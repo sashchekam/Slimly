@@ -10,7 +10,7 @@ tuist generate --no-open        # после добавления/переиме
 xcodebuild -workspace Slimly.xcworkspace -scheme Slimly \
   -destination 'generic/platform=iOS Simulator' build
 
-xcrun simctl openurl booted "slimly://home/profile"   # проверить диплинк
+xcrun simctl openurl booted "slimly://profile"   # проверить диплинк
 ```
 
 `.xcodeproj` и `.xcworkspace` — **генерируемые артефакты**, они в `.gitignore`.
@@ -24,9 +24,10 @@ xcrun simctl openurl booted "slimly://home/profile"   # проверить ди�
 
 ```
 Modules/Core/SlimlyCore            — модели, сервисы, форматтеры, DeeplinkURL
-Modules/Core/SlimlyDesignSystem    — токены и компоненты
-Modules/Core/SlimlyNavigation      — Route, AnyRoute, Router, RouteRegistry,
-                                     RouterHost, DeeplinkRegistry
+Modules/Core/SlimlyDesignSystem    — токены Nocturne и компоненты
+Modules/Core/SlimlyNavigation      — Route, AnyRoute, Router, TabRouter,
+                                     RouteRegistry, RouterHost, TabRouterHost,
+                                     DeeplinkRegistry
 Modules/Features/<Name>Feature/
   Interface/                       — только enum Route, без UI
   Sources/                         — View, ViewModel, <Name>Feature.resolver(...)

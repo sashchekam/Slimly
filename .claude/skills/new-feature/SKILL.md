@@ -68,12 +68,19 @@ ViewModel — `@MainActor @Observable final class`, получает `Router` в
 
 ```swift
 registry = RouteRegistry([
-    WelcomeFeature.resolver(authService: authService),
-    <Name>Feature.resolver(authService: authService),
+    CompressFeature.resolver(
+        mediaLibrary: mediaLibrary,
+        compressionService: compressionService,
+        showProfile: { tabRouter.selection = SqueezeTab.profile.id }
+    ),
+    <Name>Feature.resolver(mediaLibrary: mediaLibrary),
 ])
 ```
 
 Импорт `<Name>Feature` и `<Name>FeatureInterface` — там же.
+
+Если фича должна стать отдельным табом — добавь кейс в `App/Sources/SqueezeTab.swift`:
+корень таба, заголовок, иконку и ветку в `owner(of:)` для диплинков.
 
 ### 4. Проверка
 

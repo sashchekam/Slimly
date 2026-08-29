@@ -1,31 +1,29 @@
 import Foundation
-import HomeFeatureInterface
+import CompressFeatureInterface
+import ProfileFeatureInterface
 import SlimlyCore
 import SlimlyNavigation
-import WelcomeFeatureInterface
 
 /// Таблица «URL → маршруты». Живёт в App: только здесь видны маршруты всех фич.
 ///
-/// Первый элемент результата становится корнем стека, остальные — экранами поверх.
+/// Первый элемент результата становится корнем стека, остальные — экранами
+/// поверх. Внутренние шаги сжатия ссылками не открываются: они требуют
+/// конкретных файлов медиатеки, а такое в URL не положишь.
 enum DeeplinkMap {
     static let mappers: [DeeplinkRegistry.Mapper] = [
-        welcome,
-        home,
+        compress,
+        profile,
     ]
 
-    /// `slimly://welcome`
-    private static let welcome: DeeplinkRegistry.Mapper = { deeplink in
-        guard deeplink.host == "welcome" else { return nil }
-        return [WelcomeRoute.signIn]
+    /// `slimly://compress`
+    private static let compress: DeeplinkRegistry.Mapper = { deeplink in
+        guard deeplink.host == "compress", deeplink.pathComponents.isEmpty else { return nil }
+        return [CompressRoute.gallery]
     }
 
-    /// `slimly://home`, `slimly://home/profile`
-    private static let home: DeeplinkRegistry.Mapper = { deeplink in
-        guard deeplink.host == "home" else { return nil }
-        switch deeplink.pathComponents.first {
-        case nil: return [HomeRoute.dashboard]
-        case "profile": return [HomeRoute.dashboard, HomeRoute.profile]
-        default: return nil
-        }
+    /// `slimly://profile`
+    private static let profile: DeeplinkRegistry.Mapper = { deeplink in
+        guard deeplink.host == "profile", deeplink.pathComponents.isEmpty else { return nil }
+        return [ProfileRoute.profile]
     }
 }

@@ -17,7 +17,8 @@ let project = Project(
                 "UIApplicationSceneManifest": [
                     "UIApplicationSupportsMultipleScenes": false,
                 ],
-                "CFBundleDisplayName": "Slimly",
+                "CFBundleDisplayName": "Squeeze",
+                "UIUserInterfaceStyle": "Dark",
                 "CFBundleURLTypes": [
                     [
                         "CFBundleTypeRole": "Editor",

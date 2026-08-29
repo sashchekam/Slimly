@@ -14,10 +14,10 @@ public enum Module: CaseIterable {
     case designSystem
     case navigation
     // Features
-    case welcomeInterface
-    case welcome
-    case homeInterface
-    case home
+    case compressInterface
+    case compress
+    case profileInterface
+    case profile
 
     public enum Kind {
         case core
@@ -28,8 +28,8 @@ public enum Module: CaseIterable {
     public var kind: Kind {
         switch self {
         case .core, .designSystem, .navigation: .core
-        case .welcomeInterface, .homeInterface: .featureInterface
-        case .welcome, .home: .feature
+        case .compressInterface, .profileInterface: .featureInterface
+        case .compress, .profile: .feature
         }
     }
 
@@ -38,10 +38,10 @@ public enum Module: CaseIterable {
         case .core: "SlimlyCore"
         case .designSystem: "SlimlyDesignSystem"
         case .navigation: "SlimlyNavigation"
-        case .welcomeInterface: "WelcomeFeatureInterface"
-        case .welcome: "WelcomeFeature"
-        case .homeInterface: "HomeFeatureInterface"
-        case .home: "HomeFeature"
+        case .compressInterface: "CompressFeatureInterface"
+        case .compress: "CompressFeature"
+        case .profileInterface: "ProfileFeatureInterface"
+        case .profile: "ProfileFeature"
         }
     }
 
@@ -50,10 +50,10 @@ public enum Module: CaseIterable {
         switch self {
         case .core, .designSystem, .navigation:
             "Modules/Core/\(name)"
-        case .welcomeInterface, .welcome:
-            "Modules/Features/WelcomeFeature"
-        case .homeInterface, .home:
-            "Modules/Features/HomeFeature"
+        case .compressInterface, .compress:
+            "Modules/Features/CompressFeature"
+        case .profileInterface, .profile:
+            "Modules/Features/ProfileFeature"
         }
     }
 
@@ -70,10 +70,11 @@ public enum Module: CaseIterable {
         case .core: []
         case .designSystem: [.core]
         case .navigation: [.core]
-        case .welcomeInterface: [.navigation]
-        case .welcome: [.core, .designSystem, .navigation, .welcomeInterface, .homeInterface]
-        case .homeInterface: [.navigation]
-        case .home: [.core, .designSystem, .navigation, .homeInterface, .welcomeInterface]
+        // Маршруты сжатия несут модели медиатеки, поэтому интерфейсу нужен core.
+        case .compressInterface: [.core, .navigation]
+        case .compress: [.core, .designSystem, .navigation, .compressInterface]
+        case .profileInterface: [.navigation]
+        case .profile: [.core, .designSystem, .navigation, .profileInterface]
         }
     }
 
