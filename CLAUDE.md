@@ -23,17 +23,33 @@ xcrun simctl openurl booted "slimly://profile"   # проверить дипли
 ## Структура
 
 ```
-Modules/Core/SlimlyCore            — модели, сервисы, форматтеры, DeeplinkURL
+Modules/Core/SlimlyCore            — модели, протоколы сервисов, форматтеры,
+                                     DeeplinkURL (без системных фреймворков)
 Modules/Core/SlimlyDesignSystem    — токены Nocturne и компоненты
 Modules/Core/SlimlyNavigation      — Route, AnyRoute, Router, TabRouter,
                                      RouteRegistry, RouterHost, TabRouterHost,
                                      DeeplinkRegistry
+Modules/Core/SlimlyMediaKit       — единственный модуль, знающий про PhotoKit
+                                     и AVFoundation: медиатека, перекодирование,
+                                     сохранение результата
+Modules/Core/SlimlyMediaFlow       — общие шаги флоу обработки: выбор файлов,
+                                     формат, обработка, итог
 Modules/Features/<Name>Feature/
   Interface/                       — только enum Route, без UI
   Sources/                         — View, ViewModel, <Name>Feature.resolver(...)
-App/                               — composition root, реестр резолверов, диплинки
+App/                               — composition root, реестр резолверов,
+                                     состав главного экрана, диплинки
 Tuist/ProjectDescriptionHelpers/   — реестр модулей и правила связей
 ```
+
+Реализации сервисов живут в `SlimlyMediaKit`, а протоколы — в `SlimlyCore`:
+фича видит только протокол, поэтому не тянет за собой PhotoKit.
+
+Главный экран (`HomeFeature`) — хаб инструментов, а каждый инструмент —
+свой модуль: `CompressFeature`, `ConvertFeature`, `AudioFeature`, `ScanFeature`.
+Общие шаги у них одни (`SlimlyMediaFlow`), различаются конфиг и то, что есть
+только у инструмента. Табов в приложении нет: навигация — один стек с корнем
+`HomeRoute.home`.
 
 ## Архитектурные правила (не нарушать)
 

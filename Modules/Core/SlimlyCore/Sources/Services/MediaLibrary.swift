@@ -1,44 +1,66 @@
 import Foundation
 
+/// Что система разрешила делать с медиатекой.
+public enum MediaAccess: Sendable, Hashable {
+    case notDetermined
+    case denied
+    /// Пользователь выдал доступ к части файлов — работать можно, но
+    /// показываем мы только отобранное им.
+    case limited
+    case authorized
+
+    public var allowsBrowsing: Bool {
+        self == .authorized || self == .limited
+    }
+}
+
+public enum MediaLibraryError: LocalizedError, Sendable {
+    case accessDenied
+    case itemNotFound
+    /// Оригинал лежит в iCloud, а не на устройстве.
+    case originalUnavailable
+    case exportFailed(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .accessDenied: "Нет доступа к медиатеке"
+        case .itemNotFound: "Файл не найден в медиатеке"
+        case .originalUnavailable: "Оригинал не выгружен из iCloud"
+        case let .exportFailed(reason): reason
+        }
+    }
+}
+
 /// Доступ к медиатеке устройства.
 ///
-/// Намеренно узкий протокол: система отдаёт количества и свободное место,
-/// но не общий вес библиотеки — поэтому такого метода здесь нет.
+/// Здесь и просмотр, и выдача оригиналов обработчику: и то и другое —
+/// работа с одними и теми же ассетами, и разделять их значило бы дважды
+/// спрашивать систему об одном и том же. Общего веса медиатеки iOS
+/// не сообщает, поэтому такого метода нет и быть не может.
+/// Вид файлов задаёт инструмент: конвертеру видео нечего показывать фото.
 public protocol MediaLibrary: Sendable {
+    func access() async -> MediaAccess
+    /// Спросить доступ. Системный запрос показывается один раз за установку,
+    /// дальше метод просто возвращает текущий статус.
+    func requestAccess() async -> MediaAccess
+
     func snapshot() async -> LibrarySnapshot
-    func recentItems(limit: Int) async -> [MediaItem]
-}
+    func albums(kind: MediaKind?) async -> [MediaAlbum]
+    func items(in albumID: String, kind: MediaKind?) async -> [MediaItem]
 
-/// Заглушка для запуска без доступа к Фото.
-public actor StubMediaLibrary: MediaLibrary {
-    private let items: [MediaItem]
-    private let librarySnapshot: LibrarySnapshot
+    /// Миниатюра в JPEG. Данные, а не картинка, — чтобы модель не зависела
+    /// от UIKit и спокойно ездила между акторами.
+    func thumbnail(for item: MediaItem, size: Int) async -> Data?
 
-    public init() {
-        items = [
-            MediaItem(id: "v1", kind: .video, fileName: "IMG_4821.MOV", byteCount: .megabytes(186), duration: .seconds(42)),
-            MediaItem(id: "p1", kind: .photo, fileName: "IMG_4822.HEIC", byteCount: .megabytes(4.1), isHEIC: true),
-            MediaItem(id: "p2", kind: .photo, fileName: "IMG_4823.HEIC", byteCount: .megabytes(3.6), isHEIC: true),
-            MediaItem(id: "v2", kind: .video, fileName: "IMG_4826.MOV", byteCount: .megabytes(612), duration: .seconds(135)),
-            MediaItem(id: "p3", kind: .photo, fileName: "IMG_4830.JPG", byteCount: .megabytes(6.2)),
-            MediaItem(id: "v3", kind: .video, fileName: "IMG_4834.MOV", byteCount: .megabytes(74), duration: .seconds(18)),
-            MediaItem(id: "p4", kind: .photo, fileName: "IMG_4839.HEIC", byteCount: .megabytes(5.4), isHEIC: true),
-            MediaItem(id: "p5", kind: .photo, fileName: "IMG_4841.HEIC", byteCount: .megabytes(2.9), isHEIC: true),
-            MediaItem(id: "v4", kind: .video, fileName: "IMG_4845.MOV", byteCount: .megabytes(298), duration: .seconds(67)),
-        ]
-        librarySnapshot = LibrarySnapshot(
-            photoCount: 12_480,
-            videoCount: 640,
-            freeSpace: .gigabytes(18.2)
-        )
-    }
+    /// Копия оригинала во временной папке — источник для обработки.
+    /// Удалять её должен тот, кто заказал: система за нами не убирает.
+    func exportOriginal(_ item: MediaItem) async throws -> URL
 
-    public func snapshot() -> LibrarySnapshot { librarySnapshot }
+    /// Положить готовый файл в медиатеку. Возвращает идентификатор
+    /// созданного ассета.
+    func saveToLibrary(_ file: URL, kind: MediaKind) async throws -> String
 
-    public func recentItems(limit: Int) -> [MediaItem] { Array(items.prefix(limit)) }
-}
-
-public extension Int64 {
-    static func megabytes(_ value: Double) -> Int64 { Int64(value * 1024 * 1024) }
-    static func gigabytes(_ value: Double) -> Int64 { Int64(value * 1024 * 1024 * 1024) }
+    /// Удалить оригиналы. iOS показывает собственный запрос подтверждения,
+    /// поэтому своего мы не рисуем.
+    func deleteOriginals(_ items: [MediaItem]) async throws
 }

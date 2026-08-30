@@ -1,61 +1,42 @@
-import SwiftUI
-import SlimlyDesignSystem
 import SlimlyNavigation
+import SwiftUI
 
 struct AppRootView: View {
     let container: AppContainer
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var isSplashVisible = true
+
     var body: some View {
-        TabRouterHost(tabRouter: container.tabRouter, registry: container.registry) { tabRouter in
-            SqueezeTabBar(tabRouter: tabRouter)
+        ZStack {
+            RouterHost(router: container.router, registry: container.registry)
+                // Приложение подъезжает навстречу зрителю, пока заставка уходит
+                // вперёд. Разъезд в разные стороны читается как «открылось»,
+                // тогда как простое растворение — как «подгрузилось».
+                .scaleEffect(isSplashVisible && !reduceMotion ? 0.96 : 1)
+                .opacity(isSplashVisible ? 0 : 1)
+
+            if isSplashVisible {
+                SplashView(onFinish: hideSplash)
+                    .transition(splashExit)
+            }
         }
         // Nocturne — тёмная система без светлого варианта, поэтому схему
         // фиксируем: иначе системные элементы приедут светлыми.
         .preferredColorScheme(.dark)
-    }
-}
-
-/// Панель табов. Рисуется в App, а не в навигации: как выглядит таб-бар —
-/// продуктовая деталь, а не свойство роутинга.
-struct SqueezeTabBar: View {
-    let tabRouter: TabRouter
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Rectangle()
-                .fill(SlimlyColor.text.opacity(0.08))
-                .frame(height: 1)
-
-            HStack(spacing: 0) {
-                ForEach(SqueezeTab.allCases) { tab in
-                    button(for: tab)
-                }
-            }
-            .padding(.vertical, 6)
-        }
-        .background {
-            SlimlyColor.chrome
-                .background(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .bottom)
+        // Мягкий удар в момент передачи: он тяжелее ударов по углам, поэтому
+        // круг заканчивается не затиханием, а точкой.
+        .sensoryFeedback(trigger: isSplashVisible) { _, isVisible in
+            isVisible ? nil : .impact(flexibility: .soft, intensity: 0.9)
         }
     }
 
-    private func button(for tab: SqueezeTab) -> some View {
-        let isSelected = tabRouter.selection == tab.id
+    private var splashExit: AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 1.08))
+    }
 
-        return Button {
-            tabRouter.select(tab.id)
-        } label: {
-            VStack(spacing: 4) {
-                SlimlyIcon(tab.icon, width: 24)
-                Text(tab.title).font(.slimlyTabLabel)
-            }
-            .foregroundStyle(isSelected ? SlimlyColor.accent300 : SlimlyColor.neutral600)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 5)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    private func hideSplash() {
+        withAnimation(.easeInOut(duration: 0.42)) { isSplashVisible = false }
     }
 }

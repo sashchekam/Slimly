@@ -13,8 +13,10 @@ description: Добавить или изменить диплинк в Slimly �
 1. `SlimlyApp.onOpenURL` → `DeeplinkURL(url:)` разбирает `slimly://host/path?query`
    (`Modules/Core/SlimlyCore/Sources/Deeplink/DeeplinkURL.swift`).
 2. `AppContainer.handle(_:)` спрашивает `DeeplinkRegistry` о маршрутах.
-3. `rootRouter.replace(with: routes)` — **первый** маршрут становится корнем,
+3. `router.replace(with: routes)` — **первый** маршрут становится корнем,
    остальные ложатся в стек. Модалки при этом закрываются.
+
+Табов в приложении нет: роутер один, корень — `HomeRoute.home`.
 
 ## Шаги
 
@@ -23,18 +25,14 @@ description: Добавить или изменить диплинк в Slimly �
 `App/Sources/DeeplinkMap.swift` — единственное место, где известны маршруты всех фич.
 
 ```swift
-/// `slimly://diary`, `slimly://diary/meal?id=<uuid>`
-private static let diary: DeeplinkRegistry.Mapper = { deeplink in
-    guard deeplink.host == "diary" else { return nil }
-    switch deeplink.pathComponents.first {
-    case nil:
-        return [DiaryRoute.today]
-    case "meal":
-        guard let raw = deeplink[query: "id"], let id = UUID(uuidString: raw) else { return nil }
-        return [DiaryRoute.today, DiaryRoute.meal(id: id)]
-    default:
-        return nil
-    }
+/// `slimly://convert/photo`, `slimly://convert/video`
+private static let convert: DeeplinkRegistry.Mapper = { deeplink in
+    guard
+        deeplink.host == "convert",
+        deeplink.pathComponents.count == 1,
+        let kind = ConvertKind(rawValue: deeplink.pathComponents[0])
+    else { return nil }
+    return [HomeRoute.home, ConvertRoute.picker(kind)]
 }
 ```
 
@@ -57,7 +55,7 @@ private static let diary: DeeplinkRegistry.Mapper = { deeplink in
 
 ```bash
 tuist generate --no-open
-xcrun simctl openurl booted "slimly://diary/meal?id=<uuid>"
+xcrun simctl openurl booted "slimly://convert/photo"
 ```
 
 Симулятор показывает системный алерт «Open in Slimly?» — это нормально,
@@ -65,9 +63,13 @@ xcrun simctl openurl booted "slimly://diary/meal?id=<uuid>"
 
 ## Правила
 
-- Первый маршрут — всегда корень «мира» (например `DiaryRoute.today`), иначе экран
-  откроется без родителя и без кнопки «назад».
-- Маршруты, которые в UI показываются модалкой, в диплинке лучше не использовать:
-  `replace(with:)` строит стек, и кнопка закрытия модалки окажется мёртвой.
-- Экран, требующий авторизации, не должен открываться поверх экрана логина —
-  проверяй состояние `AuthService` в `AppContainer.handle(_:)`.
+- Первый маршрут — всегда `HomeRoute.home`, иначе экран откроется без родителя
+  и кнопка «Назад» уведёт в пустоту.
+- Ссылками открываются только входы во флоу (`CompressRoute.picker`,
+  `ScanRoute.intro`). Внутренние шаги требуют конкретных файлов медиатеки
+  и заданий на обработку — такое в URL не положишь.
+- Маршруты, которые в UI показываются модалкой (`CompressRoute.level`),
+  в диплинке не используются: `replace(with:)` строит стек, и закрытие модалки
+  окажется мёртвым.
+- Диплинк — рабочий способ дойти до экрана при проверке вёрстки в симуляторе;
+  для внутренних шагов проще временный мэппер, чем клики.

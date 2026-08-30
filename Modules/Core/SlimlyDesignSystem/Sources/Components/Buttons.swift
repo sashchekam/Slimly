@@ -79,3 +79,25 @@ public extension ButtonStyle where Self == SlimlyLinkButtonStyle {
         SlimlyLinkButtonStyle(color: SlimlyColor.neutral400, font: .slimlyBody)
     }
 }
+
+public struct SlimlyPressableStyle: ButtonStyle {
+    private let scale: CGFloat
+
+    public init(scale: CGFloat = 0.95) {
+        self.scale = scale
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(.spring(response: 0.28, dampingFraction: 0.72), value: configuration.isPressed)
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: configuration.isPressed) { _, pressed in
+                pressed
+            }
+    }
+}
+
+public extension ButtonStyle where Self == SlimlyPressableStyle {
+    /// Плитка на главной и прочие крупные тапабельные поверхности.
+    static var slimlyPressable: SlimlyPressableStyle { SlimlyPressableStyle() }
+}

@@ -43,29 +43,3 @@ public enum FileSizeFormatter {
         value.formatted(.number.precision(.fractionLength(fraction)).locale(locale))
     }
 }
-
-public enum CountFormatter {
-    private static let locale = Locale(identifier: "ru_RU")
-
-    /// Крупные количества с разрядами: «12 480».
-    public static func string(_ count: Int) -> String {
-        count.formatted(.number.locale(locale))
-    }
-
-    /// «1 файл», «3 файла», «128 файлов».
-    public static func files(_ count: Int) -> String {
-        "\(count) \(fileWord(count))"
-    }
-
-    public static func fileWord(_ count: Int) -> String {
-        let tens = abs(count) % 100
-        let ones = abs(count) % 10
-
-        if (11 ... 14).contains(tens) { return "файлов" }
-        switch ones {
-        case 1: return "файл"
-        case 2 ... 4: return "файла"
-        default: return "файлов"
-        }
-    }
-}

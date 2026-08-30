@@ -13,11 +13,21 @@ let project = Project(
             bundleId: Slimly.bundleIdPrefix,
             deploymentTargets: Slimly.deploymentTargets,
             infoPlist: .extendingDefault(with: [
-                "UILaunchScreen": ["UIColorName": ""],
+                // Экран запуска — сплошная заливка цветом фона: белая вспышка
+                // между иконкой и заставкой ломает всё впечатление от старта.
+                "UILaunchScreen": ["UIColorName": "LaunchBackground"],
                 "UIApplicationSceneManifest": [
                     "UIApplicationSupportsMultipleScenes": false,
                 ],
-                "CFBundleDisplayName": "Squeeze",
+                "CFBundleDisplayName": "Slimly",
+                "NSPhotoLibraryUsageDescription":
+                    "Slimly показывает медиатеку, чтобы вы выбрали файлы для сжатия и конвертации.",
+                "NSPhotoLibraryAddUsageDescription":
+                    "Slimly сохраняет обработанные файлы в медиатеку — оригиналы остаются на месте.",
+                // Извлечённые дорожки лежат в папке приложения: без этих двух
+                // ключей она не видна в «Файлах», и забрать звук было бы нечем.
+                "UIFileSharingEnabled": true,
+                "LSSupportsOpeningDocumentsInPlace": true,
                 "UIUserInterfaceStyle": "Dark",
                 "CFBundleURLTypes": [
                     [

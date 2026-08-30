@@ -48,10 +48,25 @@ public enum SlimlyColor {
     public static let tileCaption = Color(hex: 0x0C0D14).opacity(0.74)
     /// Дно прогресс-кольца и другие «утопленные» участки.
     public static let surfaceSunken = Color(hex: 0x1A1C2B)
+    /// Поверхность нижней шторки — на ступень светлее фона, чтобы её край
+    /// читался поверх затемнённого экрана.
+    public static let sheet = Color(hex: 0x1C1E2C)
+    /// Всплывающее меню альбомов: полупрозрачная подложка под блюром —
+    /// системные меню iOS ведут себя так же.
+    public static let menu = Color(hex: 0x303242).opacity(0.72)
     /// Панель таб-бара — полупрозрачная, поверх неё работает блюр.
     public static let chrome = Color(hex: 0x141622).opacity(0.92)
     /// Подложка под кнопкой действия: контент под ней должен «уходить в туман».
     public static let scrim = Color(hex: 0x161826).opacity(0.96)
+
+    // MARK: Знак приложения
+
+    /// Приглушённые квадраты знака. Холоднее нейтральной рампы: рядом
+    /// с акцентом чистый серый выглядит грязным.
+    public static let markMuted = Color(hex: 0x5B5F80)
+    /// Центр свечения на заставке. Ярче, чем `backgroundGlow` у экранов:
+    /// на заставке нет контента, и вся глубина держится на этом пятне.
+    public static let splashGlow = Color(hex: 0x24273D)
 
     /// Заливка галочки на акцентном кружке — тёмная, а не чёрная.
     public static let onAccent = Color(hex: 0x181A2C)

@@ -18,15 +18,19 @@ public enum MediaItemFormatter {
     }
 
     /// «840 МБ → 302 МБ».
-    public static func sizeTransition(_ result: CompressionResult) -> String {
-        let before = FileSizeFormatter.string(bytes: result.item.byteCount)
-        let after = FileSizeFormatter.string(bytes: result.compressedByteCount)
-        return "\(before) → \(after)"
+    public static func sizeTransition(from: Int64, to: Int64) -> String {
+        "\(FileSizeFormatter.string(bytes: from)) → \(FileSizeFormatter.string(bytes: to))"
     }
 
     /// «−64%».
-    public static func reduction(_ result: CompressionResult) -> String {
-        "−\(Int((result.reduction * 100).rounded()))%"
+    public static func reduction(_ result: ProcessingResult) -> String {
+        percent(result.reduction)
+    }
+
+    /// Доля в процентах со знаком: «−58%», «+140%».
+    public static func percent(_ fraction: Double) -> String {
+        let value = Int((fraction * 100).rounded())
+        return value < 0 ? "+\(-value)%" : "−\(value)%"
     }
 }
 
@@ -45,9 +49,11 @@ public enum DurationFormatter {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    /// «Осталось 12 с» — грубая оценка, поэтому без долей секунды.
+    /// «12 с», «3 мин» — грубая оценка, поэтому без долей и без секунд
+    /// после минуты: точность, которой у прогноза всё равно нет.
     public static func remaining(_ duration: Duration) -> String {
         let seconds = max(1, Int(duration.components.seconds))
-        return "\(seconds) с"
+        guard seconds >= 60 else { return "\(seconds) с" }
+        return "\(Int((Double(seconds) / 60).rounded(.up))) мин"
     }
 }

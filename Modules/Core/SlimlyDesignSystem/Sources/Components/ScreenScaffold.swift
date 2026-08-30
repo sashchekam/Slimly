@@ -54,6 +54,9 @@ public extension View {
     /// панель — макет рисует заголовки и «Назад» сам.
     func slimlyScreen() -> some View {
         scrollIndicators(.hidden)
+            // Скролл рисует содержимое и за своими границами: без обрезки
+            // хвост списка проступает под статус-баром поверх шапки.
+            .clipped()
             .background(SlimlyScreenBackground())
             .toolbar(.hidden, for: .navigationBar)
             .foregroundStyle(SlimlyColor.text)

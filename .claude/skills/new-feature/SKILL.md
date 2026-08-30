@@ -50,6 +50,11 @@ public enum <Name>Feature {
 
 ViewModel — `@MainActor @Observable final class`, получает `Router` в `init`.
 
+Если фича — инструмент обработки файлов, не пиши экраны заново: выбор файлов,
+обработка и итог живут в `SlimlyMediaFlow` (`MediaPickerView`, `FormatStepView`,
+`ProcessingView`, `OutcomeView`). Фиче остаётся конфиг шагов и то, что есть
+только у неё, — как шторка степени сжатия у `CompressFeature`.
+
 ### 2. Реестр модулей
 
 `Tuist/ProjectDescriptionHelpers/Module.swift` — добавить **два** кейса
@@ -68,10 +73,10 @@ ViewModel — `@MainActor @Observable final class`, получает `Router` в
 
 ```swift
 registry = RouteRegistry([
+    HomeFeature.resolver(tools: HomeTools.all, profile: ProfileRoute.profile),
     CompressFeature.resolver(
         mediaLibrary: mediaLibrary,
-        compressionService: compressionService,
-        showProfile: { tabRouter.selection = SqueezeTab.profile.id }
+        processingService: processingService
     ),
     <Name>Feature.resolver(mediaLibrary: mediaLibrary),
 ])
@@ -79,8 +84,12 @@ registry = RouteRegistry([
 
 Импорт `<Name>Feature` и `<Name>FeatureInterface` — там же.
 
-Если фича должна стать отдельным табом — добавь кейс в `App/Sources/SqueezeTab.swift`:
-корень таба, заголовок, иконку и ветку в `owner(of:)` для диплинков.
+Если фича — новый инструмент на главной, добавь карточку
+в `App/Sources/HomeTools.swift`: заголовок, подпись, иконку и маршрут.
+Главный экран получает список готовым и про сами фичи ничего не знает.
+
+Ссылку `slimly://<name>` заводи в `App/Sources/DeeplinkMap.swift` —
+первым маршрутом всегда `HomeRoute.home`, иначе возврату некуда вести.
 
 ### 4. Проверка
 

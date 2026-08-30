@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SlimlyCore
+import SlimlyNavigation
 
 @MainActor
 @Observable
@@ -12,19 +13,29 @@ public final class ProfileViewModel {
     }
 
     public private(set) var snapshot: LibrarySnapshot?
-    public private(set) var stats: CompressionStats = .empty
+    public private(set) var stats: ProcessingStats = .empty
+    public private(set) var access: MediaAccess = .notDetermined
 
     private let mediaLibrary: any MediaLibrary
-    private let compressionService: any CompressionService
+    private let processingService: any MediaProcessingService
+    private let router: Router
 
-    public init(mediaLibrary: any MediaLibrary, compressionService: any CompressionService) {
+    public init(
+        mediaLibrary: any MediaLibrary,
+        processingService: any MediaProcessingService,
+        router: Router
+    ) {
         self.mediaLibrary = mediaLibrary
-        self.compressionService = compressionService
+        self.processingService = processingService
+        self.router = router
     }
 
+    /// Доступ здесь только показываем: спрашивать его на экране статистики
+    /// не за чем — системный запрос уместен там, где выбирают файлы.
     public func load() async {
+        access = await mediaLibrary.access()
         async let snapshot = mediaLibrary.snapshot()
-        async let stats = compressionService.stats()
+        async let stats = processingService.stats()
 
         self.snapshot = await snapshot
         self.stats = await stats
@@ -60,51 +71,35 @@ public final class ProfileViewModel {
         "было \(FileSizeFormatter.string(bytes: stats.originalByteCount))"
     }
 
-    // MARK: Ачивки
-
-    public var achievements: [Achievement] { Achievement.catalogue }
-
-    public func isEarned(_ achievement: Achievement) -> Bool {
-        achievement.isEarned(in: stats)
-    }
-
-    public var earnedCountText: String {
-        "\(Achievement.earned(in: stats).count) из \(Achievement.catalogue.count)"
-    }
-
-    public var nextAchievement: Achievement? {
-        Achievement.next(in: stats)
-    }
-
-    public func progress(for achievement: Achievement) -> Double {
-        achievement.progress(in: stats)
-    }
-
-    public func progressText(for achievement: Achievement) -> String {
-        achievement.progressText(in: stats)
+    public var breakdown: [(value: String, caption: String)] {
+        [
+            (CountFormatter.string(stats.photoCount), "фото"),
+            (CountFormatter.string(stats.videoCount), "видео"),
+            (
+                CountFormatter.string(stats.conversionCount),
+                CountFormatter.word(stats.conversionCount, .conversion)
+            ),
+        ]
     }
 
     // MARK: Настройки
 
     public var settingsRows: [SettingsRow] {
-        [
-            SettingsRow(
-                id: "preset",
-                label: "Пресет по умолчанию",
-                value: CompressionOptions.default.preset.title
-            ),
-            // Реальный статус придёт из PhotoKit вместе с настоящей медиатекой.
-            SettingsRow(id: "access", label: "Доступ к Фото", value: "Все фото"),
-            SettingsRow(
-                id: "history",
-                label: "История сжатий",
-                value: CountFormatter.string(stats.fileCount)
-            ),
-            SettingsRow(id: "about", label: "О приложении", value: Self.appVersion),
-        ]
+        [SettingsRow(id: "access", label: "Доступ к Фото", value: accessText)]
     }
 
-    private static var appVersion: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    private var accessText: String {
+        switch access {
+        case .authorized: "Все фото"
+        case .limited: "Выбранные фото"
+        case .denied: "Запрещён"
+        case .notDetermined: "Не запрошен"
+        }
+    }
+
+    // MARK: Навигация
+
+    public func goBack() {
+        router.pop()
     }
 }

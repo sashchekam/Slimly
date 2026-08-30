@@ -13,9 +13,19 @@ public enum Module: CaseIterable {
     case core
     case designSystem
     case navigation
+    case mediaKit
+    case mediaFlow
     // Features
+    case homeInterface
+    case home
     case compressInterface
     case compress
+    case convertInterface
+    case convert
+    case audioInterface
+    case audio
+    case scanInterface
+    case scan
     case profileInterface
     case profile
 
@@ -27,9 +37,10 @@ public enum Module: CaseIterable {
 
     public var kind: Kind {
         switch self {
-        case .core, .designSystem, .navigation: .core
-        case .compressInterface, .profileInterface: .featureInterface
-        case .compress, .profile: .feature
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow: .core
+        case .homeInterface, .compressInterface, .convertInterface,
+             .audioInterface, .scanInterface, .profileInterface: .featureInterface
+        case .home, .compress, .convert, .audio, .scan, .profile: .feature
         }
     }
 
@@ -38,8 +49,18 @@ public enum Module: CaseIterable {
         case .core: "SlimlyCore"
         case .designSystem: "SlimlyDesignSystem"
         case .navigation: "SlimlyNavigation"
+        case .mediaKit: "SlimlyMediaKit"
+        case .mediaFlow: "SlimlyMediaFlow"
+        case .homeInterface: "HomeFeatureInterface"
+        case .home: "HomeFeature"
         case .compressInterface: "CompressFeatureInterface"
         case .compress: "CompressFeature"
+        case .convertInterface: "ConvertFeatureInterface"
+        case .convert: "ConvertFeature"
+        case .audioInterface: "AudioFeatureInterface"
+        case .audio: "AudioFeature"
+        case .scanInterface: "ScanFeatureInterface"
+        case .scan: "ScanFeature"
         case .profileInterface: "ProfileFeatureInterface"
         case .profile: "ProfileFeature"
         }
@@ -48,10 +69,18 @@ public enum Module: CaseIterable {
     /// Папка модуля на диске.
     public var path: String {
         switch self {
-        case .core, .designSystem, .navigation:
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow:
             "Modules/Core/\(name)"
+        case .homeInterface, .home:
+            "Modules/Features/HomeFeature"
         case .compressInterface, .compress:
             "Modules/Features/CompressFeature"
+        case .convertInterface, .convert:
+            "Modules/Features/ConvertFeature"
+        case .audioInterface, .audio:
+            "Modules/Features/AudioFeature"
+        case .scanInterface, .scan:
+            "Modules/Features/ScanFeature"
         case .profileInterface, .profile:
             "Modules/Features/ProfileFeature"
         }
@@ -70,9 +99,26 @@ public enum Module: CaseIterable {
         case .core: []
         case .designSystem: [.core]
         case .navigation: [.core]
-        // Маршруты сжатия несут модели медиатеки, поэтому интерфейсу нужен core.
+        // Единственный модуль, который знает про PhotoKit и AVFoundation:
+        // всё общение с системой собрано здесь, а не размазано по фичам.
+        case .mediaKit: [.core]
+        // Общие шаги флоу — это экраны, поэтому нужны и дизайн-система,
+        // и роутер: шаг сам решает, куда положить следующий маршрут.
+        case .mediaFlow: [.core, .designSystem, .navigation]
+        case .homeInterface: [.navigation]
+        case .home: [.core, .designSystem, .navigation, .homeInterface]
+        // Маршруты инструментов несут модели медиатеки и задание
+        // на обработку, поэтому их интерфейсам нужен core.
         case .compressInterface: [.core, .navigation]
-        case .compress: [.core, .designSystem, .navigation, .compressInterface]
+        // Сравнение «до / после» показывает кадр из уже готового файла,
+        // а его умеет достать только модуль системной обработки.
+        case .compress: [.core, .designSystem, .navigation, .mediaKit, .mediaFlow, .compressInterface]
+        case .convertInterface: [.core, .navigation]
+        case .convert: [.core, .designSystem, .navigation, .mediaFlow, .convertInterface]
+        case .audioInterface: [.core, .navigation]
+        case .audio: [.core, .designSystem, .navigation, .mediaFlow, .audioInterface]
+        case .scanInterface: [.core, .navigation]
+        case .scan: [.core, .designSystem, .navigation, .mediaFlow, .scanInterface]
         case .profileInterface: [.navigation]
         case .profile: [.core, .designSystem, .navigation, .profileInterface]
         }

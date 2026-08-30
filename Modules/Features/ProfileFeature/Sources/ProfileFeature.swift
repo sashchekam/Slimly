@@ -6,15 +6,16 @@ public enum ProfileFeature {
     @MainActor
     public static func resolver(
         mediaLibrary: any MediaLibrary,
-        compressionService: any CompressionService
+        processingService: any MediaProcessingService
     ) -> RouteResolver {
-        RouteResolver(for: ProfileRoute.self) { route, _ in
+        RouteResolver(for: ProfileRoute.self) { route, router in
             switch route {
             case .profile:
                 ProfileView(
                     viewModel: ProfileViewModel(
                         mediaLibrary: mediaLibrary,
-                        compressionService: compressionService
+                        processingService: processingService,
+                        router: router
                     )
                 )
             }

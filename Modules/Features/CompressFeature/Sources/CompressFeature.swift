@@ -1,52 +1,75 @@
 import CompressFeatureInterface
 import SlimlyCore
+import SlimlyMediaFlow
 import SlimlyNavigation
 
-/// Точка сборки фичи сжатия.
+/// Точка сборки флоу сжатия.
 ///
-/// Переход в профиль приходит замыканием, а не ссылкой на таб-бар: фича
-/// умеет «показать профиль», но ничего не знает ни про соседний модуль,
-/// ни про то, как устроена корневая навигация.
+/// Шаги выбора, обработки и итога — общие для всех инструментов, поэтому
+/// собственного кода у фичи ровно столько, сколько в ней своего: шторка
+/// со степенью сжатия и сравнение «до / после».
 public enum CompressFeature {
     @MainActor
     public static func resolver(
         mediaLibrary: any MediaLibrary,
-        compressionService: any CompressionService,
-        showProfile: @escaping @MainActor () -> Void
+        processingService: any MediaProcessingService
     ) -> RouteResolver {
         RouteResolver(for: CompressRoute.self) { route, router in
             switch route {
-            case .gallery:
-                GalleryView(
-                    viewModel: GalleryViewModel(
-                        mediaLibrary: mediaLibrary,
-                        compressionService: compressionService,
-                        router: router
-                    )
-                )
-
-            case let .setup(items, options):
-                SetupView(viewModel: SetupViewModel(items: items, options: options, router: router))
-
-            case let .run(items, options):
-                RunView(
-                    viewModel: RunViewModel(
-                        items: items,
-                        options: options,
-                        compressionService: compressionService,
-                        router: router
-                    )
-                )
-
-            case let .result(outcome):
-                ResultView(
-                    viewModel: ResultViewModel(
-                        outcome: outcome,
+            case .picker:
+                MediaPickerView(
+                    viewModel: MediaPickerViewModel(
+                        config: pickerConfig,
+                        library: mediaLibrary,
                         router: router,
-                        showProfile: showProfile
+                        // Степень сжатия — шторка поверх выбора: настройка
+                        // одна, и ради неё уходить с экрана не стоит.
+                        destination: { .present(CompressRoute.level(items: $0)) }
+                    )
+                )
+
+            case let .level(items):
+                LevelSheetView(viewModel: LevelSheetViewModel(items: items, router: router))
+
+            case let .run(request):
+                ProcessingView(
+                    viewModel: ProcessingViewModel(
+                        request: request,
+                        service: processingService,
+                        router: router,
+                        thumbnails: mediaLibrary.thumbnailLoader,
+                        outcome: { CompressRoute.outcome($0) }
+                    )
+                )
+
+            case let .outcome(outcome):
+                OutcomeView(
+                    viewModel: OutcomeViewModel(
+                        outcome: outcome,
+                        library: mediaLibrary,
+                        router: router,
+                        comparison: { CompressRoute.comparison($0) }
+                    )
+                )
+
+            case let .comparison(result):
+                ComparisonView(
+                    viewModel: ComparisonViewModel(
+                        result: result,
+                        library: mediaLibrary,
+                        router: router
                     )
                 )
             }
         }
     }
+
+    private static let pickerConfig = MediaPickerConfig(
+        title: "Выбрать файлы",
+        hint: "Фото и видео из галереи",
+        footnote: "Больше файлов за раз — в Pro",
+        kind: nil,
+        limit: 5,
+        noun: .file
+    )
 }

@@ -16,9 +16,10 @@ description: Добавить экран в существующую фичу Sl
 Ассоциированные значения допустимы, если тип `Hashable & Sendable`:
 
 ```swift
-public enum DiaryRoute: Route {
-    case today
-    case meal(id: UUID)
+public enum CompressRoute: Route {
+    case picker
+    case level(items: [MediaItem])
+    case outcome(ProcessingOutcome)
 }
 ```
 
@@ -27,19 +28,19 @@ public enum DiaryRoute: Route {
 
 ### 2. View + ViewModel
 
-В `Sources/`. ViewModel получает `Router` и сервисы в `init`, наружу отдаёт
-состояние через `private(set)`:
+В `Sources/`. ViewModel получает `Router` и сервисы в `init`. Неизменяемый вход —
+`let`, вычисленное состояние — `private(set) var`, ввод пользователя — обычный `var`:
 
 ```swift
 @MainActor
 @Observable
-public final class MealViewModel {
-    public private(set) var meal: Meal?
+public final class ComparisonViewModel {
+    public let result: ProcessingResult          // вход шага
+    public var side: Side = .after               // переключатель на экране
 
-    private let storage: any MealStorage
     private let router: Router
 
-    public init(id: UUID, storage: any MealStorage, router: Router) { … }
+    public init(result: ProcessingResult, router: Router) { … }
 }
 ```
 
@@ -54,19 +55,35 @@ View держит ViewModel в `@State`, загрузку делает чере�
 ### 4. Вызов
 
 ```swift
-router.push(DiaryRoute.meal(id: id))        // в стек
-router.present(DiaryRoute.meal(id: id))     // модалкой, со своим вложенным Router
+router.push(CompressRoute.outcome(outcome))     // в стек
+router.present(CompressRoute.level(items: items)) // модалкой, со своим вложенным Router
+router.setPath([CompressRoute.outcome(outcome)])  // заменить стек целиком
+router.popToRoot()                                // вернуться на главную
 ```
 
-Из другой фичи — то же самое, но с импортом `DiaryFeatureInterface`.
+Из другой фичи — то же самое, но с импортом `CompressFeatureInterface`.
+
+Экран **внутри модалки** живёт в собственном дочернем роутере. Чтобы уйти
+из шторки в стек под ней, закрой её и толкай маршрут родителю — так делает
+`LevelSheetViewModel`:
+
+```swift
+let parent = router.parent ?? router
+router.dismiss()
+parent.push(CompressRoute.run(request))
+```
 
 ### 5. Проверка
 
 `tuist generate --no-open`, затем сборка. Если экран должен открываться ссылкой —
-дальше по скиллу `add-deeplink`.
+дальше по скиллу `add-deeplink`. Вёрстку смотри в симуляторе: `#Preview`
+в проекте не используются, до экрана быстрее дойти диплинком (см. `design-system`).
 
 ## Чего не делать
 
 - Не вызывать `router` прямо из `View` — навигация живёт в ViewModel.
 - Не передавать во `View` больше, чем её ViewModel.
-- Не хранить в маршруте тяжёлые объекты: только идентификаторы и мелкие значения.
+- Не хранить в маршруте тяжёлые объекты: идентификаторы, выбранные файлы
+  и задание на обработку — да, изображения и сервисы — нет.
+- Не вешать шапку через `safeAreaInset(edge: .top)`: она рисуется соседом
+  скролла, иначе контент проступает под статус-баром (см. `design-system`).
