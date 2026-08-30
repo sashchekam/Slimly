@@ -2,6 +2,7 @@ import Foundation
 import AudioFeatureInterface
 import CompressFeatureInterface
 import ConvertFeatureInterface
+import DebugFeatureInterface
 import HomeFeatureInterface
 import ProfileFeatureInterface
 import ScanFeatureInterface
@@ -14,14 +15,20 @@ import SlimlyNavigation
 /// вести на хаб, а не в пустоту. Внутренние шаги флоу ссылками не открываются —
 /// они требуют конкретных файлов медиатеки, а такое в URL не положишь.
 enum DeeplinkMap {
-    static let mappers: [DeeplinkRegistry.Mapper] = [
-        home,
-        compress,
-        convert,
-        audio,
-        scan,
-        profile,
-    ]
+    static let mappers: [DeeplinkRegistry.Mapper] = {
+        var mappers: [DeeplinkRegistry.Mapper] = [
+            home,
+            compress,
+            convert,
+            audio,
+            scan,
+            profile,
+        ]
+        #if DEBUG
+        mappers.append(debug)
+        #endif
+        return mappers
+    }()
 
     /// `slimly://home`
     private static let home: DeeplinkRegistry.Mapper = { deeplink in
@@ -62,4 +69,13 @@ enum DeeplinkMap {
         guard deeplink.host == "profile", deeplink.pathComponents.isEmpty else { return nil }
         return [HomeRoute.home, ProfileRoute.profile]
     }
+
+    #if DEBUG
+    /// `slimly://debug` — отладочное меню пушем. Тряска в симуляторе есть
+    /// (⌃⌘Z), но одной командой из терминала до меню быстрее.
+    private static let debug: DeeplinkRegistry.Mapper = { deeplink in
+        guard deeplink.host == "debug", deeplink.pathComponents.isEmpty else { return nil }
+        return [HomeRoute.home, DebugRoute.menu]
+    }
+    #endif
 }

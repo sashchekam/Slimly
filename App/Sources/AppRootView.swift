@@ -1,25 +1,34 @@
+import SlimlyDesignSystem
 import SlimlyNavigation
 import SwiftUI
 
 struct AppRootView: View {
     let container: AppContainer
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     @State private var isSplashVisible = true
+    /// Заставка остаётся в иерархии до конца растворения — снимаем её только
+    /// после, иначе гаснуть будет уже нечему.
+    @State private var isSplashMounted = true
+    @State private var isAppVisible = false
 
     var body: some View {
         ZStack {
-            RouterHost(router: container.router, registry: container.registry)
-                // Приложение подъезжает навстречу зрителю, пока заставка уходит
-                // вперёд. Разъезд в разные стороны читается как «открылось»,
-                // тогда как простое растворение — как «подгрузилось».
-                .scaleEffect(isSplashVisible && !reduceMotion ? 0.96 : 1)
-                .opacity(isSplashVisible ? 0 : 1)
+            // Подложка не участвует в передаче кадра: пока заставка гаснет, а
+            // первый экран ещё не проявился, между ними виден фон приложения,
+            // а не чёрное окно.
+            SlimlyScreenBackground()
 
-            if isSplashVisible {
+            RouterHost(router: container.router, registry: container.registry)
+                .opacity(isAppVisible ? 1 : 0)
+
+            #if DEBUG
+            DebugAccessOverlay(container: container)
+            #endif
+
+            if isSplashMounted {
                 SplashView(onFinish: hideSplash)
-                    .transition(splashExit)
+                    .opacity(isSplashVisible ? 1 : 0)
+                    .allowsHitTesting(false)
             }
         }
         // Nocturne — тёмная система без светлого варианта, поэтому схему
@@ -32,11 +41,19 @@ struct AppRootView: View {
         }
     }
 
-    private var splashExit: AnyTransition {
-        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 1.08))
-    }
-
+    /// Заставка сначала полностью уходит и только потом проявляется первый
+    /// экран: одновременный кроссфейд смешал бы два кадра в мутную середину.
+    ///
+    /// Прозрачность анимируем на самой заставке, а не переходом при удалении:
+    /// уход запускает её собственная задача, и вью снимается вместе с задачей —
+    /// отыграть `.transition` SwiftUI уже не успевает.
     private func hideSplash() {
-        withAnimation(.easeInOut(duration: 0.42)) { isSplashVisible = false }
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isSplashVisible = false
+        } completion: {
+            isSplashMounted = false
+        }
+
+        withAnimation(.easeInOut(duration: 0.3).delay(0.26)) { isAppVisible = true }
     }
 }

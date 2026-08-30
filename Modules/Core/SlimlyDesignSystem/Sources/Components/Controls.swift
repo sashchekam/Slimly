@@ -2,32 +2,51 @@ import SwiftUI
 
 /// Чип выбора: формат результата, короткий фильтр.
 public struct SlimlyChip: View {
+    /// На чём лежит чип. Внутри карточки невыбранный чип не заливается:
+    /// заливка совпала бы с поверхностью под ним и ряд превратился бы в кашу.
+    public enum Style: Sendable {
+        case standalone
+        case onSurface
+    }
+
     private let title: String
     private let isSelected: Bool
+    private let style: Style
 
-    public init(_ title: String, isSelected: Bool) {
+    public init(_ title: String, isSelected: Bool, style: Style = .standalone) {
         self.title = title
         self.isSelected = isSelected
+        self.style = style
     }
 
     public var body: some View {
         Text(title)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(isSelected ? SlimlyColor.accent200 : SlimlyColor.neutral300)
-            .padding(.horizontal, 15)
-            .padding(.vertical, 10)
-            .background(
-                isSelected ? SlimlyColor.accentTint(14) : SlimlyColor.surface,
-                in: RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
-                    .strokeBorder(
-                        isSelected ? SlimlyColor.accent : SlimlyColor.text.opacity(0.1),
-                        lineWidth: 1
-                    )
-            }
+            .font(.system(size: style == .standalone ? 13 : 12, weight: .medium))
+            .foregroundStyle(foreground)
+            .padding(.horizontal, style == .standalone ? 15 : 12)
+            .padding(.vertical, style == .standalone ? 10 : 8)
+            .background(background, in: shape)
+            .overlay { shape.strokeBorder(border, lineWidth: 1) }
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
+    }
+
+    private var foreground: Color {
+        if isSelected { return SlimlyColor.accent200 }
+        return style == .standalone ? SlimlyColor.neutral300 : SlimlyColor.neutral400
+    }
+
+    private var background: Color {
+        if isSelected { return SlimlyColor.accentTint(14) }
+        return style == .standalone ? SlimlyColor.surface : .clear
+    }
+
+    private var border: Color {
+        if isSelected { return SlimlyColor.accent }
+        return SlimlyColor.text.opacity(style == .standalone ? 0.1 : 0.12)
     }
 }
 

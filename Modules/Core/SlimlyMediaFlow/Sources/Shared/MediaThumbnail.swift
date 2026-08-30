@@ -35,6 +35,9 @@ struct MediaThumbnail: View {
                     .scaledToFill()
             }
         }
+        // Кадр по `scaledToFill` выходит за рамку, и вырезание его только
+        // прячет: в хит-тесте он остаётся и перехватывает нажатия у соседей.
+        .contentShape(Rectangle())
         .task(id: item.id) {
             guard image == nil else { return }
             guard let data = await load(item, pointSize), let decoded = UIImage(data: data) else { return }

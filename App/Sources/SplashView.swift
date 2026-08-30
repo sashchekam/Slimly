@@ -10,28 +10,19 @@ struct SplashView: View {
     let onFinish: () -> Void
 
     @State private var isMarkVisible = false
-    @State private var isNameVisible = false
     /// Считает посадки акцента: каждая — короткий удар в ладонь.
     @State private var landings = 0
 
     var body: some View {
-        VStack(spacing: 14) {
-            // 117 — сторона сетки знака в макете анимации (холст 150 × 0.78).
-            // Крупнее статичного: летящему акценту нужен запас на замах.
-            SlimlyLogoMarkAnimation(
-                size: 117,
-                onLanding: { landings += 1 },
-                onFinish: onFinish
-            )
-            .scaleEffect(isMarkVisible ? 1 : 0.94)
-            .opacity(isMarkVisible ? 1 : 0)
-
-            Text("Slimly")
-                .font(.slimlyTitle)
-                .tracking(SlimlyTracking.title)
-                .foregroundStyle(SlimlyColor.text)
-                .opacity(isNameVisible ? 1 : 0)
-        }
+        // 117 — сторона сетки знака в макете анимации (холст 150 × 0.78).
+        // Крупнее статичного: летящему акценту нужен запас на замах.
+        SlimlyLogoMarkAnimation(
+            size: 117,
+            onLanding: { landings += 1 },
+            onFinish: onFinish
+        )
+        .scaleEffect(isMarkVisible ? 1 : 0.94)
+        .opacity(isMarkVisible ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(glow)
         .ignoresSafeArea()
@@ -42,9 +33,6 @@ struct SplashView: View {
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.34)) { isMarkVisible = true }
-            // Название догоняет знак, а не выезжает вместе с ним: так пауза
-            // перед первым экраном читается как проявление, а не как задержка.
-            withAnimation(.easeOut(duration: 0.3).delay(0.14)) { isNameVisible = true }
         }
     }
 

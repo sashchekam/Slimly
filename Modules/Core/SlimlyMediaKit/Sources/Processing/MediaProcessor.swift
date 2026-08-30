@@ -44,11 +44,26 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         var results: [ProcessingResult] = []
         var failures: [ProcessingFailure] = []
 
+        #if DEBUG
+        // Подмена из отладочного меню. Дождаться настоящего отказа от системы
+        // почти нельзя — место кончается редко, — а список отказов на экране
+        // итога проверять надо.
+        let simulatedFailure = SimulatedFailure.stored().reason
+        #endif
+
         for (index, item) in request.items.enumerated() {
             guard !Task.isCancelled else {
                 continuation.finish()
                 return
             }
+
+            #if DEBUG
+            if let simulatedFailure {
+                failures.append(ProcessingFailure(item: item, message: simulatedFailure))
+                tracker.update(index: index, fraction: 1)
+                continue
+            }
+            #endif
 
             do {
                 let result = try await process(item, request: request) { fraction in

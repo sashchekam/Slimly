@@ -37,6 +37,8 @@ public struct ProcessingView: View {
             }
         }
         .slimlyScreen()
+        // Работа идёт, пока открыт этот экран, — смахнуть его нельзя.
+        .backSwipeDisabled()
         .task { await viewModel.run() }
     }
 

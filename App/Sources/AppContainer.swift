@@ -6,6 +6,8 @@ import CompressFeature
 import CompressFeatureInterface
 import ConvertFeature
 import ConvertFeatureInterface
+import DebugFeature
+import DebugFeatureInterface
 import HomeFeature
 import HomeFeatureInterface
 import ProfileFeature
@@ -27,6 +29,7 @@ final class AppContainer {
 
     let mediaLibrary: any MediaLibrary
     let processingService: any MediaProcessingService
+    let debugSettings = DebugSettings()
 
     // MARK: Навигация
 
@@ -42,12 +45,18 @@ final class AppContainer {
         mediaLibrary: any MediaLibrary = PhotosMediaLibrary(),
         processingService: (any MediaProcessingService)? = nil
     ) {
-        let processing = processingService ?? MediaProcessor(library: mediaLibrary)
+        // Хранилище статистики создаётся здесь, а не внутри обработчика:
+        // отладочное меню сбрасывает те же цифры, что показывает профиль,
+        // и экземпляр у них должен быть один.
+        let statsStore = ProcessingStatsStore()
+        let processing = processingService
+            ?? MediaProcessor(library: mediaLibrary, statsStore: statsStore)
         self.mediaLibrary = mediaLibrary
         self.processingService = processing
 
         router = Router(root: HomeRoute.home)
-        registry = RouteRegistry([
+
+        var resolvers: [RouteResolver] = [
             HomeFeature.resolver(tools: HomeTools.all, profile: ProfileRoute.profile),
             CompressFeature.resolver(
                 mediaLibrary: mediaLibrary,
@@ -67,10 +76,30 @@ final class AppContainer {
             ),
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
-                processingService: processing
+                processingService: processing,
+                debugMenu: Self.debugMenuRoute
             ),
-        ])
+        ]
+
+        // В релизной сборке резолвера нет: маршрут остаётся значением,
+        // которому не соответствует ни один экран, и меню недостижимо.
+        #if DEBUG
+        resolvers.append(
+            DebugFeature.resolver(settings: debugSettings, statsStore: statsStore)
+        )
+        #endif
+
+        registry = RouteRegistry(resolvers)
         deeplinks = DeeplinkRegistry(DeeplinkMap.mappers)
+    }
+
+    /// Куда ведёт пятое нажатие на строку версии. В релизе — никуда.
+    private static var debugMenuRoute: (any Route)? {
+        #if DEBUG
+        DebugRoute.menu
+        #else
+        nil
+        #endif
     }
 
     /// Диплинк — это одно присвоение состояния: маршруты раскладываются
@@ -79,4 +108,14 @@ final class AppContainer {
         guard let routes = deeplinks.routes(for: deeplink) else { return }
         router.replace(with: routes)
     }
+
+    #if DEBUG
+    /// Меню приезжает поверх всего: тряхнуть могли на любом шаге флоу, и
+    /// уводить пользователя с его места незачем — «Готово» вернёт как было.
+    func openDebugMenu() {
+        guard router.fullScreenCover == nil else { return }
+        router.sheet = nil
+        router.cover(DebugRoute.menu)
+    }
+    #endif
 }

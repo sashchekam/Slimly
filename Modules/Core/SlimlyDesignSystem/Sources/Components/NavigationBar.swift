@@ -22,7 +22,7 @@ public struct SlimlyNavigationBar<Trailing: View>: View {
         HStack(spacing: 12) {
             if let onBack {
                 Button(action: onBack) {
-                    SlimlyIcon(.chevronLeft, width: 8)
+                    SlimlyIcon(.chevronLeft, width: 10)
                         .foregroundStyle(SlimlyColor.accent300)
                         // Сам шеврон крошечный: без явной области нажатия
                         // в него трудно попасть пальцем.

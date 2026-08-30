@@ -28,6 +28,7 @@ public struct ProfileView: View {
             }
         }
         .slimlyScreen()
+        .slimlyToast(viewModel.toast)
         .task { await viewModel.load() }
     }
 
@@ -126,19 +127,33 @@ public struct ProfileView: View {
     private var settings: some View {
         SlimlyRowGroup {
             ForEach(viewModel.settingsRows) { row in
-                HStack(spacing: 10) {
-                    Text(row.label)
-                        .font(.slimlyBody)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(row.value)
-                        .font(.system(size: 12))
-                        .foregroundStyle(SlimlyColor.neutral500)
-                    SlimlyIcon(.chevronRight, width: 6)
-                        .foregroundStyle(SlimlyColor.neutral600)
+                Button {
+                    viewModel.tap(row)
+                } label: {
+                    settingsRow(row)
                 }
-                .slimlyRow(horizontal: 15, vertical: 13)
+                .buttonStyle(.plain)
+                .disabled(!row.isTappable)
                 .accessibilityElement(children: .combine)
             }
         }
+    }
+
+    private func settingsRow(_ row: ProfileViewModel.SettingsRow) -> some View {
+        HStack(spacing: 10) {
+            Text(row.label)
+                .font(.slimlyBody)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(row.value)
+                .font(.system(size: 12))
+                .foregroundStyle(SlimlyColor.neutral500)
+            // Шеврон одинаковый у всех строк: он часть ритма списка,
+            // а не обещание перехода. Спрятать его у строки версии значило бы
+            // подсветить ту единственную, которая куда-то ведёт.
+            SlimlyIcon(.chevronRight, width: 6)
+                .foregroundStyle(SlimlyColor.neutral600)
+        }
+        .slimlyRow(horizontal: 15, vertical: 13)
+        .contentShape(Rectangle())
     }
 }

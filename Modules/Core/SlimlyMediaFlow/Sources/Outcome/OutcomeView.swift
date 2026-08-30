@@ -52,6 +52,8 @@ public struct OutcomeView: View {
             }
         }
         .slimlyScreen()
+        // Возвращаться некуда: позади — экран уже закончившейся обработки.
+        .backSwipeDisabled()
     }
 
     private var summary: some View {

@@ -28,6 +28,8 @@ public enum Module: CaseIterable {
     case scan
     case profileInterface
     case profile
+    case debugInterface
+    case debug
 
     public enum Kind {
         case core
@@ -39,8 +41,9 @@ public enum Module: CaseIterable {
         switch self {
         case .core, .designSystem, .navigation, .mediaKit, .mediaFlow: .core
         case .homeInterface, .compressInterface, .convertInterface,
-             .audioInterface, .scanInterface, .profileInterface: .featureInterface
-        case .home, .compress, .convert, .audio, .scan, .profile: .feature
+             .audioInterface, .scanInterface, .profileInterface,
+             .debugInterface: .featureInterface
+        case .home, .compress, .convert, .audio, .scan, .profile, .debug: .feature
         }
     }
 
@@ -63,6 +66,8 @@ public enum Module: CaseIterable {
         case .scan: "ScanFeature"
         case .profileInterface: "ProfileFeatureInterface"
         case .profile: "ProfileFeature"
+        case .debugInterface: "DebugFeatureInterface"
+        case .debug: "DebugFeature"
         }
     }
 
@@ -83,6 +88,8 @@ public enum Module: CaseIterable {
             "Modules/Features/ScanFeature"
         case .profileInterface, .profile:
             "Modules/Features/ProfileFeature"
+        case .debugInterface, .debug:
+            "Modules/Features/DebugFeature"
         }
     }
 
@@ -121,6 +128,8 @@ public enum Module: CaseIterable {
         case .scan: [.core, .designSystem, .navigation, .mediaFlow, .scanInterface]
         case .profileInterface: [.navigation]
         case .profile: [.core, .designSystem, .navigation, .profileInterface]
+        case .debugInterface: [.navigation]
+        case .debug: [.core, .designSystem, .navigation, .debugInterface]
         }
     }
 

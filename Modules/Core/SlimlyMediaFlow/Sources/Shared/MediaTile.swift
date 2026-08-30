@@ -44,6 +44,11 @@ struct MediaTile: View {
                         .padding(5)
                 }
             }
+            // Миниатюра растянута по `scaledToFill`, поэтому вертикальный кадр
+            // вылезает за пределы квадрата вверх и вниз. `clipShape` прячет его
+            // визуально, но не в хит-тесте: без явной формы соседняя плитка
+            // ниже (она выше по z-порядку) перехватывает тап и долгое нажатие.
+            .contentShape(RoundedRectangle(cornerRadius: SlimlyRadius.tile, style: .continuous))
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(item.fileName), \(MediaItemFormatter.meta(item))")
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)

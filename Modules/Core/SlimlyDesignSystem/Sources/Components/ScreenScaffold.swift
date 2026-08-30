@@ -59,6 +59,8 @@ public extension View {
             .clipped()
             .background(SlimlyScreenBackground())
             .toolbar(.hidden, for: .navigationBar)
+            // Скрытая панель уносит с собой системный свайп-назад — возвращаем.
+            .interactivePopGestureEnabled()
             .foregroundStyle(SlimlyColor.text)
     }
 }

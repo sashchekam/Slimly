@@ -7,26 +7,48 @@ import SlimlyNavigation
 @Observable
 public final class ProfileViewModel {
     public struct SettingsRow: Identifiable, Sendable {
-        public let id: String
+        public enum ID: String, Sendable {
+            case access
+            case version
+        }
+
+        public let id: ID
         public let label: String
         public let value: String
+        /// Строка без действия — просто показание: у неё нет ни нажатия,
+        /// ни шеврона, обещающего продолжение.
+        public let isTappable: Bool
     }
 
     public private(set) var snapshot: LibrarySnapshot?
     public private(set) var stats: ProcessingStats = .empty
     public private(set) var access: MediaAccess = .notDetermined
+    public private(set) var toast: String?
 
     private let mediaLibrary: any MediaLibrary
     private let processingService: any MediaProcessingService
+    private let environment: AppEnvironment
+    /// Маршрут отладочного меню. В релизной сборке его нет — и строка версии
+    /// остаётся обычным показанием, а не спрятанной дверью.
+    private let debugMenu: (any Route)?
     private let router: Router
+
+    private var versionTaps = 0
+
+    @ObservationIgnored
+    private var toastTask: Task<Void, Never>?
 
     public init(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        environment: AppEnvironment = .current,
+        debugMenu: (any Route)? = nil,
         router: Router
     ) {
         self.mediaLibrary = mediaLibrary
         self.processingService = processingService
+        self.environment = environment
+        self.debugMenu = debugMenu
         self.router = router
     }
 
@@ -85,7 +107,15 @@ public final class ProfileViewModel {
     // MARK: Настройки
 
     public var settingsRows: [SettingsRow] {
-        [SettingsRow(id: "access", label: "Доступ к Фото", value: accessText)]
+        [
+            SettingsRow(id: .access, label: "Доступ к Фото", value: accessText, isTappable: false),
+            SettingsRow(
+                id: .version,
+                label: "Версия",
+                value: environment.versionText,
+                isTappable: debugMenu != nil
+            ),
+        ]
     }
 
     private var accessText: String {
@@ -101,5 +131,35 @@ public final class ProfileViewModel {
 
     public func goBack() {
         router.pop()
+    }
+
+    /// Пять нажатий на версию открывают отладочное меню.
+    ///
+    /// Второй вход рядом с тряской нужен потому, что трясти телефон в чужих
+    /// руках — так себе инструкция: по телефону проще сказать «нажмите
+    /// пять раз на версию».
+    public func tap(_ row: SettingsRow) {
+        guard row.id == .version, let debugMenu else { return }
+
+        versionTaps += 1
+        switch versionTaps {
+        case 5...:
+            versionTaps = 0
+            router.cover(debugMenu)
+        case 3, 4:
+            say("Ещё \(5 - versionTaps) — и откроется Debug-меню")
+        default:
+            break
+        }
+    }
+
+    private func say(_ text: String) {
+        toastTask?.cancel()
+        toast = text
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(2.6))
+            guard !Task.isCancelled else { return }
+            toast = nil
+        }
     }
 }
