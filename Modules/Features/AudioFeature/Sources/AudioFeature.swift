@@ -57,20 +57,15 @@ public enum AudioFeature {
                         outcome: outcome,
                         library: mediaLibrary,
                         router: router,
-                        preview: { .push(AudioRoute.preview($0)) }
+                        // Дорожку слушают шторкой поверх итога: уходить
+                        // с экрана ради одной кнопки «играть» незачем.
+                        preview: { .present(AudioRoute.preview($0)) }
                     )
                 )
 
             case let .preview(result):
-                // Рендерер кадра здесь не нужен: у дорожки нет картинки,
-                // и весь просмотр — это плеер из фабрики.
-                ResultPreviewView(
-                    viewModel: ResultPreviewViewModel(
-                        result: result,
-                        kind: .audioExtraction,
-                        library: mediaLibrary,
-                        router: router
-                    ),
+                AudioPreviewSheetView(
+                    viewModel: AudioPreviewSheetViewModel(result: result, router: router),
                     viewer: fileViewer
                 )
             }

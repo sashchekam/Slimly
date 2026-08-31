@@ -7,17 +7,22 @@ import SwiftUI
 public struct SlimlySheetScaffold<Content: View>: View {
     private let title: String
     private let height: CGFloat
+    /// Подпись кнопки закрытия. У шторки-настройки это «Отмена», но там,
+    /// где отменять нечего — просмотр готового файла, — уместно «Готово».
+    private let closeTitle: String
     private let onCancel: () -> Void
     private let content: Content
 
     public init(
         title: String,
         height: CGFloat,
+        closeTitle: String = "Отмена",
         onCancel: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.height = height
+        self.closeTitle = closeTitle
         self.onCancel = onCancel
         self.content = content()
     }
@@ -32,10 +37,14 @@ public struct SlimlySheetScaffold<Content: View>: View {
                 Text(title)
                     .font(.system(size: 20, weight: .medium))
                     .tracking(-0.3)
+                    // Заголовком бывает имя файла: у него значимы начало
+                    // и расширение, а не середина.
+                    .lineLimit(1)
+                    .truncationMode(.middle)
 
                 Spacer(minLength: 0)
 
-                Button("Отмена", action: onCancel)
+                Button(closeTitle, action: onCancel)
                     .buttonStyle(SlimlyLinkButtonStyle(font: .system(size: 15)))
             }
 

@@ -74,6 +74,17 @@ public enum FlowCopy {
         }
     }
 
+    /// Подсказка под списком готовых файлов. У сжатия смотрят пару
+    /// «до / после», дорожку слушают, а остальное просто открывают —
+    /// звать «сравнить» везде было бы враньём.
+    public static func previewHint(_ kind: ProcessingKind) -> String {
+        switch kind {
+        case .compression: "Нажмите файл, чтобы сравнить до и после"
+        case .audioExtraction: "Нажмите дорожку, чтобы прослушать"
+        case .conversion, .scan: "Нажмите файл, чтобы открыть просмотр"
+        }
+    }
+
     /// Сравнение «до / после» имеет смысл только у сжатия: там меняется
     /// картинка, а не контейнер.
     public static func allowsComparison(_ kind: ProcessingKind) -> Bool {

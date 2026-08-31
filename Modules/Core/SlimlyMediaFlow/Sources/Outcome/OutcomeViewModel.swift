@@ -101,13 +101,9 @@ public final class OutcomeViewModel {
         allowsPreview && result.outputURL != nil
     }
 
-    /// Подсказка под списком. У сжатия смотрят пару «до / после», у остальных
-    /// инструментов — просто готовый файл, и звать «сравнить» было бы враньём.
     public var previewHint: String? {
         guard allowsPreview, !results.isEmpty else { return nil }
-        return FlowCopy.allowsComparison(outcome.kind)
-            ? "Нажмите файл, чтобы сравнить до и после"
-            : "Нажмите файл, чтобы открыть просмотр"
+        return FlowCopy.previewHint(outcome.kind)
     }
 
     // MARK: Шаринг
