@@ -9,6 +9,7 @@ enum ProcessingError: LocalizedError {
     case noVideoTrack
     case noAudioTrack
     case unsupportedOperation(String)
+    case pdfAssemblyFailed
 
     var errorDescription: String? {
         switch self {
@@ -24,6 +25,8 @@ enum ProcessingError: LocalizedError {
             "В видео нет звука"
         case let .unsupportedOperation(name):
             name
+        case .pdfAssemblyFailed:
+            "Не удалось собрать PDF из страниц"
         }
     }
 }

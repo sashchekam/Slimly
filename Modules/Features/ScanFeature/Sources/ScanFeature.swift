@@ -71,14 +71,20 @@ public enum ScanFeature {
         noun: .page
     )
 
-    /// Сборки PDF ещё нет: экраны флоу на месте, а обработчик у скана
-    /// пока не реализован — и он честно об этом сообщает на итоге.
+    /// Режим — это и вид страницы, и её вес: у трёх вариантов одна и та же
+    /// обработка, но разное количество цвета на выходе.
     private static let formatConfig = FormatStepConfig(
-        title: "Формат скана",
-        note: "Сборка PDF пока в разработке — файлы останутся без изменений.",
+        title: "Как собрать скан",
+        note: """
+        Границы листа находим сами, кадр выпрямляем, фон добиваем до белого. \
+        Ч/б даёт самый лёгкий файл и самый чёткий текст, цвет нужен печатям \
+        и картинкам. Документ ляжет в «Файлы» — оригиналы останутся в медиатеке.
+        """,
         actionTitle: "Собрать скан",
-        sourceFormat: "Фото со страницей",
-        formats: [MediaFormat(target: .document, ratio: 0.18)],
+        sourceFormat: "Фото",
+        formats: ScanMode.allCases.map {
+            MediaFormat(target: .document($0), ratio: $0.estimatedRatio)
+        },
         noun: .page,
         makeOperation: { .scan($0) }
     )

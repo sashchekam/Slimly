@@ -64,6 +64,11 @@ public struct ProcessingStats: Sendable, Hashable, Codable {
 
     /// Присоединить итог очередной обработки.
     public func adding(_ outcome: ProcessingOutcome) -> ProcessingStats {
+        // Скан в счётчиках не отражается: из пачки снимков получается один
+        // PDF, и он не конвертация — считать его наравне с ней значило бы
+        // показывать в профиле цифру, которой там нет смысла.
+        guard outcome.kind != .scan else { return self }
+
         guard outcome.kind == .compression else {
             return ProcessingStats(
                 originalByteCount: originalByteCount,

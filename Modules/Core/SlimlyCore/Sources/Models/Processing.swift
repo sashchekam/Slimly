@@ -100,15 +100,16 @@ public enum ProcessingTarget: Sendable, Hashable {
     case image(ImageFormat)
     case video(container: VideoContainer, codec: VideoCodec)
     case audio(AudioFormat)
-    /// Скан ещё не реализован: цель во флоу есть, обработчика у неё нет.
-    case document
+    /// PDF из страниц скана. Режим — часть цели, а не отдельная настройка:
+    /// от него зависит и то, как выглядит страница, и вес документа.
+    case document(ScanMode)
 
     public var displayName: String {
         switch self {
         case let .image(format): format.displayName
         case let .video(container, codec): "\(container.displayName) · \(codec.displayName)"
         case let .audio(format): format.displayName
-        case .document: "PDF"
+        case let .document(mode): "PDF · \(mode.displayName)"
         }
     }
 }

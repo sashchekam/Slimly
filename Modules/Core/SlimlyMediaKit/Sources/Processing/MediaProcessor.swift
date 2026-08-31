@@ -41,29 +41,65 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         }
 
         let tracker = ProgressTracker(items: request.items, continuation: continuation)
-        var results: [ProcessingResult] = []
-        var failures: [ProcessingFailure] = []
 
         #if DEBUG
         // Подмена из отладочного меню. Дождаться настоящего отказа от системы
         // почти нельзя — место кончается редко, — а список отказов на экране
         // итога проверять надо.
         let simulatedFailure = SimulatedFailure.stored().reason
+        #else
+        let simulatedFailure: String? = nil
         #endif
 
-        for (index, item) in request.items.enumerated() {
-            guard !Task.isCancelled else {
-                continuation.finish()
-                return
-            }
+        // Скан идёт своей дорогой: из пачки снимков получается один документ,
+        // а не файл на каждый файл, — и поштучная очередь для него не годится.
+        let outcome: ProcessingOutcome?
+        if case let .scan(format) = request.operation, case let .document(mode) = format.target {
+            outcome = await assembleScan(
+                request,
+                mode: mode,
+                tracker: tracker,
+                simulatedFailure: simulatedFailure
+            )
+        } else {
+            outcome = await processEach(
+                request,
+                tracker: tracker,
+                simulatedFailure: simulatedFailure
+            )
+        }
 
-            #if DEBUG
+        // `nil` — работу отменили: экрана, которому нужен итог, уже нет.
+        guard let outcome else {
+            continuation.finish()
+            return
+        }
+
+        if !outcome.results.isEmpty {
+            await statsStore.add(outcome)
+        }
+
+        continuation.yield(.finished(outcome))
+        continuation.finish()
+    }
+
+    /// Файл за файлом: у каждого исходника получается свой результат.
+    private func processEach(
+        _ request: ProcessingRequest,
+        tracker: ProgressTracker,
+        simulatedFailure: String?
+    ) async -> ProcessingOutcome? {
+        var results: [ProcessingResult] = []
+        var failures: [ProcessingFailure] = []
+
+        for (index, item) in request.items.enumerated() {
+            guard !Task.isCancelled else { return nil }
+
             if let simulatedFailure {
                 failures.append(ProcessingFailure(item: item, message: simulatedFailure))
                 tracker.update(index: index, fraction: 1)
                 continue
             }
-            #endif
 
             do {
                 let result = try await process(item, request: request) { fraction in
@@ -71,8 +107,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
                 }
                 results.append(result)
             } catch is CancellationError {
-                continuation.finish()
-                return
+                return nil
             } catch {
                 // Один битый файл не должен обрывать очередь: остальные
                 // обработаются, а про этот честно скажем на экране итога.
@@ -82,13 +117,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
             tracker.update(index: index, fraction: 1)
         }
 
-        let outcome = ProcessingOutcome(request: request, results: results, failures: failures)
-        if !results.isEmpty {
-            await statsStore.add(outcome)
-        }
-
-        continuation.yield(.finished(outcome))
-        continuation.finish()
+        return ProcessingOutcome(request: request, results: results, failures: failures)
     }
 
     private func message(for error: Error) -> String {
@@ -113,7 +142,9 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         case let .extractAudio(format):
             return try await extractAudio(item, source: source, format: format, progress: progress)
         case .scan:
-            throw ProcessingError.unsupportedOperation("Скан пока не реализован")
+            // Страница обрабатывается не сама по себе, а вместе с документом:
+            // сюда очередь скана не заходит.
+            throw ProcessingError.unsupportedOperation("Страница собирается вместе с документом")
         }
     }
 
@@ -245,6 +276,126 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
                 progress: progress
             )
         }
+    }
+
+    // MARK: Скан
+
+    /// Доля прогресса страницы, приходящаяся на её подготовку. Остаток —
+    /// сборка PDF: она одна на весь документ, и до её конца ни одна
+    /// страница по-настоящему не готова.
+    private static let pagePreparationShare = 0.9
+
+    /// Пачка снимков → один документ.
+    ///
+    /// Нечитаемый снимок документ не отменяет: соберём PDF из тех страниц,
+    /// что получились, а про пропущенные скажем на экране итога.
+    private func assembleScan(
+        _ request: ProcessingRequest,
+        mode: ScanMode,
+        tracker: ProgressTracker,
+        simulatedFailure: String?
+    ) async -> ProcessingOutcome? {
+        var prepared: [(item: MediaItem, page: ScannedPage)] = []
+        var failures: [ProcessingFailure] = []
+
+        for (index, item) in request.items.enumerated() {
+            guard !Task.isCancelled else { return nil }
+
+            if let simulatedFailure {
+                failures.append(ProcessingFailure(item: item, message: simulatedFailure))
+                tracker.update(index: index, fraction: 1)
+                continue
+            }
+
+            do {
+                let page = try await preparePage(item, mode: mode)
+                prepared.append((item, page))
+                tracker.update(index: index, fraction: Self.pagePreparationShare)
+            } catch is CancellationError {
+                return nil
+            } catch {
+                failures.append(ProcessingFailure(item: item, message: message(for: error)))
+                tracker.update(index: index, fraction: 1)
+            }
+        }
+
+        guard let cover = prepared.first?.item else {
+            return ProcessingOutcome(request: request, results: [], failures: failures)
+        }
+
+        do {
+            let document = try await assembleDocument(prepared.map(\.page), cover: cover)
+            for index in request.items.indices {
+                tracker.update(index: index, fraction: 1)
+            }
+            return ProcessingOutcome(request: request, results: [document], failures: failures)
+        } catch {
+            // Документ не собрался — значит, не вышло ни одной страницы:
+            // по отдельности они никуда не сохраняются.
+            let reason = message(for: error)
+            failures.append(
+                contentsOf: prepared.map { ProcessingFailure(item: $0.item, message: reason) }
+            )
+            return ProcessingOutcome(request: request, results: [], failures: failures)
+        }
+    }
+
+    private func preparePage(_ item: MediaItem, mode: ScanMode) async throws -> ScannedPage {
+        let source = try await library.exportOriginal(item)
+        defer { try? FileManager.default.removeItem(at: source) }
+        return try DocumentScanner.page(at: source, mode: mode)
+    }
+
+    /// Документ ложится в «Файлы»: PDF в медиатеке не место, да iOS туда его
+    /// и не примет.
+    ///
+    /// - Parameter cover: первая удавшаяся страница. Результат у скана один
+    ///   на весь заказ, а ``ProcessingResult`` привязан к исходнику — берём
+    ///   ту страницу, что открывается в PDF первой: её превью и увидят
+    ///   в списке итога.
+    private func assembleDocument(_ pages: [ScannedPage], cover: MediaItem) async throws -> ProcessingResult {
+        let name = Self.documentName()
+        let file = try output.makeWorkFile(extension: "pdf")
+
+        do {
+            try PDFBuilder.write(
+                pages: pages,
+                to: file,
+                title: (name as NSString).deletingPathExtension
+            )
+
+            let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            let stored = try await output.store(
+                file,
+                kind: cover.kind,
+                name: name,
+                destination: .files
+            )
+
+            return ProcessingResult(
+                item: cover,
+                outputByteCount: Int64(size),
+                outputName: name,
+                outputURL: stored,
+                destination: .files
+            )
+        } catch {
+            try? FileManager.default.removeItem(at: file)
+            throw error
+        }
+    }
+
+    /// «Скан 2026-08-30 14-23.pdf».
+    ///
+    /// Дата в имени, потому что своего имени у документа нет: страницы
+    /// приходят из медиатеки под номерами камеры, а сканов в папке
+    /// со временем накапливается много.
+    private static func documentName() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        // Двоеточие «Файлы» показывают косой чертой — время разделяем дефисом.
+        formatter.dateFormat = "yyyy-MM-dd HH-mm"
+        return "Скан \(formatter.string(from: .now)).pdf"
     }
 
     /// Записать результат и разложить его по месту.
