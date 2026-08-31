@@ -22,6 +22,8 @@ let project = Project(
                 "CFBundleDisplayName": "Slimly",
                 "NSPhotoLibraryUsageDescription":
                     "Slimly показывает медиатеку, чтобы вы выбрали файлы для сжатия и конвертации.",
+                "NSCameraUsageDescription":
+                    "Slimly включает камеру, чтобы снять страницы документа и собрать их в PDF.",
                 "NSPhotoLibraryAddUsageDescription":
                     "Slimly сохраняет обработанные файлы в медиатеку — оригиналы остаются на месте.",
                 // Извлечённые дорожки лежат в папке приложения: без этих двух

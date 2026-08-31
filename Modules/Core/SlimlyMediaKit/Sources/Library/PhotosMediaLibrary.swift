@@ -221,6 +221,14 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         let key = "\(item.id)#\(size)" as NSString
         if let cached = thumbnails.object(forKey: key) { return cached as Data }
 
+        // Страница с камеры — обычный файл, а не ассет: PhotoKit о ней
+        // не знает, и кадр достаём прямо из него.
+        if let source = item.sourceURL {
+            guard let data = await MediaPreview.image(at: source, maxPixel: size * 3) else { return nil }
+            thumbnails.setObject(data as NSData, forKey: key)
+            return data
+        }
+
         guard let asset = Self.asset(for: item.id) else { return nil }
 
         let options = PHImageRequestOptions()
@@ -259,13 +267,18 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
     // MARK: Файлы
 
     public func exportOriginal(_ item: MediaItem) async throws -> URL {
+        // Файл отдаём копией, а не им самим: обработчик удаляет исходник
+        // за собой, и оригинальная страница исчезла бы вместе с ним.
+        if let source = item.sourceURL {
+            return try Self.copyToWorkDirectory(source)
+        }
+
         guard let asset = Self.asset(for: item.id) else { throw MediaLibraryError.itemNotFound }
         guard let resource = Self.primaryResource(for: asset) else {
             throw MediaLibraryError.originalUnavailable
         }
 
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("SlimlySource", isDirectory: true)
+        let directory = Self.sourceDirectory
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let ext = (resource.originalFilename as NSString).pathExtension
@@ -310,7 +323,9 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
     }
 
     public func deleteOriginals(_ items: [MediaItem]) async throws {
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: items.map(\.id), options: nil)
+        // Страницы с камеры в медиатеке не лежат — удалять там нечего.
+        let identifiers = items.filter { $0.sourceURL == nil }.map(\.id)
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
         guard assets.count > 0 else { return }
 
         try await PHPhotoLibrary.shared().performChanges {
@@ -320,6 +335,27 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
 
     private static func asset(for id: String) -> PHAsset? {
         PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
+    }
+
+    /// Копия файла там же, куда ложатся выгруженные из медиатеки оригиналы:
+    /// дальше по цепочке разницы между ними уже нет.
+    private static func copyToWorkDirectory(_ source: URL) throws -> URL {
+        let directory = sourceDirectory
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let ext = source.pathExtension.isEmpty ? "dat" : source.pathExtension
+        let url = directory.appendingPathComponent("\(UUID().uuidString).\(ext)")
+        do {
+            try FileManager.default.copyItem(at: source, to: url)
+        } catch {
+            throw MediaLibraryError.exportFailed(error.localizedDescription)
+        }
+        return url
+    }
+
+    private static var sourceDirectory: URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("SlimlySource", isDirectory: true)
     }
 }
 

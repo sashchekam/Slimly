@@ -23,6 +23,9 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
     /// и он же подписывает превью в сравнении «до / после».
     public let pixelWidth: Int
     public let pixelHeight: Int
+    /// Файл на диске, если элемент пришёл не из медиатеки: страница, снятая
+    /// камерой, ассетом не является, и достать её по `id` неоткуда.
+    public let sourceURL: URL?
 
     public init(
         id: String,
@@ -32,7 +35,8 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         duration: Duration? = nil,
         isHEIC: Bool = false,
         pixelWidth: Int = 0,
-        pixelHeight: Int = 0
+        pixelHeight: Int = 0,
+        sourceURL: URL? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -42,6 +46,7 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         self.isHEIC = isHEIC
         self.pixelWidth = pixelWidth
         self.pixelHeight = pixelHeight
+        self.sourceURL = sourceURL
     }
 
     /// Имя без расширения — основа для имени результата.

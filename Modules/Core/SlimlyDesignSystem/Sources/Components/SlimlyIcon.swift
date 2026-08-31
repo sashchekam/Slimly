@@ -18,6 +18,7 @@ public struct SlimlyIcon: View {
         case gallery
         case folder
         // Управление
+        case flash
         case check
         case chevronLeft
         case chevronRight
@@ -72,6 +73,7 @@ extension SlimlyIcon.Kind {
         case .chevronRight, .chevronDown: 1.6
         case .arrowRight: 1.4
         case .compress, .person, .share: 1.6
+        case .flash: 1.7
         default: 1.5
         }
     }
@@ -185,6 +187,17 @@ private struct IconShape: Shape {
             path.corner(via: CGPoint(x: 18.6, y: 7.6), to: CGPoint(x: 18.6, y: 16.8), radius: 2)
             path.corner(via: CGPoint(x: 18.6, y: 18.8), to: CGPoint(x: 5.4, y: 18.8), radius: 2)
             path.corner(via: CGPoint(x: 3.4, y: 18.8), to: CGPoint(x: 3.4, y: 7.6), radius: 2)
+            path.closeSubpath()
+
+        case .flash:
+            path.polyline([
+                CGPoint(x: 13.4, y: 2.6),
+                CGPoint(x: 5.6, y: 13.4),
+                CGPoint(x: 10.6, y: 13.4),
+                CGPoint(x: 9.7, y: 21.4),
+                CGPoint(x: 17.7, y: 10.4),
+                CGPoint(x: 12.5, y: 10.4),
+            ])
             path.closeSubpath()
 
         case .check:

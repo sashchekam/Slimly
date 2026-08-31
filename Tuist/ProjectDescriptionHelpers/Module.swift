@@ -125,7 +125,9 @@ public enum Module: CaseIterable {
         case .audioInterface: [.core, .navigation]
         case .audio: [.core, .designSystem, .navigation, .mediaFlow, .audioInterface]
         case .scanInterface: [.core, .navigation]
-        case .scan: [.core, .designSystem, .navigation, .mediaFlow, .scanInterface]
+        // Съёмка страниц идёт через камеру, а `AVCaptureSession` живёт
+        // только в модуле системной обработки.
+        case .scan: [.core, .designSystem, .navigation, .mediaKit, .mediaFlow, .scanInterface]
         case .profileInterface: [.navigation]
         case .profile: [.core, .designSystem, .navigation, .profileInterface]
         case .debugInterface: [.navigation]

@@ -12,11 +12,10 @@ public final class ScanIntroViewModel {
         self.router = router
     }
 
-    /// Камеры в проекте пока нет: съёмка ведёт в тот же выбор страниц.
-    /// Отдельный маршрут появится вместе с `VNDocumentCameraViewController`,
-    /// и поменяется только эта строка.
+    /// Камера показывается поверх флоу: у неё нет ни шапки, ни полей экрана,
+    /// и в стеке она выглядела бы провалом в другое приложение.
     public func openCamera() {
-        router.push(ScanRoute.picker)
+        router.cover(ScanRoute.camera)
     }
 
     public func openGallery() {

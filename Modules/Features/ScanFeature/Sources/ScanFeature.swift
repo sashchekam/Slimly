@@ -1,6 +1,7 @@
 import ScanFeatureInterface
 import SlimlyCore
 import SlimlyMediaFlow
+import SlimlyMediaKit
 import SlimlyNavigation
 
 /// Точка сборки флоу скана документа.
@@ -17,6 +18,15 @@ public enum ScanFeature {
             switch route {
             case .intro:
                 ScanIntroView(viewModel: ScanIntroViewModel(router: router))
+
+            case .camera:
+                ScanCameraView(
+                    viewModel: ScanCameraViewModel(
+                        camera: DocumentCameraSession(pageLimit: pageLimit),
+                        pageLimit: pageLimit,
+                        router: router
+                    )
+                )
 
             case .picker:
                 MediaPickerView(
@@ -62,12 +72,18 @@ public enum ScanFeature {
         }
     }
 
+    /// Сколько страниц берём за раз — и в галерее, и с камеры.
+    ///
+    /// Предел один на оба источника: это ограничение документа, а не способа
+    /// его набрать, и расходиться этим числам было бы неоткуда объяснить.
+    static let pageLimit = 5
+
     private static let pickerConfig = MediaPickerConfig(
         title: "Страницы скана",
         hint: "Порядок страниц — как порядок выбора",
         footnote: "Выпрямление и чистка фона — автоматически",
         kind: .photo,
-        limit: 5,
+        limit: pageLimit,
         noun: .page
     )
 
