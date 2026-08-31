@@ -29,9 +29,13 @@ struct OutputStore: Sendable {
         try? FileManager.default.removeItem(at: workDirectory)
     }
 
-    func makeWorkFile(extension ext: String) throws -> URL {
-        try FileManager.default.createDirectory(at: Self.workDirectory, withIntermediateDirectories: true)
-        return Self.workDirectory.appending(path: "\(UUID().uuidString).\(ext)")
+    /// Готовый файл лежит под своим настоящим именем, а уникальность даёт
+    /// папка вокруг него: имя файла видно в системной шторке шаринга,
+    /// и «B7F1-…-4C2A.jpg» там выглядело бы поломкой.
+    func makeWorkFile(named name: String) throws -> URL {
+        let folder = Self.workDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appending(path: name)
     }
 
     /// Разложить готовый файл по месту и сказать, куда он лёг.
@@ -66,6 +70,8 @@ struct OutputStore: Sendable {
         }
 
         try manager.moveItem(at: file, to: candidate)
+        // Рабочая папка вокруг файла больше ни за чем не нужна.
+        try? manager.removeItem(at: file.deletingLastPathComponent())
         return candidate
     }
 }

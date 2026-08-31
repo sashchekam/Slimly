@@ -355,7 +355,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
     ///   в списке итога.
     private func assembleDocument(_ pages: [ScannedPage], cover: MediaItem) async throws -> ProcessingResult {
         let name = Self.documentName()
-        let file = try output.makeWorkFile(extension: "pdf")
+        let file = try output.makeWorkFile(named: name)
 
         do {
             try PDFBuilder.write(
@@ -408,12 +408,12 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         destination: OutputDestination,
         write: (URL) async throws -> Void
     ) async throws -> ProcessingResult {
-        let file = try output.makeWorkFile(extension: ext)
+        let name = "\(item.baseName).\(ext)"
+        let file = try output.makeWorkFile(named: name)
 
         do {
             try await write(file)
 
-            let name = "\(item.baseName).\(ext)"
             let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             let stored = try await output.store(
                 file,

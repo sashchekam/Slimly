@@ -22,6 +22,10 @@ public struct OutcomeView: View {
                         fileList
                     }
 
+                    if viewModel.showsShareAll {
+                        shareAll
+                    }
+
                     if viewModel.allowsComparison, !viewModel.results.isEmpty {
                         note("Нажмите файл, чтобы сравнить до и после")
                             .padding(.top, -8)
@@ -107,22 +111,80 @@ public struct OutcomeView: View {
     private var fileList: some View {
         SlimlyRowGroup {
             ForEach(viewModel.results) { result in
+                resultRow(result)
+            }
+        }
+    }
+
+    /// Строка результата — две зоны сразу: тап по содержимому открывает
+    /// сравнение, тап по иконке справа — системную шторку. Поэтому строка
+    /// не обёрнута в одну кнопку: вложенная кнопка в SwiftUI не нажимается.
+    private func resultRow(_ result: ProcessingResult) -> some View {
+        HStack(spacing: 12) {
+            // Кнопкой содержимое становится, только если сравнение есть:
+            // выключенная кнопка гасила бы строку там, где сравнивать нечего.
+            if viewModel.canCompare(result) {
                 Button {
                     viewModel.openComparison(result)
                 } label: {
-                    MediaFileRow(
-                        item: result.item,
-                        name: viewModel.name(for: result),
-                        detail: viewModel.detail(for: result),
-                        thumbnail: viewModel.thumbnails,
-                        delta: viewModel.delta(for: result),
-                        showsComparison: viewModel.canCompare(result)
-                    )
+                    label(for: result, showsComparison: true)
                 }
                 .buttonStyle(.plain)
-                .disabled(!viewModel.canCompare(result))
+            } else {
+                label(for: result, showsComparison: false)
+            }
+
+            if let url = viewModel.shareURL(for: result) {
+                ShareLink(item: url) {
+                    SlimlyIcon(.share, width: 17)
+                        .foregroundStyle(SlimlyColor.accent300)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Поделиться файлом \(viewModel.name(for: result))")
+                // Иконка тянет вокруг себя область нажатия, а выглядеть
+                // должна прижатой к краю строки, как остальные значки.
+                .padding(.vertical, -4)
+                .padding(.trailing, -3)
             }
         }
+        .slimlyRow()
+    }
+
+    private func label(for result: ProcessingResult, showsComparison: Bool) -> some View {
+        MediaFileLabel(
+            item: result.item,
+            name: viewModel.name(for: result),
+            detail: viewModel.detail(for: result),
+            thumbnail: viewModel.thumbnails,
+            delta: viewModel.delta(for: result),
+            showsComparison: showsComparison
+        )
+    }
+
+    /// Одна шторка на все результаты: по отдельности их пришлось бы
+    /// отправлять столько же раз, сколько файлов в очереди.
+    private var shareAll: some View {
+        ShareLink(items: viewModel.shareURLs) {
+            HStack(spacing: 9) {
+                SlimlyIcon(.share, width: 17)
+                    .foregroundStyle(SlimlyColor.accent300)
+
+                Text(viewModel.shareAllTitle)
+                    .font(.slimlyButton)
+                    .foregroundStyle(SlimlyColor.neutral100)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+            .background(
+                SlimlyColor.surface,
+                in: RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
+            )
+            .slimlyElevation(.sm)
+            .contentShape(RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous))
+        }
+        .buttonStyle(.slimlyPressable)
     }
 
     /// Отказы показываем списком рядом с готовыми файлами: пользователю важно,

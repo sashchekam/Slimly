@@ -107,6 +107,21 @@ public final class OutcomeViewModel {
         allowsComparison && result.outputURL != nil
     }
 
+    // MARK: Шаринг
+
+    /// Отдаём в системную шторку копию из кэша, а не ассет медиатеки:
+    /// файл на диске делится как файл — с именем и весом, — а идентификатор
+    /// ассета за пределами приложения ничего не значит.
+    public func shareURL(for result: ProcessingResult) -> URL? { result.outputURL }
+
+    public var shareURLs: [URL] { results.compactMap(\.outputURL) }
+
+    /// Общая кнопка нужна, только когда файлов больше одного: при единственном
+    /// результате она повторяла бы иконку в строке.
+    public var showsShareAll: Bool { shareURLs.count > 1 }
+
+    public var shareAllTitle: String { "Поделиться всеми · \(shareURLs.count)" }
+
     // MARK: Удаление оригиналов
 
     public var showsDeleteOriginals: Bool {

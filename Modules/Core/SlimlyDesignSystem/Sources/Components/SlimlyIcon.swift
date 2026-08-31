@@ -26,6 +26,7 @@ public struct SlimlyIcon: View {
         case eye
         case trash
         case person
+        case share
     }
 
     private let kind: Kind
@@ -70,7 +71,7 @@ extension SlimlyIcon.Kind {
         case .chevronLeft: 1.8
         case .chevronRight, .chevronDown: 1.6
         case .arrowRight: 1.4
-        case .compress, .person: 1.6
+        case .compress, .person, .share: 1.6
         default: 1.5
         }
     }
@@ -241,6 +242,21 @@ private struct IconShape: Shape {
             path.addLine(to: CGPoint(x: 14.5, y: 20.2))
             path.addQuadCurve(to: CGPoint(x: 16.5, y: 18.4), control: CGPoint(x: 16.4, y: 20.2))
             path.addLine(to: CGPoint(x: 17.4, y: 7.4))
+
+        case .share:
+            // Стрелка вверх из открытой коробки — системный жест «поделиться».
+            path.line(from: CGPoint(x: 12, y: 15.4), to: CGPoint(x: 12, y: 3.6))
+            path.polyline([CGPoint(x: 8.4, y: 7.1), CGPoint(x: 12, y: 3.5), CGPoint(x: 15.6, y: 7.1)])
+            path.move(to: CGPoint(x: 6.4, y: 11.2))
+            path.addLine(to: CGPoint(x: 5.2, y: 11.2))
+            path.corner(via: CGPoint(x: 3.6, y: 11.2), to: CGPoint(x: 3.6, y: 19.2), radius: 1.6)
+            path.addLine(to: CGPoint(x: 3.6, y: 19.2))
+            path.corner(via: CGPoint(x: 3.6, y: 20.8), to: CGPoint(x: 18.8, y: 20.8), radius: 1.6)
+            path.addLine(to: CGPoint(x: 18.8, y: 20.8))
+            path.corner(via: CGPoint(x: 20.4, y: 20.8), to: CGPoint(x: 20.4, y: 12.8), radius: 1.6)
+            path.addLine(to: CGPoint(x: 20.4, y: 12.8))
+            path.corner(via: CGPoint(x: 20.4, y: 11.2), to: CGPoint(x: 17.6, y: 11.2), radius: 1.6)
+            path.addLine(to: CGPoint(x: 17.6, y: 11.2))
 
         case .person:
             path.addEllipse(in: CGRect(x: 8.4, y: 4.9, width: 7.2, height: 7.2))

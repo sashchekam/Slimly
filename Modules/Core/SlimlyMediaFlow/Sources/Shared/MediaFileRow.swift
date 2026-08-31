@@ -2,9 +2,12 @@ import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
 
-/// Строка файла в списке: превью, имя, что с ним стало, и опциональная дельта.
-/// Одна и та же в предпросмотре конвертации и в итоге обработки.
-struct MediaFileRow: View {
+/// Содержимое строки файла: превью, имя, что с ним стало, и опциональная дельта.
+///
+/// Вынесено отдельно от ``MediaFileRow``, потому что на экране итога строка
+/// разбита на две тапабельные зоны — сравнение и шаринг, — и обёртывать
+/// её целиком в кнопку там нельзя.
+struct MediaFileLabel: View {
     let item: MediaItem
     let name: String
     let detail: String
@@ -39,7 +42,29 @@ struct MediaFileRow: View {
                     .foregroundStyle(SlimlyColor.neutral500)
             }
         }
-        .slimlyRow()
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Строка файла в списке. Одна и та же в предпросмотре конвертации
+/// и в итоге обработки.
+struct MediaFileRow: View {
+    let item: MediaItem
+    let name: String
+    let detail: String
+    let thumbnail: MediaThumbnailLoader
+    var delta: String?
+    var showsComparison = false
+
+    var body: some View {
+        MediaFileLabel(
+            item: item,
+            name: name,
+            detail: detail,
+            thumbnail: thumbnail,
+            delta: delta,
+            showsComparison: showsComparison
+        )
+        .slimlyRow()
     }
 }
