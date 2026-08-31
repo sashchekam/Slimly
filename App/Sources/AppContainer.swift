@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 import AudioFeature
 import AudioFeatureInterface
 import CompressFeature
@@ -15,6 +16,7 @@ import ProfileFeatureInterface
 import ScanFeature
 import ScanFeatureInterface
 import SlimlyCore
+import SlimlyMediaFlow
 import SlimlyMediaKit
 import SlimlyNavigation
 
@@ -29,6 +31,9 @@ final class AppContainer {
 
     let mediaLibrary: any MediaLibrary
     let processingService: any MediaProcessingService
+    /// Кадр из готового файла для экрана просмотра. Отдельно от медиатеки:
+    /// результат обработки — файл на диске, а не ассет.
+    let previewRenderer: any MediaPreviewRenderer
     let debugSettings = DebugSettings()
 
     // MARK: Навигация
@@ -43,7 +48,8 @@ final class AppContainer {
     /// собирается после библиотеки, а не значением по умолчанию.
     init(
         mediaLibrary: any MediaLibrary = PhotosMediaLibrary(),
-        processingService: (any MediaProcessingService)? = nil
+        processingService: (any MediaProcessingService)? = nil,
+        previewRenderer: any MediaPreviewRenderer = SystemMediaPreviewRenderer()
     ) {
         // Хранилище статистики создаётся здесь, а не внутри обработчика:
         // отладочное меню сбрасывает те же цифры, что показывает профиль,
@@ -53,26 +59,40 @@ final class AppContainer {
             ?? MediaProcessor(library: mediaLibrary, statsStore: statsStore)
         self.mediaLibrary = mediaLibrary
         self.processingService = processing
+        self.previewRenderer = previewRenderer
 
         router = Router(root: HomeRoute.home)
+
+        // Плеер превью знает медиатеку, из которой пришёл файл: ролик она
+        // отдаёт ссылкой, и другого экземпляра для этого заводить незачем.
+        let mediaPlayer = Self.mediaPlayer(library: mediaLibrary)
 
         var resolvers: [RouteResolver] = [
             HomeFeature.resolver(tools: HomeTools.all, profile: ProfileRoute.profile),
             CompressFeature.resolver(
                 mediaLibrary: mediaLibrary,
-                processingService: processing
+                processingService: processing,
+                previewRenderer: previewRenderer,
+                fileViewer: Self.fileViewer,
+                mediaPlayer: mediaPlayer
             ),
             ConvertFeature.resolver(
                 mediaLibrary: mediaLibrary,
-                processingService: processing
+                processingService: processing,
+                previewRenderer: previewRenderer,
+                fileViewer: Self.fileViewer,
+                mediaPlayer: mediaPlayer
             ),
             AudioFeature.resolver(
                 mediaLibrary: mediaLibrary,
-                processingService: processing
+                processingService: processing,
+                fileViewer: Self.fileViewer,
+                mediaPlayer: mediaPlayer
             ),
             ScanFeature.resolver(
                 mediaLibrary: mediaLibrary,
-                processingService: processing
+                processingService: processing,
+                mediaPlayer: mediaPlayer
             ),
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
@@ -91,6 +111,27 @@ final class AppContainer {
 
         registry = RouteRegistry(resolvers)
         deeplinks = DeeplinkRegistry(DeeplinkMap.mappers)
+    }
+
+    /// Чем показать готовый файл на экране просмотра. Собирается здесь,
+    /// потому что AVKit живёт в модуле системной обработки, а знать про него
+    /// разрешено только composition root.
+    private static let fileViewer: MediaFileViewerFactory = { url in
+        switch url.pathExtension.lowercased() {
+        case "mov", "mp4", "m4v": AnyView(MediaVideoPlayer(url: url))
+        case "m4a", "wav": AnyView(MediaAudioPlayer(url: url))
+        // Снимку хватает кадра: своего экрана у него нет, а превью уже готово.
+        default: nil
+        }
+    }
+
+    /// Чем оживить превью файла при выборе. Играть есть что только у ролика
+    /// и живого фото — остальному хватает кадра, и фабрика отвечает `nil`.
+    private static func mediaPlayer(library: any MediaLibrary) -> MediaItemPlayerFactory {
+        { item in
+            guard item.kind == .video || item.isLivePhoto else { return nil }
+            return AnyView(MediaItemPlayer(item: item, library: library))
+        }
     }
 
     /// Куда ведёт пятое нажатие на строку версии. В релизе — никуда.

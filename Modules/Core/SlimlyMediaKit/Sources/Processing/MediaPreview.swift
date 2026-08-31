@@ -2,12 +2,14 @@ import AVFoundation
 import CoreGraphics
 import Foundation
 import ImageIO
+import SlimlyCore
 import UniformTypeIdentifiers
 
 /// Кадр из готового файла.
 ///
-/// Нужен там, где сравнивают «до» и «после»: оригинал отдаёт медиатека,
-/// а результат ещё нигде не ассет — он просто файл на диске.
+/// Нужен на экране просмотра результата: оригинал отдаёт медиатека,
+/// а результат ещё нигде не ассет — он просто файл на диске. Документ сюда
+/// не попадает: PDF показывает системный просмотрщик целиком.
 public enum MediaPreview {
     private static let videoExtensions: Set<String> = ["mov", "mp4", "m4v"]
 
@@ -65,5 +67,14 @@ public enum MediaPreview {
         )
         guard CGImageDestinationFinalize(destination) else { return nil }
         return data as Data
+    }
+}
+
+/// Реализация ``MediaPreviewRenderer`` поверх системных декодеров.
+public struct SystemMediaPreviewRenderer: MediaPreviewRenderer {
+    public init() {}
+
+    public func preview(at url: URL, maxPixel: Int) async -> Data? {
+        await MediaPreview.image(at: url, maxPixel: maxPixel)
     }
 }

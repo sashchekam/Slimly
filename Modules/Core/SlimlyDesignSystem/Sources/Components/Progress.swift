@@ -80,3 +80,46 @@ public struct SlimlyProgressRing<Label: View>: View {
 extension Double {
     var clampedToUnitInterval: Double { min(max(self, 0), 1) }
 }
+
+/// Бесконечный индикатор загрузки: акцентная дуга, тающая в хвосте, по тёмному
+/// ободу. Системный `ProgressView` в Nocturne выглядит чужим — он берёт
+/// толщину и цвет от платформы, а не от токенов.
+public struct SlimlySpinner: View {
+    private let size: CGFloat
+    private let lineWidth: CGFloat
+
+    @State private var isSpinning = false
+
+    public init(size: CGFloat = 30, lineWidth: CGFloat = 3) {
+        self.size = size
+        self.lineWidth = lineWidth
+    }
+
+    public var body: some View {
+        ZStack {
+            Circle()
+                .strokeBorder(SlimlyColor.neutral900, lineWidth: lineWidth)
+
+            Circle()
+                .inset(by: lineWidth / 2)
+                .trim(from: 0, to: 0.3)
+                .stroke(
+                    AngularGradient(
+                        colors: [SlimlyColor.accent.opacity(0), SlimlyColor.accent],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(isSpinning ? 360 : 0))
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            // Анимация ставится в onAppear, а не в инициализаторе состояния:
+            // иначе при повторном показе вью вращение не перезапускается.
+            withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {
+                isSpinning = true
+            }
+        }
+        .accessibilityLabel("Загрузка")
+    }
+}

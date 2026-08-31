@@ -9,10 +9,15 @@ public struct MediaPickerView: View {
     @State private var viewModel: MediaPickerViewModel
     @Environment(\.openURL) private var openURL
 
+    /// Чем оживить превью в контекстном меню. Без фабрики оно остаётся
+    /// кадром — так экран работает и там, где играть нечего.
+    private let player: MediaItemPlayerFactory?
+
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 7), count: 3)
 
-    public init(viewModel: MediaPickerViewModel) {
+    public init(viewModel: MediaPickerViewModel, player: MediaItemPlayerFactory? = nil) {
         _viewModel = State(wrappedValue: viewModel)
+        self.player = player
     }
 
     public var body: some View {
@@ -28,23 +33,22 @@ public struct MediaPickerView: View {
                     }
 
                     content
-
-                    Text(viewModel.config.footnote)
-                        .font(.slimlyCaptionSmall)
-                        .foregroundStyle(SlimlyColor.neutral600)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, SlimlySpacing.screenHorizontal)
                 .padding(.bottom, 6)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
+                // Панель появляется вместе с первым выбранным файлом, поэтому
+                // выезжает снизу: резкое появление читалось бы как скачок вёрстки.
                 if viewModel.hasSelection {
                     SlimlyBottomAction {
                         Button(viewModel.ctaTitle) { viewModel.proceed() }
                             .buttonStyle(.slimlyPrimary)
                     }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
+            .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.hasSelection)
         }
         .slimlyScreen()
         .task { await viewModel.load() }
@@ -87,6 +91,8 @@ public struct MediaPickerView: View {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 openURL(url)
             }
+        } else if viewModel.isLoading {
+            loader
         } else if viewModel.isEmpty {
             notice(title: viewModel.emptyTitle, text: viewModel.emptyHint)
         } else {
@@ -95,6 +101,20 @@ public struct MediaPickerView: View {
             }
             grid
         }
+    }
+
+    /// Пока медиатека читается, сетки нет — вместо неё держим место высотой
+    /// примерно в один ряд плиток, чтобы контент под ней не прыгал.
+    private var loader: some View {
+        VStack(spacing: 12) {
+            SlimlySpinner()
+
+            Text("Загружаем медиатеку")
+                .font(.slimlyBodySmall)
+                .foregroundStyle(SlimlyColor.neutral500)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 160)
     }
 
     /// Список альбомов — системное меню: у него готовы блюр, галочка
@@ -154,7 +174,8 @@ public struct MediaPickerView: View {
                     MediaTile(
                         item: item,
                         isSelected: viewModel.isSelected(item),
-                        thumbnail: viewModel.thumbnails
+                        thumbnail: viewModel.thumbnails,
+                        showsSize: viewModel.config.showsSize
                     )
                     .opacity(viewModel.isBlocked(item) ? 0.4 : 1)
                 }
@@ -173,7 +194,12 @@ public struct MediaPickerView: View {
                     }
                     .disabled(viewModel.isBlocked(item))
                 } preview: {
-                    MediaTilePreview(item: item, thumbnail: viewModel.thumbnails)
+                    MediaTilePreview(
+                        item: item,
+                        thumbnail: viewModel.thumbnails,
+                        showsSize: viewModel.config.showsSize,
+                        player: player
+                    )
                 }
             }
         }

@@ -56,6 +56,13 @@ public protocol MediaLibrary: Sendable {
     /// Удалять её должен тот, кто заказал: система за нами не убирает.
     func exportOriginal(_ item: MediaItem) async throws -> URL
 
+    /// Ссылка на оригинал для воспроизведения.
+    ///
+    /// В отличие от ``exportOriginal(_:)`` файл не копируется: плееру хватает
+    /// того, что уже лежит в медиатеке. `nil` — если играть нечего: ассета
+    /// нет, это не видео или система не отдала файл.
+    func playbackURL(for item: MediaItem) async -> URL?
+
     /// Положить готовый файл в медиатеку. Возвращает идентификатор
     /// созданного ассета.
     func saveToLibrary(_ file: URL, kind: MediaKind) async throws -> String

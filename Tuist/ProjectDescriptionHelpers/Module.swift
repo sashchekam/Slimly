@@ -108,7 +108,10 @@ public enum Module: CaseIterable {
         case .navigation: [.core]
         // Единственный модуль, который знает про PhotoKit и AVFoundation:
         // всё общение с системой собрано здесь, а не размазано по фичам.
-        case .mediaKit: [.core]
+        // Дизайн-система нужна ему потому, что просмотр результата он
+        // собирает сам: у плеера дорожки нет системного экрана, и рисовать
+        // его приходится токенами Nocturne, как остальное приложение.
+        case .mediaKit: [.core, .designSystem]
         // Общие шаги флоу — это экраны, поэтому нужны и дизайн-система,
         // и роутер: шаг сам решает, куда положить следующий маршрут.
         case .mediaFlow: [.core, .designSystem, .navigation]
@@ -117,9 +120,7 @@ public enum Module: CaseIterable {
         // Маршруты инструментов несут модели медиатеки и задание
         // на обработку, поэтому их интерфейсам нужен core.
         case .compressInterface: [.core, .navigation]
-        // Сравнение «до / после» показывает кадр из уже готового файла,
-        // а его умеет достать только модуль системной обработки.
-        case .compress: [.core, .designSystem, .navigation, .mediaKit, .mediaFlow, .compressInterface]
+        case .compress: [.core, .designSystem, .navigation, .mediaFlow, .compressInterface]
         case .convertInterface: [.core, .navigation]
         case .convert: [.core, .designSystem, .navigation, .mediaFlow, .convertInterface]
         case .audioInterface: [.core, .navigation]

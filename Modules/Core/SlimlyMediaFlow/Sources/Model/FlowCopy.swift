@@ -59,8 +59,7 @@ public enum FlowCopy {
             // считать страницы по числу файлов итога значило бы написать
             // «1 страница» на пятистраничном документе.
             let pages = CountFormatter.string(outcome.request.items.count, .page)
-            let size = FileSizeFormatter.string(bytes: results.outputByteCount)
-            return "\(pages) в одном \(target) · \(size) · оригиналы на месте"
+            return "\(pages) в одном \(target) · оригиналы на месте"
         }
     }
 

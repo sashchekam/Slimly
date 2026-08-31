@@ -12,7 +12,9 @@ public enum AudioFeature {
     @MainActor
     public static func resolver(
         mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService
+        processingService: any MediaProcessingService,
+        fileViewer: @escaping MediaFileViewerFactory,
+        mediaPlayer: @escaping MediaItemPlayerFactory
     ) -> RouteResolver {
         RouteResolver(for: AudioRoute.self) { route, router in
             switch route {
@@ -23,7 +25,8 @@ public enum AudioFeature {
                         library: mediaLibrary,
                         router: router,
                         destination: { .push(AudioRoute.format(items: $0)) }
-                    )
+                    ),
+                    player: mediaPlayer
                 )
 
             case let .format(items):
@@ -53,8 +56,22 @@ public enum AudioFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
-                        router: router
+                        router: router,
+                        preview: { .push(AudioRoute.preview($0)) }
                     )
+                )
+
+            case let .preview(result):
+                // Рендерер кадра здесь не нужен: у дорожки нет картинки,
+                // и весь просмотр — это плеер из фабрики.
+                ResultPreviewView(
+                    viewModel: ResultPreviewViewModel(
+                        result: result,
+                        kind: .audioExtraction,
+                        library: mediaLibrary,
+                        router: router
+                    ),
+                    viewer: fileViewer
                 )
             }
         }
@@ -63,7 +80,6 @@ public enum AudioFeature {
     private static let pickerConfig = MediaPickerConfig(
         title: "Извлечь звук",
         hint: "Дорожку сохраним отдельным файлом",
-        footnote: "Видео остаётся без изменений",
         kind: .video,
         limit: 3,
         noun: .video

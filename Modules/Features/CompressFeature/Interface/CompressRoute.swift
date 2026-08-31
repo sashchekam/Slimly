@@ -13,6 +13,6 @@ public enum CompressRoute: Route {
     case level(items: [MediaItem])
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
-    /// Сравнение «до / после» одного файла.
-    case comparison(ProcessingResult)
+    /// Просмотр одного готового файла — у сжатия это пара «до / после».
+    case preview(ProcessingResult)
 }

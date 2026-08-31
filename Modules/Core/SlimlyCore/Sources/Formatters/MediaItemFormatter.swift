@@ -10,11 +10,14 @@ public enum MediaItemFormatter {
     }
 
     /// Строка под плиткой: у видео — длительность и вес, у фото — только вес.
-    public static func meta(_ item: MediaItem) -> String {
-        guard let duration = item.duration else {
-            return FileSizeFormatter.string(bytes: item.byteCount)
-        }
-        return "\(DurationFormatter.string(duration)) · \(FileSizeFormatter.string(bytes: item.byteCount))"
+    ///
+    /// Вес нужен не везде: скану безразлично, сколько весит снимок страницы, —
+    /// там это число ни на что не влияет и только шумит.
+    public static func meta(_ item: MediaItem, showsSize: Bool = true) -> String {
+        let size = showsSize ? FileSizeFormatter.string(bytes: item.byteCount) : ""
+        guard let duration = item.duration else { return size }
+        let time = DurationFormatter.string(duration)
+        return size.isEmpty ? time : "\(time) · \(size)"
     }
 
     /// «840 МБ → 302 МБ».

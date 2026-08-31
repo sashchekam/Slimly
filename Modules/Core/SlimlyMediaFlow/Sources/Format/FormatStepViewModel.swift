@@ -13,6 +13,9 @@ public struct FormatStepConfig: Sendable {
     public let sourceFormat: String
     public let formats: [MediaFormat]
     public let noun: CountFormatter.Noun
+    /// Показывать ли вес: у скана результат ценен читаемостью, а не
+    /// мегабайтами, и прогноз «5 МБ → ≈ 0,1 МБ» там ничего не решает.
+    public let showsSize: Bool
     /// Что именно делать с выбранным форматом. Шаг один и тот же,
     /// а работа за ним разная — поэтому её задаёт инструмент.
     public let makeOperation: @Sendable (MediaFormat) -> ProcessingOperation
@@ -24,6 +27,7 @@ public struct FormatStepConfig: Sendable {
         sourceFormat: String,
         formats: [MediaFormat],
         noun: CountFormatter.Noun,
+        showsSize: Bool = true,
         makeOperation: @escaping @Sendable (MediaFormat) -> ProcessingOperation
     ) {
         self.title = title
@@ -32,6 +36,7 @@ public struct FormatStepConfig: Sendable {
         self.sourceFormat = sourceFormat
         self.formats = formats
         self.noun = noun
+        self.showsSize = showsSize
         self.makeOperation = makeOperation
     }
 }
@@ -82,15 +87,24 @@ public final class FormatStepViewModel {
     // MARK: Показатели
 
     public var summary: String {
-        let size = FileSizeFormatter.string(bytes: items.totalByteCount)
-        return "\(CountFormatter.string(items.count, config.noun)) · \(size)"
+        let count = CountFormatter.string(items.count, config.noun)
+        guard config.showsSize else { return count }
+        return "\(count) · \(FileSizeFormatter.string(bytes: items.totalByteCount))"
     }
 
     public var targetTitle: String { selectedFormat.id }
 
     /// Строка под именем файла: у звука это отдельная дорожка, у остальных —
-    /// «было → станет».
+    /// «было → станет». Там, где вес не показываем, остаётся размер кадра:
+    /// по нему видно, что за страница, а число мегабайт — нет.
     public func detail(for item: MediaItem) -> String {
+        guard config.showsSize else {
+            // Размер кадра система сообщает не всегда, а пустая вторая строка
+            // роняет высоту строки списка — тогда подписываем хотя бы тип.
+            let size = item.pixelSizeText
+            return size.isEmpty ? MediaItemFormatter.kindLabel(item) : size
+        }
+
         let estimate = FileSizeFormatter.string(bytes: request.estimatedByteCount(for: item))
 
         if request.kind == .audioExtraction {

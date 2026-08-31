@@ -12,7 +12,8 @@ public enum ScanFeature {
     @MainActor
     public static func resolver(
         mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService
+        processingService: any MediaProcessingService,
+        mediaPlayer: @escaping MediaItemPlayerFactory
     ) -> RouteResolver {
         RouteResolver(for: ScanRoute.self) { route, router in
             switch route {
@@ -35,7 +36,8 @@ public enum ScanFeature {
                         library: mediaLibrary,
                         router: router,
                         destination: { .push(ScanRoute.format(items: $0)) }
-                    )
+                    ),
+                    player: mediaPlayer
                 )
 
             case let .format(items):
@@ -65,9 +67,22 @@ public enum ScanFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
-                        router: router
+                        router: router,
+                        // Документ уходит поверх всего: у системного
+                        // просмотрщика своя полноэкранная жизнь с шапкой
+                        // и кнопкой «Готово».
+                        preview: { .cover(ScanRoute.preview($0)) }
                     )
                 )
+
+            case let .preview(result):
+                if let url = result.outputURL {
+                    SystemDocumentPreview(url: url) { router.dismiss() }
+                        .ignoresSafeArea()
+                        // Шапку рисует сам просмотрщик — пустая панель стека
+                        // над ней стала бы вторым баром.
+                        .toolbar(.hidden, for: .navigationBar)
+                }
             }
         }
     }
@@ -81,27 +96,28 @@ public enum ScanFeature {
     private static let pickerConfig = MediaPickerConfig(
         title: "Страницы скана",
         hint: "Порядок страниц — как порядок выбора",
-        footnote: "Выпрямление и чистка фона — автоматически",
         kind: .photo,
         limit: pageLimit,
-        noun: .page
+        noun: .page,
+        // Страницу выбирают по тому, что на ней написано: вес снимка
+        // здесь ни на что не влияет и в итог документа не переходит.
+        showsSize: false
     )
 
-    /// Режим — это и вид страницы, и её вес: у трёх вариантов одна и та же
-    /// обработка, но разное количество цвета на выходе.
+    /// Режим — это вид страницы: у трёх вариантов одна и та же обработка,
+    /// но разное количество цвета на выходе.
     private static let formatConfig = FormatStepConfig(
         title: "Как собрать скан",
         note: """
         Границы листа находим сами, кадр выпрямляем, фон добиваем до белого. \
-        Ч/б даёт самый лёгкий файл и самый чёткий текст, цвет нужен печатям \
-        и картинкам. Документ ляжет в «Файлы» — оригиналы останутся в медиатеке.
+        Ч/б даёт самый чёткий текст, цвет нужен печатям и картинкам. \
+        Документ ляжет в «Файлы» — оригиналы останутся в медиатеке.
         """,
         actionTitle: "Собрать скан",
         sourceFormat: "Фото",
-        formats: ScanMode.allCases.map {
-            MediaFormat(target: .document($0), ratio: $0.estimatedRatio)
-        },
+        formats: ScanMode.allCases.map { MediaFormat(target: .document($0)) },
         noun: .page,
+        showsSize: false,
         makeOperation: { .scan($0) }
     )
 }

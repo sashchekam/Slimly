@@ -5,7 +5,7 @@ import SlimlyDesignSystem
 /// Содержимое строки файла: превью, имя, что с ним стало, и опциональная дельта.
 ///
 /// Вынесено отдельно от ``MediaFileRow``, потому что на экране итога строка
-/// разбита на две тапабельные зоны — сравнение и шаринг, — и обёртывать
+/// разбита на две тапабельные зоны — просмотр и шаринг, — и обёртывать
 /// её целиком в кнопку там нельзя.
 struct MediaFileLabel: View {
     let item: MediaItem
@@ -13,7 +13,7 @@ struct MediaFileLabel: View {
     let detail: String
     let thumbnail: MediaThumbnailLoader
     var delta: String?
-    var showsComparison = false
+    var showsPreview = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -37,7 +37,7 @@ struct MediaFileLabel: View {
                 SlimlyDeltaBadge(delta)
             }
 
-            if showsComparison {
+            if showsPreview {
                 SlimlyIcon(.eye, width: 17)
                     .foregroundStyle(SlimlyColor.neutral500)
             }
@@ -54,7 +54,7 @@ struct MediaFileRow: View {
     let detail: String
     let thumbnail: MediaThumbnailLoader
     var delta: String?
-    var showsComparison = false
+    var showsPreview = false
 
     var body: some View {
         MediaFileLabel(
@@ -63,7 +63,7 @@ struct MediaFileRow: View {
             detail: detail,
             thumbnail: thumbnail,
             delta: delta,
-            showsComparison: showsComparison
+            showsPreview: showsPreview
         )
         .slimlyRow()
     }

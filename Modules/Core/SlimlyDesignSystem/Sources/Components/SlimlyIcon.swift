@@ -28,6 +28,8 @@ public struct SlimlyIcon: View {
         case trash
         case person
         case share
+        case play
+        case pause
     }
 
     private let kind: Kind
@@ -72,8 +74,11 @@ extension SlimlyIcon.Kind {
         case .chevronLeft: 1.8
         case .chevronRight, .chevronDown: 1.6
         case .arrowRight: 1.4
-        case .compress, .person, .share: 1.6
+        case .compress, .person, .share, .play: 1.6
         case .flash: 1.7
+        // Пауза — две короткие черты: тонкой линией они читались бы
+        // как случайный штрих, а не как знак.
+        case .pause: 2.4
         default: 1.5
         }
     }
@@ -270,6 +275,18 @@ private struct IconShape: Shape {
             path.addLine(to: CGPoint(x: 20.4, y: 12.8))
             path.corner(via: CGPoint(x: 20.4, y: 11.2), to: CGPoint(x: 17.6, y: 11.2), radius: 1.6)
             path.addLine(to: CGPoint(x: 17.6, y: 11.2))
+
+        case .play:
+            path.polyline([
+                CGPoint(x: 8.6, y: 5.4),
+                CGPoint(x: 18.4, y: 12),
+                CGPoint(x: 8.6, y: 18.6),
+            ])
+            path.closeSubpath()
+
+        case .pause:
+            path.line(from: CGPoint(x: 9.4, y: 6.4), to: CGPoint(x: 9.4, y: 17.6))
+            path.line(from: CGPoint(x: 14.6, y: 6.4), to: CGPoint(x: 14.6, y: 17.6))
 
         case .person:
             path.addEllipse(in: CGRect(x: 8.4, y: 4.9, width: 7.2, height: 7.2))

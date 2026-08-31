@@ -14,20 +14,21 @@ public final class OutcomeViewModel {
 
     private let library: any MediaLibrary
     private let router: Router
-    /// Сравнение «до / после» есть не у всех инструментов, поэтому маршрут
-    /// приходит опциональным: нет маршрута — нет и строки-приглашения.
-    private let comparison: ((ProcessingResult) -> any Route)?
+    /// Просмотр результата — не обязательная часть флоу: маршрут приходит
+    /// опциональным, и без него нет ни перехода по строке, ни подсказки
+    /// под списком.
+    private let preview: ((ProcessingResult) -> FlowDestination)?
 
     public init(
         outcome: ProcessingOutcome,
         library: any MediaLibrary,
         router: Router,
-        comparison: ((ProcessingResult) -> any Route)? = nil
+        preview: ((ProcessingResult) -> FlowDestination)? = nil
     ) {
         self.outcome = outcome
         self.library = library
         self.router = router
-        self.comparison = comparison
+        self.preview = preview
     }
 
     public var results: [ProcessingResult] { outcome.results }
@@ -65,13 +66,6 @@ public final class OutcomeViewModel {
         return FlowCopy.summary(outcome)
     }
 
-    /// Куда всё уехало. Медиатеку не поясняем — там результат и ищут,
-    /// а вот дорожку в «Файлах» без подсказки не найти.
-    public var destinationNote: String? {
-        guard results.contains(where: { $0.destination == .files }) else { return nil }
-        return "Файлы приложения → Slimly. Откройте «Файлы» → «На iPhone» → Slimly."
-    }
-
     public var failureSummary: String? {
         guard !failures.isEmpty else { return nil }
         return "Не удалось обработать: \(CountFormatter.string(failures.count, .file))"
@@ -101,10 +95,19 @@ public final class OutcomeViewModel {
             : (outcome.request.targetFormat?.shortName ?? "")
     }
 
-    public var allowsComparison: Bool { comparison != nil }
+    public var allowsPreview: Bool { preview != nil }
 
-    public func canCompare(_ result: ProcessingResult) -> Bool {
-        allowsComparison && result.outputURL != nil
+    public func canPreview(_ result: ProcessingResult) -> Bool {
+        allowsPreview && result.outputURL != nil
+    }
+
+    /// Подсказка под списком. У сжатия смотрят пару «до / после», у остальных
+    /// инструментов — просто готовый файл, и звать «сравнить» было бы враньём.
+    public var previewHint: String? {
+        guard allowsPreview, !results.isEmpty else { return nil }
+        return FlowCopy.allowsComparison(outcome.kind)
+            ? "Нажмите файл, чтобы сравнить до и после"
+            : "Нажмите файл, чтобы открыть просмотр"
     }
 
     // MARK: Шаринг
@@ -139,9 +142,14 @@ public final class OutcomeViewModel {
         router.popToRoot()
     }
 
-    public func openComparison(_ result: ProcessingResult) {
-        guard let comparison, canCompare(result) else { return }
-        router.push(comparison(result))
+    public func openPreview(_ result: ProcessingResult) {
+        guard let preview, canPreview(result) else { return }
+
+        switch preview(result) {
+        case let .push(route): router.push(route)
+        case let .present(route): router.present(route)
+        case let .cover(route): router.cover(route)
+        }
     }
 
     /// Удаление — отдельный шаг после итога, а не часть обработки:

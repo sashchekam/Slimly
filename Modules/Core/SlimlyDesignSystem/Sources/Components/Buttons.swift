@@ -25,6 +25,10 @@ public struct SlimlyOutlineButtonStyle: ButtonStyle {
             .frame(maxWidth: size == .regular ? .infinity : nil)
             .background(tint(pressed: configuration.isPressed), in: shape)
             .overlay(shape.strokeBorder(SlimlyColor.accent, lineWidth: 1))
+            // Без своей формы кнопка без заливки ловит нажатие только по тексту
+            // и линии рамки — прозрачная середина и отступы проваливались бы
+            // мимо, а в скролле промах ещё и уходит в жест прокрутки.
+            .contentShape(shape)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 

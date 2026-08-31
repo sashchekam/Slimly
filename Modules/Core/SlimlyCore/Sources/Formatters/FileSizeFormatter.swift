@@ -15,8 +15,12 @@ public enum FileSizeFormatter {
     }
 
     private static let locale = Locale(identifier: "ru_RU")
-    private static let bytesInMegabyte = 1024.0 * 1024
-    private static let megabytesInGigabyte = 1024.0
+
+    // Десятичные мегабайты, а не двоичные: так считают и Photos, и Настройки,
+    // и Finder. С делением на 1024² тот же файл выглядел бы на 5% легче,
+    // чем в системной галерее, — и пользователь решил бы, что мы врём.
+    private static let bytesInMegabyte = 1_000_000.0
+    private static let megabytesInGigabyte = 1000.0
 
     public static func string(bytes: Int64, unit: Unit = .automatic) -> String {
         let formatted = parts(bytes: bytes, unit: unit)

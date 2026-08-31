@@ -7,6 +7,7 @@ struct MediaTile: View {
     let item: MediaItem
     let isSelected: Bool
     let thumbnail: MediaThumbnailLoader
+    var showsSize = true
 
     var body: some View {
         Color.clear
@@ -15,13 +16,17 @@ struct MediaTile: View {
                 MediaThumbnail(item: item, pointSize: 140, load: thumbnail, placeholder: .tile)
             }
             .overlay(alignment: .bottomLeading) {
-                Text(MediaItemFormatter.meta(item))
-                    .font(.slimlyNano)
-                    .foregroundStyle(SlimlyColor.neutral300)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(SlimlyColor.tileCaption, in: RoundedRectangle(cornerRadius: SlimlyRadius.sm))
-                    .padding(5)
+                // У фото без веса подписи не остаётся вовсе — пустая плашка
+                // на кадре выглядела бы обрезком интерфейса.
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(.slimlyNano)
+                        .foregroundStyle(SlimlyColor.neutral300)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(SlimlyColor.tileCaption, in: RoundedRectangle(cornerRadius: SlimlyRadius.sm))
+                        .padding(5)
+                }
             }
             .overlay {
                 if isSelected {
@@ -50,17 +55,26 @@ struct MediaTile: View {
             // ниже (она выше по z-порядку) перехватывает тап и долгое нажатие.
             .contentShape(RoundedRectangle(cornerRadius: SlimlyRadius.tile, style: .continuous))
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(item.fileName), \(MediaItemFormatter.meta(item))")
+            .accessibilityLabel(caption.isEmpty ? item.fileName : "\(item.fileName), \(caption)")
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var caption: String {
+        MediaItemFormatter.meta(item, showsSize: showsSize)
     }
 }
 
 /// Превью плитки для контекстного меню: кадр целиком и подпись с параметрами
 /// файла. В сетке кадр обрезан до квадрата, поэтому по ней не всегда понятно,
 /// тот ли это файл, — долгое нажатие показывает исходные пропорции до выбора.
+/// Ролик и живое фото здесь играют: по одному кадру их не отличить друг
+/// от друга, а выбирают именно по движению.
 struct MediaTilePreview: View {
     let item: MediaItem
     let thumbnail: MediaThumbnailLoader
+    var showsSize = true
+    /// Без фабрики превью остаётся картиночным — снимку этого и достаточно.
+    var player: MediaItemPlayerFactory?
 
     /// Систему интересуют пропорции превью, а не пункты: платтер меню всё
     /// равно масштабирует его под свою ширину.
@@ -76,9 +90,18 @@ struct MediaTilePreview: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            MediaThumbnail(item: item, pointSize: 700, load: thumbnail, placeholder: .thumbnail)
-                .frame(width: width, height: height)
-                .clipped()
+            ZStack {
+                // Кадр под плеером — не заглушка на время, а честный первый
+                // кадр: ролик из iCloud система отдаёт с задержкой, и до
+                // этого момента превью не должно быть пустым.
+                MediaThumbnail(item: item, pointSize: 700, load: thumbnail, placeholder: .thumbnail)
+
+                if let player, let view = player(item) {
+                    view
+                }
+            }
+            .frame(width: width, height: height)
+            .clipped()
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.fileName)
@@ -100,10 +123,14 @@ struct MediaTilePreview: View {
     }
 
     /// «ФОТО · 4032 × 3024 · 3,1 МБ» — пустые части выпадают, если система
-    /// не сообщила размер кадра.
+    /// не сообщила размер кадра или инструменту не нужен вес.
     private var caption: String {
-        [MediaItemFormatter.kindLabel(item), item.pixelSizeText, MediaItemFormatter.meta(item)]
-            .filter { !$0.isEmpty }
-            .joined(separator: " · ")
+        [
+            MediaItemFormatter.kindLabel(item),
+            item.pixelSizeText,
+            MediaItemFormatter.meta(item, showsSize: showsSize),
+        ]
+        .filter { !$0.isEmpty }
+        .joined(separator: " · ")
     }
 }

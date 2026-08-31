@@ -7,4 +7,6 @@ public enum AudioRoute: Route {
     case format(items: [MediaItem])
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
+    /// Прослушивание готовой дорожки с экрана итога.
+    case preview(ProcessingResult)
 }

@@ -101,7 +101,7 @@ public enum ProcessingTarget: Sendable, Hashable {
     case video(container: VideoContainer, codec: VideoCodec)
     case audio(AudioFormat)
     /// PDF из страниц скана. Режим — часть цели, а не отдельная настройка:
-    /// от него зависит и то, как выглядит страница, и вес документа.
+    /// от него зависит то, как выглядит собранная страница.
     case document(ScanMode)
 
     public var displayName: String {
@@ -117,12 +117,13 @@ public enum ProcessingTarget: Sendable, Hashable {
 /// Формат результата: «JPEG», «MP4 · H.264», «M4A · 128 кбит».
 ///
 /// Коэффициент — оценка веса относительно оригинала; у PNG он больше единицы,
-/// и это честно: конвертация не всегда облегчает файл.
+/// и это честно: конвертация не всегда облегчает файл. Там, где вес не
+/// показывают и не считают, оценки нет — коэффициент остаётся единицей.
 public struct MediaFormat: Sendable, Hashable, Identifiable {
     public let target: ProcessingTarget
     public let ratio: Double
 
-    public init(target: ProcessingTarget, ratio: Double) {
+    public init(target: ProcessingTarget, ratio: Double = 1) {
         self.target = target
         self.ratio = ratio
     }
@@ -285,7 +286,9 @@ public struct ProcessingRequest: Sendable, Hashable {
         {
             return Int64(audio.bytesPerSecond * duration.seconds)
         }
-        return Int64(Double(item.byteCount) * ratio)
+        // Считаем от того файла, который реально пойдёт в кодировщик:
+        // у обрезанного видео это рендер правок, а не исходник с камеры.
+        return Int64(Double(item.sourceByteCount) * ratio)
     }
 
     /// «−58%». У конвертации может получиться и прибавка — знак берём из числа.

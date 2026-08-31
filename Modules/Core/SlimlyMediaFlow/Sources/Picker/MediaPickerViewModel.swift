@@ -7,27 +7,29 @@ import SlimlyNavigation
 public struct MediaPickerConfig: Sendable {
     public let title: String
     public let hint: String
-    public let footnote: String
     /// Чем ограничена выборка: конвертеру видео нечего показывать фото.
     public let kind: MediaKind?
     /// Сколько файлов можно взять за раз — предел бесплатной обработки.
     public let limit: Int
     public let noun: CountFormatter.Noun
+    /// Показывать ли вес файлов. У скана он ни на что не влияет: страницу
+    /// выбирают по содержимому, а не по мегабайтам.
+    public let showsSize: Bool
 
     public init(
         title: String,
         hint: String,
-        footnote: String,
         kind: MediaKind?,
         limit: Int,
-        noun: CountFormatter.Noun
+        noun: CountFormatter.Noun,
+        showsSize: Bool = true
     ) {
         self.title = title
         self.hint = hint
-        self.footnote = footnote
         self.kind = kind
         self.limit = limit
         self.noun = noun
+        self.showsSize = showsSize
     }
 }
 
@@ -92,8 +94,15 @@ public final class MediaPickerViewModel {
     public func select(_ album: MediaAlbum) {
         guard album.id != albumID else { return }
         albumID = album.id
+        isLoading = true
         // Выбор не сбрасываем: альбом — это фильтр витрины, а не новая сессия.
-        Task { items = await library.items(in: album.id, kind: config.kind) }
+        Task {
+            items = await library.items(in: album.id, kind: config.kind)
+            // Пока читался альбом, пользователь мог переключиться на другой:
+            // тогда индикатор снимает уже та, более поздняя загрузка.
+            guard albumID == album.id else { return }
+            isLoading = false
+        }
     }
 
     public var currentAlbum: MediaAlbum? {
@@ -163,8 +172,9 @@ public final class MediaPickerViewModel {
     }
 
     public var ctaTitle: String {
-        let size = FileSizeFormatter.string(bytes: selection.totalByteCount)
-        return "Далее · \(CountFormatter.string(selection.count, config.noun)) · \(size)"
+        let count = CountFormatter.string(selection.count, config.noun)
+        guard config.showsSize else { return "Далее · \(count)" }
+        return "Далее · \(count) · \(FileSizeFormatter.string(bytes: selection.totalByteCount))"
     }
 
     // MARK: Навигация
@@ -179,6 +189,7 @@ public final class MediaPickerViewModel {
         switch destination(selection) {
         case let .push(route): router.push(route)
         case let .present(route): router.present(route)
+        case let .cover(route): router.cover(route)
         }
     }
 }

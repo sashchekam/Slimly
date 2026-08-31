@@ -26,21 +26,13 @@ public struct OutcomeView: View {
                         shareAll
                     }
 
-                    if viewModel.allowsComparison, !viewModel.results.isEmpty {
-                        note("Нажмите файл, чтобы сравнить до и после")
-                            .padding(.top, -8)
-                    }
-
-                    if let destination = viewModel.destinationNote {
-                        note(destination).padding(.top, -8)
+                    if let hint = viewModel.previewHint {
+                        note(hint).padding(.top, -8)
                     }
 
                     if !viewModel.failures.isEmpty {
                         failureList
                     }
-
-                    Button("Готово") { viewModel.finish() }
-                        .buttonStyle(.slimlyOutline)
 
                     if viewModel.showsDeleteOriginals {
                         deleteOriginals
@@ -53,6 +45,12 @@ public struct OutcomeView: View {
                 .padding(.top, 16)
                 .padding(.horizontal, SlimlySpacing.screenHorizontal)
                 .padding(.bottom, 4)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                SlimlyBottomAction {
+                    Button("Готово") { viewModel.finish() }
+                        .buttonStyle(.slimlyOutline)
+                }
             }
         }
         .slimlyScreen()
@@ -117,21 +115,25 @@ public struct OutcomeView: View {
     }
 
     /// Строка результата — две зоны сразу: тап по содержимому открывает
-    /// сравнение, тап по иконке справа — системную шторку. Поэтому строка
+    /// просмотр, тап по иконке справа — системную шторку. Поэтому строка
     /// не обёрнута в одну кнопку: вложенная кнопка в SwiftUI не нажимается.
     private func resultRow(_ result: ProcessingResult) -> some View {
         HStack(spacing: 12) {
-            // Кнопкой содержимое становится, только если сравнение есть:
-            // выключенная кнопка гасила бы строку там, где сравнивать нечего.
-            if viewModel.canCompare(result) {
+            // Кнопкой содержимое становится, только если просмотр есть:
+            // выключенная кнопка гасила бы строку там, где смотреть нечего.
+            if viewModel.canPreview(result) {
                 Button {
-                    viewModel.openComparison(result)
+                    viewModel.openPreview(result)
                 } label: {
-                    label(for: result, showsComparison: true)
+                    label(for: result, showsPreview: true)
+                        // Без своей формы кнопка ловит нажатие только по самим
+                        // тексту и картинке — промежутки между ними проваливались
+                        // бы мимо, хотя выглядят частью той же строки.
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             } else {
-                label(for: result, showsComparison: false)
+                label(for: result, showsPreview: false)
             }
 
             if let url = viewModel.shareURL(for: result) {
@@ -152,14 +154,14 @@ public struct OutcomeView: View {
         .slimlyRow()
     }
 
-    private func label(for result: ProcessingResult, showsComparison: Bool) -> some View {
+    private func label(for result: ProcessingResult, showsPreview: Bool) -> some View {
         MediaFileLabel(
             item: result.item,
             name: viewModel.name(for: result),
             detail: viewModel.detail(for: result),
             thumbnail: viewModel.thumbnails,
             delta: viewModel.delta(for: result),
-            showsComparison: showsComparison
+            showsPreview: showsPreview
         )
     }
 

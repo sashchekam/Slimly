@@ -8,7 +8,10 @@ public enum ConvertFeature {
     @MainActor
     public static func resolver(
         mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService
+        processingService: any MediaProcessingService,
+        previewRenderer: any MediaPreviewRenderer,
+        fileViewer: @escaping MediaFileViewerFactory,
+        mediaPlayer: @escaping MediaItemPlayerFactory
     ) -> RouteResolver {
         RouteResolver(for: ConvertRoute.self) { route, router in
             switch route {
@@ -19,7 +22,8 @@ public enum ConvertFeature {
                         library: mediaLibrary,
                         router: router,
                         destination: { .push(ConvertRoute.format(kind: kind, items: $0)) }
-                    )
+                    ),
+                    player: mediaPlayer
                 )
 
             case let .format(kind, items):
@@ -49,8 +53,21 @@ public enum ConvertFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
-                        router: router
+                        router: router,
+                        preview: { .push(ConvertRoute.preview($0)) }
                     )
+                )
+
+            case let .preview(result):
+                ResultPreviewView(
+                    viewModel: ResultPreviewViewModel(
+                        result: result,
+                        kind: .conversion,
+                        library: mediaLibrary,
+                        previews: previewRenderer,
+                        router: router
+                    ),
+                    viewer: fileViewer
                 )
             }
         }
@@ -64,7 +81,6 @@ public enum ConvertFeature {
             MediaPickerConfig(
                 title: "Конвертация фото",
                 hint: "Формат зададим на следующем шаге",
-                footnote: "Больше фото за раз — в Pro",
                 kind: .photo,
                 limit: 5,
                 noun: .photo
@@ -73,7 +89,6 @@ public enum ConvertFeature {
             MediaPickerConfig(
                 title: "Конвертация видео",
                 hint: "Контейнер и кодек на следующем шаге",
-                footnote: "Больше видео за раз — в Pro",
                 kind: .video,
                 limit: 3,
                 noun: .video

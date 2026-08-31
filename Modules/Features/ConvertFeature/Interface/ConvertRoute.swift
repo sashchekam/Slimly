@@ -15,4 +15,6 @@ public enum ConvertRoute: Route {
     case format(kind: ConvertKind, items: [MediaItem])
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
+    /// Просмотр одного готового файла с экрана итога.
+    case preview(ProcessingResult)
 }

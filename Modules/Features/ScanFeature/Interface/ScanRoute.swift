@@ -12,4 +12,6 @@ public enum ScanRoute: Route {
     case format(items: [MediaItem])
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
+    /// Просмотр собранного документа с экрана итога.
+    case preview(ProcessingResult)
 }

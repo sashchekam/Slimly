@@ -15,10 +15,21 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
     public let kind: MediaKind
     public let fileName: String
     public let byteCount: Int64
+    /// Вес файла, который реально уйдёт в обработку.
+    ///
+    /// У медиа с правками медиатека хранит два файла: исходник с камеры и
+    /// рендер обрезки. `byteCount` — исходник, как его показывает системная
+    /// галерея, а обрабатываем мы рендер. Считать прогноз результата от
+    /// исходника нельзя: минутное видео, обрезанное до тридцати секунд,
+    /// дало бы вдвое завышенную оценку.
+    public let sourceByteCount: Int64
     /// Только у видео.
     public let duration: Duration?
     /// HEIC можно переложить в JPEG — на вес это влияет слабо, на совместимость сильно.
     public let isHEIC: Bool
+    /// Живое фото: у снимка есть короткий ролик, и в превью его можно
+    /// проиграть. На обработку это не влияет — обрабатываем кадр.
+    public let isLivePhoto: Bool
     /// Размер кадра: от него зависит, есть ли что уменьшать при сжатии,
     /// и он же подписывает превью в сравнении «до / после».
     public let pixelWidth: Int
@@ -32,8 +43,10 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         kind: MediaKind,
         fileName: String,
         byteCount: Int64,
+        sourceByteCount: Int64? = nil,
         duration: Duration? = nil,
         isHEIC: Bool = false,
+        isLivePhoto: Bool = false,
         pixelWidth: Int = 0,
         pixelHeight: Int = 0,
         sourceURL: URL? = nil
@@ -42,8 +55,10 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         self.kind = kind
         self.fileName = fileName
         self.byteCount = byteCount
+        self.sourceByteCount = sourceByteCount ?? byteCount
         self.duration = duration
         self.isHEIC = isHEIC
+        self.isLivePhoto = isLivePhoto
         self.pixelWidth = pixelWidth
         self.pixelHeight = pixelHeight
         self.sourceURL = sourceURL
@@ -70,6 +85,7 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
 
 public extension Sequence<MediaItem> {
     var totalByteCount: Int64 { reduce(0) { $0 + $1.byteCount } }
+    var totalSourceByteCount: Int64 { reduce(0) { $0 + $1.sourceByteCount } }
 }
 
 /// Альбом медиатеки.

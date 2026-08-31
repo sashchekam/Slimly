@@ -8,4 +8,7 @@ import SlimlyNavigation
 public enum FlowDestination: Sendable {
     case push(any Route)
     case present(any Route)
+    /// Поверх всего экрана — для того, у чего своя полноэкранная жизнь:
+    /// камера, системный просмотрщик документа.
+    case cover(any Route)
 }

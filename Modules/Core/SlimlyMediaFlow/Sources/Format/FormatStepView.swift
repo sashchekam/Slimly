@@ -2,8 +2,7 @@ import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
 
-/// Общий шаг «в какой формат»: пара «из → в», выбор формата и список файлов
-/// с оценкой веса.
+/// Общий шаг «в какой формат»: пара «из → в», выбор формата и список файлов.
 public struct FormatStepView: View {
     @State private var viewModel: FormatStepViewModel
 

@@ -158,7 +158,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
     ) async throws -> ProcessingResult {
         switch item.kind {
         case .photo:
-            let format = ImageFormat.matching(fileExtension: item.fileExtension)
+            let format = ImageFormat.matching(fileExtension: source.pathExtension)
             return try await produce(
                 item,
                 extension: format.fileExtension,
@@ -177,7 +177,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
             }
 
         case .video:
-            let container: VideoContainer = item.fileExtension == "mp4" ? .mp4 : .mov
+            let container: VideoContainer = source.pathExtension.lowercased() == "mp4" ? .mp4 : .mov
             let codec = await MediaTranscoder.videoCodec(of: source) ?? .hevc
             return try await produce(
                 item,
@@ -455,9 +455,11 @@ private final class ProgressTracker: @unchecked Sendable {
         self.continuation = continuation
         fractions = Array(repeating: 0, count: items.count)
 
-        let total = Double(items.totalByteCount)
+        // Доля работы, а не доля веса в галерее: перекодировать придётся
+        // ровно то, что уходит в обработку.
+        let total = Double(items.totalSourceByteCount)
         weights = total > 0
-            ? items.map { Double($0.byteCount) / total }
+            ? items.map { Double($0.sourceByteCount) / total }
             : Array(repeating: 1 / Double(max(items.count, 1)), count: items.count)
     }
 

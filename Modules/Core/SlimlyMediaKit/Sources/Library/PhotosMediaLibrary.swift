@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Photos
 import UIKit
@@ -170,30 +171,49 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         default: return nil
         }
 
-        let resource = primaryResource(for: asset)
-        let name = resource?.originalFilename ?? "\(asset.localIdentifier.prefix(8)).\(kind == .video ? "mov" : "heic")"
-        let type = resource?.uniformTypeIdentifier ?? ""
+        // Имя и вес берём у исходника: и то и другое пользователь только что
+        // видел в системной галерее, и расхождение читалось бы как ошибка.
+        let original = originalResource(for: asset)
+        let edited = editedResource(for: asset)
+        let name = original?.originalFilename ?? "\(asset.localIdentifier.prefix(8)).\(kind == .video ? "mov" : "heic")"
+        let type = original?.uniformTypeIdentifier ?? ""
 
         return MediaItem(
             id: asset.localIdentifier,
             kind: kind,
             fileName: name,
-            byteCount: byteCount(of: resource, asset: asset, kind: kind),
+            byteCount: byteCount(of: original, asset: asset, kind: kind),
+            sourceByteCount: byteCount(of: edited, asset: asset, kind: kind),
             duration: kind == .video ? .seconds(asset.duration) : nil,
             isHEIC: type == "public.heic" || type == "public.heif" || name.lowercased().hasSuffix(".heic"),
+            isLivePhoto: asset.mediaSubtypes.contains(.photoLive),
             pixelWidth: asset.pixelWidth,
             pixelHeight: asset.pixelHeight
         )
     }
 
-    /// Ресурс, который считается «самим файлом»: если снимок редактировали,
-    /// это отредактированная версия, а не исходник из камеры.
-    private static func primaryResource(for asset: PHAsset) -> PHAssetResource? {
-        let resources = PHAssetResource.assetResources(for: asset)
-        let order: [PHAssetResourceType] = asset.mediaType == .video
-            ? [.fullSizeVideo, .video]
-            : [.fullSizePhoto, .photo]
+    /// Файл, каким он лежит в медиатеке, — исходник с камеры.
+    /// Его вес и имя показывает системная галерея, их же показываем и мы.
+    private static func originalResource(for asset: PHAsset) -> PHAssetResource? {
+        resource(for: asset, preferring: asset.mediaType == .video
+            ? [.video, .fullSizeVideo]
+            : [.photo, .fullSizePhoto])
+    }
 
+    /// Файл, который уходит в обработку: у отредактированного медиа это
+    /// рендер правок. Пользователь ждёт обратно своё обрезанное видео,
+    /// а не полную версию, которую он в галерее уже не видит.
+    private static func editedResource(for asset: PHAsset) -> PHAssetResource? {
+        resource(for: asset, preferring: asset.mediaType == .video
+            ? [.fullSizeVideo, .video]
+            : [.fullSizePhoto, .photo])
+    }
+
+    private static func resource(
+        for asset: PHAsset,
+        preferring order: [PHAssetResourceType]
+    ) -> PHAssetResource? {
+        let resources = PHAssetResource.assetResources(for: asset)
         for type in order {
             if let match = resources.first(where: { $0.type == type }) { return match }
         }
@@ -274,7 +294,7 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         }
 
         guard let asset = Self.asset(for: item.id) else { throw MediaLibraryError.itemNotFound }
-        guard let resource = Self.primaryResource(for: asset) else {
+        guard let resource = Self.editedResource(for: asset) else {
             throw MediaLibraryError.originalUnavailable
         }
 
@@ -298,6 +318,33 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
             throw MediaLibraryError.exportFailed(error.localizedDescription)
         }
         return url
+    }
+
+    public func playbackURL(for item: MediaItem) async -> URL? {
+        if let source = item.sourceURL { return source }
+        guard item.kind == .video, let asset = Self.asset(for: item.id) else { return nil }
+
+        let options = PHVideoRequestOptions()
+        // Ролик может лежать только в iCloud — тогда его сначала выкачают.
+        options.isNetworkAccessAllowed = true
+        // Оригинал, а не отрендеренная версия: сравнивать нужно ровно тот
+        // файл, который ушёл в обработку.
+        options.version = .current
+        options.deliveryMode = .highQualityFormat
+
+        // Наружу отдаём ссылку, а не сам ассет: `AVAsset` не `Sendable`,
+        // и разбирать его нужно там же, где он приехал.
+        //
+        // Композиция вместо файла приходит у слоу-мо и монтажа: играть её
+        // напрямую нельзя, а тянуть ради просмотра полный экспорт — незачем.
+        return await withCheckedContinuation { continuation in
+            PHImageManager.default().requestAVAsset(
+                forVideo: asset,
+                options: options
+            ) { avAsset, _, _ in
+                continuation.resume(returning: (avAsset as? AVURLAsset)?.url)
+            }
+        }
     }
 
     public func saveToLibrary(_ file: URL, kind: MediaKind) async throws -> String {

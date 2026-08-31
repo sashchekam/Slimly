@@ -32,6 +32,12 @@ public struct ScanCameraView: View {
         // Экран приезжает поверх стека, а свой стек рисует системную панель:
         // над кадром камеры ей места нет.
         .toolbar(.hidden, for: .navigationBar)
+        // Отклик на снятый кадр: затвора не слышно, а глаз в этот момент
+        // в видоискателе — счётчик и тост он заметит уже потом. Триггер по
+        // счётчику, поэтому автосъёмка отзывается так же, как ручная.
+        .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.pageCount) { before, after in
+            after > before
+        }
         .task { await viewModel.appear() }
         .onDisappear { viewModel.disappear() }
     }
