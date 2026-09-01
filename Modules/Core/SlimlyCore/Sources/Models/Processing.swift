@@ -311,10 +311,12 @@ public struct ProcessingResult: Sendable, Hashable, Identifiable {
     public let outputByteCount: Int64
     /// Имя готового файла — у конвертации и звука оно отличается от исходного.
     public let outputName: String
-    /// Копия результата в кэше приложения. Нужна, чтобы показать «после»
-    /// в сравнении: в медиатеке файл уже живёт своей жизнью.
+    /// Готовый файл в кэше приложения. Пока результат не сохранён, это
+    /// единственное место, где он есть; после сохранения — копия, по которой
+    /// показываем «после» в сравнении.
     public let outputURL: URL?
-    /// Куда результат уехал: медиатека или папка приложения в «Файлах».
+    /// Куда результат уедет, когда его сохранят: медиатека или папка
+    /// приложения в «Файлах».
     public let destination: OutputDestination
 
     public init(
@@ -332,6 +334,18 @@ public struct ProcessingResult: Sendable, Hashable, Identifiable {
     }
 
     public var id: String { item.id }
+
+    /// Тот же результат, но по новому адресу: уехав в «Файлы», файл меняет
+    /// место, и ссылка из кэша после этого никуда не ведёт.
+    public func stored(at url: URL) -> ProcessingResult {
+        ProcessingResult(
+            item: item,
+            outputByteCount: outputByteCount,
+            outputName: outputName,
+            outputURL: url,
+            destination: destination
+        )
+    }
 
     public var savedByteCount: Int64 { item.byteCount - outputByteCount }
 

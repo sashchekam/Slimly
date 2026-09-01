@@ -102,7 +102,7 @@ public struct ScanCameraView: View {
                 SlimlyToast(toast)
                     .padding(.horizontal, SlimlySpacing.screenHorizontal)
                     .padding(.bottom, 10)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .transition(.slimlyToast)
             }
 
             hint

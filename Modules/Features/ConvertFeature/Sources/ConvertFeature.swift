@@ -65,6 +65,7 @@ public enum ConvertFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
+                        service: processingService,
                         router: router,
                         preview: { .push(ConvertRoute.preview($0)) }
                     )

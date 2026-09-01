@@ -1,10 +1,12 @@
 import Foundation
 import SlimlyCore
 
-/// Куда попадает готовый файл.
+/// Куда попадает сохранённый файл.
 ///
 /// Фото и видео уходят в медиатеку — там их ищут. Звуку в медиатеке места
 /// нет, поэтому дорожки ложатся в папку приложения, которая видна в «Файлах».
+/// Само раскладывание происходит только по кнопке на экране итога: до неё
+/// результат не покидает рабочую папку.
 struct OutputStore: Sendable {
     private let library: any MediaLibrary
 
@@ -12,8 +14,8 @@ struct OutputStore: Sendable {
         self.library = library
     }
 
-    /// Рабочая папка в кэше: результат нужен ещё и после сохранения —
-    /// на экране сравнения «до / после».
+    /// Рабочая папка в кэше. Здесь результат живёт до сохранения, и здесь же
+    /// остаётся после — на экране сравнения «до / после».
     static var workDirectory: URL {
         URL.cachesDirectory.appending(path: "Slimly/Output", directoryHint: .isDirectory)
     }
@@ -23,8 +25,9 @@ struct OutputStore: Sendable {
         URL.documentsDirectory.appending(path: "Slimly", directoryHint: .isDirectory)
     }
 
-    /// Кэш чистим на старте: файлы прошлых сессий уже сохранены там,
-    /// где им положено, и держать их копии незачем.
+    /// Кэш чистим на старте: сохранённое лежит там, где ему положено,
+    /// а несохранённое человек сохранять не стал — предлагать ему прошлый
+    /// результат новым запуском было бы странно.
     static func clearWorkDirectory() {
         try? FileManager.default.removeItem(at: workDirectory)
     }

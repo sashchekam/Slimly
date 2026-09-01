@@ -29,6 +29,39 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         }
     }
 
+    /// Вынести готовые файлы наружу — по кнопке на экране итога.
+    ///
+    /// Здесь же учитывается статистика: до сохранения ничего не освобождено
+    /// и никуда не положено, а профиль считает сделанное, а не проделанное.
+    public func save(_ outcome: ProcessingOutcome) async -> ProcessingOutcome {
+        var saved: [ProcessingResult] = []
+        var failures = outcome.failures
+
+        for result in outcome.results {
+            do {
+                guard let file = result.outputURL else { throw ProcessingError.outputMissing }
+
+                let stored = try await output.store(
+                    file,
+                    kind: result.item.kind,
+                    name: result.outputName,
+                    destination: result.destination
+                )
+                saved.append(result.stored(at: stored))
+            } catch {
+                failures.append(ProcessingFailure(item: result.item, message: message(for: error)))
+            }
+        }
+
+        let stored = ProcessingOutcome(request: outcome.request, results: saved, failures: failures)
+
+        if !saved.isEmpty {
+            await statsStore.add(stored)
+        }
+
+        return stored
+    }
+
     // MARK: Очередь
 
     private func run(
@@ -74,10 +107,6 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         guard let outcome else {
             continuation.finish()
             return
-        }
-
-        if !outcome.results.isEmpty {
-            await statsStore.add(outcome)
         }
 
         continuation.yield(.finished(outcome))
@@ -371,18 +400,12 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
             )
 
             let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            let stored = try await output.store(
-                file,
-                kind: cover.kind,
-                name: name,
-                destination: .files
-            )
 
             return ProcessingResult(
                 item: cover,
                 outputByteCount: Int64(size),
                 outputName: name,
-                outputURL: stored,
+                outputURL: file,
                 destination: .files
             )
         } catch {
@@ -421,18 +444,12 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
             try await write(file)
 
             let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            let stored = try await output.store(
-                file,
-                kind: item.kind,
-                name: name,
-                destination: destination
-            )
 
             return ProcessingResult(
                 item: item,
                 outputByteCount: Int64(size),
                 outputName: name,
-                outputURL: stored,
+                outputURL: file,
                 destination: destination
             )
         } catch {

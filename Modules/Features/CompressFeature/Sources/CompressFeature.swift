@@ -51,6 +51,7 @@ public enum CompressFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
+                        service: processingService,
                         router: router,
                         preview: { .push(CompressRoute.preview($0)) }
                     )

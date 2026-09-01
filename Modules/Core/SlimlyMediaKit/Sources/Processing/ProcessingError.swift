@@ -10,6 +10,8 @@ enum ProcessingError: LocalizedError {
     case noAudioTrack
     case unsupportedOperation(String)
     case pdfAssemblyFailed
+    /// Сохранять нечего: записанного файла нет.
+    case outputMissing
 
     var errorDescription: String? {
         switch self {
@@ -27,6 +29,8 @@ enum ProcessingError: LocalizedError {
             name
         case .pdfAssemblyFailed:
             "Не удалось собрать PDF из страниц"
+        case .outputMissing:
+            "Готовый файл не найден"
         }
     }
 }

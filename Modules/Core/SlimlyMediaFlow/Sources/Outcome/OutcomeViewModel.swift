@@ -6,27 +6,40 @@ import SlimlyNavigation
 @MainActor
 @Observable
 public final class OutcomeViewModel {
-    public let outcome: ProcessingOutcome
+    /// Итог меняется на месте: сохранение переписывает ссылки на файлы,
+    /// а то, что сохранить не удалось, переезжает в список отказов.
+    public private(set) var outcome: ProcessingOutcome
     /// Что пошло не так при удалении оригиналов. Системный запрос можно
     /// и отклонить — тогда это не ошибка, но сказать об этом нужно.
     public private(set) var deletionMessage: String?
     public private(set) var isDeleting = false
+    public private(set) var isSaving = false
+    public private(set) var isSaved = false
+    /// Подтверждение сохранения. Живёт пару секунд: где искать файлы,
+    /// написано и в подписи под списком — тост только отмечает момент.
+    public private(set) var toast: String?
 
     private let library: any MediaLibrary
+    private let service: any MediaProcessingService
     private let router: Router
     /// Просмотр результата — не обязательная часть флоу: маршрут приходит
     /// опциональным, и без него нет ни перехода по строке, ни подсказки
     /// под списком.
     private let preview: ((ProcessingResult) -> FlowDestination)?
 
+    @ObservationIgnored
+    private var toastTask: Task<Void, Never>?
+
     public init(
         outcome: ProcessingOutcome,
         library: any MediaLibrary,
+        service: any MediaProcessingService,
         router: Router,
         preview: ((ProcessingResult) -> FlowDestination)? = nil
     ) {
         self.outcome = outcome
         self.library = library
+        self.service = service
         self.router = router
         self.preview = preview
     }
@@ -66,9 +79,11 @@ public final class OutcomeViewModel {
         return FlowCopy.summary(outcome)
     }
 
+    /// В список отказов попадает и то, что не обработалось, и то, что
+    /// не сохранилось, — поэтому в заголовке нет ни того ни другого слова.
     public var failureSummary: String? {
         guard !failures.isEmpty else { return nil }
-        return "Не удалось обработать: \(CountFormatter.string(failures.count, .file))"
+        return "Не удалось: \(CountFormatter.string(failures.count, .file))"
     }
 
     // MARK: Список файлов
@@ -121,10 +136,94 @@ public final class OutcomeViewModel {
 
     public var shareAllTitle: String { "Поделиться всеми · \(shareURLs.count)" }
 
+    // MARK: Сохранение
+
+    /// Куда уедут файлы. Внутри одного заказа место всегда одно: у сжатия
+    /// и конвертации — медиатека, у дорожек и сканов — «Файлы».
+    public var destination: OutputDestination {
+        results.first?.destination ?? .photoLibrary
+    }
+
+    /// Кнопка живёт до первого успеха: второй раз она сохранила бы вторую
+    /// копию, а выключенная с надписью «Сохранено» осталась бы на экране
+    /// мёртвой. После сохранения её место занимает «Готово».
+    public var showsSaveButton: Bool { !results.isEmpty && !isSaved }
+
+    /// Подпись под списком, наоборот, никуда не уходит: до сохранения она
+    /// предупреждает, после — остаётся единственным местом, где написано,
+    /// куда легли файлы, когда тост погаснет.
+    public var showsSaveNote: Bool { !results.isEmpty }
+
+    public var saveTitle: String {
+        switch destination {
+        case .photoLibrary: "Сохранить в галерею"
+        case .files: "Сохранить в «Файлы»"
+        }
+    }
+
+    /// Подпись у кнопки. До сохранения важнее предупредить, после —
+    /// сказать, где искать файлы.
+    public var saveNote: String {
+        guard isSaved else {
+            return "Пока файлы живут только внутри приложения — без сохранения они пропадут"
+        }
+
+        switch destination {
+        case .photoLibrary: return "Сохранено в галерею"
+        case .files: return "Сохранено в папку «Slimly» в «Файлах»"
+        }
+    }
+
+    /// Сохранение — отдельное действие человека, а не хвост обработки:
+    /// до нажатия ни один готовый файл наружу не выходит.
+    public func save() {
+        guard !isSaving, !isSaved, !results.isEmpty else { return }
+        isSaving = true
+
+        let requested = results.count
+
+        Task {
+            let stored = await service.save(outcome)
+            outcome = stored
+            isSaving = false
+
+            guard !stored.results.isEmpty else {
+                say("Сохранить не удалось")
+                return
+            }
+
+            isSaved = true
+            say(stored.results.count < requested ? "Сохранилось не всё" : savedTitle)
+        }
+    }
+
+    /// Куда именно легли файлы — в тосте это главное: подтверждение без места
+    /// ничем не отличалось бы от «готово».
+    private var savedTitle: String {
+        switch destination {
+        case .photoLibrary: "Сохранено в галерею"
+        case .files: "Сохранено в «Файлы»"
+        }
+    }
+
+    /// Тост уходит сам: следующий показ отменяет прошлый отсчёт, иначе
+    /// старый таймер погасил бы новое сообщение раньше срока.
+    private func say(_ text: String) {
+        toastTask?.cancel()
+        toast = text
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(2.6))
+            guard !Task.isCancelled else { return }
+            toast = nil
+        }
+    }
+
     // MARK: Удаление оригиналов
 
+    /// Пока результат не сохранён, оригинал — единственная копия:
+    /// предлагать его удалить в этот момент нельзя.
     public var showsDeleteOriginals: Bool {
-        FlowCopy.offersDeletingOriginals(outcome.kind) && !outcome.isEmpty
+        FlowCopy.offersDeletingOriginals(outcome.kind) && !outcome.isEmpty && isSaved
     }
 
     public var deleteSubtitle: String {
@@ -148,7 +247,7 @@ public final class OutcomeViewModel {
     /// подтверждение показывает система, и до её запроса оригиналы должны
     /// быть уже заменены готовыми файлами.
     public func deleteOriginals() {
-        guard !isDeleting else { return }
+        guard !isDeleting, isSaved else { return }
         isDeleting = true
         deletionMessage = nil
 

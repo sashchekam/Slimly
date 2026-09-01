@@ -3,10 +3,6 @@ import SlimlyNavigation
 import SwiftUI
 
 struct AppRootView: View {
-    /// Смещение, с которого первый экран выезжает вверх. Ход заметный —
-    /// экран именно подаётся снизу, а не подрагивает на месте.
-    private static let appEntryOffset: CGFloat = 130
-
     let container: AppContainer
 
     @State private var isSplashVisible = true
@@ -24,9 +20,6 @@ struct AppRootView: View {
 
             RouterHost(router: container.router, registry: container.registry)
                 .opacity(isAppVisible ? 1 : 0)
-                // Экран не проявляется на месте, а подаётся снизу: движение
-                // задаёт направление передачи от заставки к приложению.
-                .offset(y: isAppVisible ? 0 : Self.appEntryOffset)
 
             #if DEBUG
             DebugAccessOverlay(container: container)
@@ -61,9 +54,6 @@ struct AppRootView: View {
             isSplashMounted = false
         }
 
-        // Пружина с перелётом: экран проскакивает конечную позицию и
-        // возвращается — так подъём читается как живое движение, а не как
-        // равномерная подача кадра по прямой.
-        withAnimation(.smooth(duration: 0.55).delay(0.26)) { isAppVisible = true }
+        withAnimation(.easeInOut(duration: 0.35).delay(0.26)) { isAppVisible = true }
     }
 }

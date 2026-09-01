@@ -91,6 +91,11 @@ public struct ResultPreviewView: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
+                // Кадр вертикального ролика в окне 16:9 свисает за края на
+                // сотни пунктов, и `clipped` убирает свес только с картинки,
+                // но не из хит-теста: невидимая часть накрывает переключатель
+                // «до / после» над окном и глушит его нажатия.
+                .allowsHitTesting(false)
         } else {
             Text(viewModel.placeholderLabel)
                 .font(.slimlyCaptionSmall)

@@ -129,18 +129,7 @@ public struct MediaPickerView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, SlimlySpacing.screenHorizontal)
             .padding(.vertical, 6)
-            .background(SlimlyColor.background)
-            // Растушёвка снизу: плитки уезжают под шапку и гаснут,
-            // а не обрезаются о её край.
-            .overlay(alignment: .bottom) {
-                LinearGradient(
-                    colors: [SlimlyColor.background, SlimlyColor.background.opacity(0)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 10)
-                .offset(y: 10)
-            }
+            .slimlyStickyBackground()
     }
 
     /// Список альбомов — системное меню: у него готовы блюр, галочка
@@ -194,18 +183,18 @@ public struct MediaPickerView: View {
     private var grid: some View {
         LazyVGrid(columns: columns, spacing: 7) {
             ForEach(viewModel.items) { item in
-                Button {
-                    viewModel.toggle(item)
-                } label: {
-                    MediaTile(
-                        item: item,
-                        isSelected: viewModel.isSelected(item),
-                        thumbnail: viewModel.thumbnails,
-                        showsSize: viewModel.config.showsSize
-                    )
-                    .opacity(viewModel.isBlocked(item) ? 0.4 : 1)
-                }
-                .buttonStyle(.plain)
+                // Не `Button`: у плитки есть и контекстное меню, а его длинное
+                // нажатие живёт в UIKit-интеракции и постоянно отбирает у кнопки
+                // отслеживание касания — тап то срабатывает, то нет. Отдельный
+                // жест нажатия с интеракцией уживается.
+                MediaTile(
+                    item: item,
+                    isSelected: viewModel.isSelected(item),
+                    thumbnail: viewModel.thumbnails,
+                    showsSize: viewModel.config.showsSize
+                )
+                .opacity(viewModel.isBlocked(item) ? 0.4 : 1)
+                .onTapGesture { viewModel.toggle(item) }
                 .disabled(viewModel.isBlocked(item))
                 .contextMenu {
                     // Меню без пунктов система не показывает, поэтому выбор

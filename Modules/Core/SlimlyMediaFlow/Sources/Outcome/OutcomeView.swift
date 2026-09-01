@@ -30,6 +30,10 @@ public struct OutcomeView: View {
                         note(hint).padding(.top, -8)
                     }
 
+                    if viewModel.showsSaveNote {
+                        note(viewModel.saveNote)
+                    }
+
                     if !viewModel.failures.isEmpty {
                         failureList
                     }
@@ -47,15 +51,70 @@ public struct OutcomeView: View {
                 .padding(.bottom, 4)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                SlimlyBottomAction {
-                    Button("Готово") { viewModel.finish() }
-                        .buttonStyle(.slimlyOutline)
-                }
+                bottomBar
             }
         }
         .slimlyScreen()
         // Возвращаться некуда: позади — экран уже закончившейся обработки.
         .backSwipeDisabled()
+    }
+
+    /// Тост живёт над кнопками, а не у нижнего края: общий `slimlyToast`
+    /// накрыл бы собой действие, которое его и вызвало.
+    private var bottomBar: some View {
+        VStack(spacing: 0) {
+            if let toast = viewModel.toast {
+                SlimlyToast(toast, icon: viewModel.isSaved ? .check : nil)
+                    .padding(.horizontal, SlimlySpacing.screenHorizontal)
+                    .padding(.bottom, 12)
+                    .transition(.slimlyToast)
+            }
+
+            SlimlyBottomAction {
+                VStack(spacing: 10) {
+                    if viewModel.showsSaveButton {
+                        saveButton
+                            // Кнопка не пропадает рывком, а сжимается вверх,
+                            // пока на её месте всплывает тост: это один жест,
+                            // а не два независимых.
+                            .transition(.scale(scale: 0.96).combined(with: .opacity))
+                    }
+
+                    // После сохранения главным действием остаётся выход,
+                    // и акцент переезжает на него.
+                    Button("Готово") { viewModel.finish() }
+                        .buttonStyle(SlimlyOutlineButtonStyle(emphasis: viewModel.isSaved ? .tinted : .plain))
+                }
+            }
+        }
+        .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.toast)
+        .animation(.spring(response: 0.38, dampingFraction: 0.88), value: viewModel.isSaved)
+    }
+
+    /// Главное действие экрана: до нажатия результат существует только
+    /// внутри приложения, и наружу его выносит именно эта кнопка. Сделав своё
+    /// дело, она уходит — подтверждает тост, а место назначения остаётся
+    /// написанным в подписи под списком.
+    private var saveButton: some View {
+        Button {
+            viewModel.save()
+        } label: {
+            HStack(spacing: 9) {
+                if viewModel.isSaving {
+                    ProgressView().controlSize(.small)
+                } else {
+                    SlimlyIcon(saveIcon, width: 17)
+                }
+
+                Text(viewModel.saveTitle)
+            }
+        }
+        .buttonStyle(.slimlyPrimary)
+        .disabled(viewModel.isSaving)
+    }
+
+    private var saveIcon: SlimlyIcon.Kind {
+        viewModel.destination == .photoLibrary ? .gallery : .folder
     }
 
     private var summary: some View {

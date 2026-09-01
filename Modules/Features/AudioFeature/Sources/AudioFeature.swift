@@ -6,7 +6,7 @@ import SlimlyNavigation
 /// Точка сборки флоу «извлечь звук».
 ///
 /// От конвертации отличается сутью, а не экранами: исходное видео остаётся
-/// нетронутым, а дорожка сохраняется отдельным файлом — поэтому здесь нет
+/// нетронутым, а дорожка становится отдельным файлом — поэтому здесь нет
 /// предложения удалить оригиналы.
 public enum AudioFeature {
     @MainActor
@@ -68,6 +68,7 @@ public enum AudioFeature {
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
                         library: mediaLibrary,
+                        service: processingService,
                         router: router,
                         // Дорожку слушают шторкой поверх итога: уходить
                         // с экрана ради одной кнопки «играть» незачем.
@@ -86,7 +87,7 @@ public enum AudioFeature {
 
     private static let pickerConfig = MediaPickerConfig(
         title: "Извлечь звук",
-        hint: "Дорожку сохраним отдельным файлом",
+        hint: "Дорожка станет отдельным файлом",
         kind: .video,
         limit: 3,
         noun: .video
