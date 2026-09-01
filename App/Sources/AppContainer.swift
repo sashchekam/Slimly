@@ -144,10 +144,10 @@ final class AppContainer {
     }
 
     /// Диплинк — это одно присвоение состояния: маршруты раскладываются
-    /// в корень и стек, SwiftUI сам дорисовывает иерархию.
+    /// в корень, стек и модалку, SwiftUI сам дорисовывает иерархию.
     func handle(_ deeplink: DeeplinkURL) {
-        guard let routes = deeplinks.routes(for: deeplink) else { return }
-        router.replace(with: routes)
+        guard let destination = deeplinks.destination(for: deeplink) else { return }
+        router.apply(destination)
     }
 
     #if DEBUG

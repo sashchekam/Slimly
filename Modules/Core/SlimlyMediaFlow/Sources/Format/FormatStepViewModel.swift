@@ -51,18 +51,23 @@ public final class FormatStepViewModel {
     private let router: Router
     private let run: (ProcessingRequest) -> any Route
     private let thumbnailLoader: MediaThumbnailLoader
+    /// Просмотр исходника — не обязательная часть шага: без маршрута строка
+    /// списка остаётся подписью, а не кнопкой.
+    private let preview: ((MediaItem) -> FlowDestination)?
 
     public init(
         config: FormatStepConfig,
         items: [MediaItem],
         router: Router,
         thumbnails: @escaping MediaThumbnailLoader,
+        preview: ((MediaItem) -> FlowDestination)? = nil,
         run: @escaping (ProcessingRequest) -> any Route
     ) {
         self.config = config
         self.items = items
         self.router = router
         thumbnailLoader = thumbnails
+        self.preview = preview
         self.run = run
         // Исходный формат из списка убираем: «сконвертировать HEIC в HEIC» —
         // не выбор, а недоразумение.
@@ -125,6 +130,15 @@ public final class FormatStepViewModel {
             operation: config.makeOperation(selectedFormat),
             sourceFormat: config.sourceFormat
         )
+    }
+
+    public var allowsPreview: Bool { preview != nil }
+
+    /// Кадр в списке — 33 пункта: по нему видно, что файл выбран, но не то,
+    /// что на нём. Поэтому строка открывает оригинал целиком.
+    public func openPreview(_ item: MediaItem) {
+        guard let preview else { return }
+        router.go(to: preview(item))
     }
 
     public func goBack() {

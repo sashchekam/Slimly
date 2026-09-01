@@ -36,8 +36,20 @@ public enum AudioFeature {
                         items: items,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
+                        preview: { .push(AudioRoute.sourcePreview($0)) },
                         run: { AudioRoute.run($0) }
                     )
+                )
+
+            case let .sourcePreview(item):
+                SourcePreviewView(
+                    viewModel: SourcePreviewViewModel(
+                        item: item,
+                        library: mediaLibrary,
+                        router: router
+                    ),
+                    viewer: fileViewer,
+                    player: mediaPlayer
                 )
 
             case let .run(request):

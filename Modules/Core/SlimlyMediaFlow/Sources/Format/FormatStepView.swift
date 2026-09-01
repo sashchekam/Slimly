@@ -102,13 +102,34 @@ public struct FormatStepView: View {
     private var fileList: some View {
         SlimlyRowGroup {
             ForEach(viewModel.items) { item in
-                MediaFileRow(
-                    item: item,
-                    name: item.fileName,
-                    detail: viewModel.detail(for: item),
-                    thumbnail: viewModel.thumbnails
-                )
+                // Кнопкой строка становится, только если просмотр есть:
+                // иначе она осталась бы нажимаемой в никуда.
+                if viewModel.allowsPreview {
+                    Button {
+                        viewModel.openPreview(item)
+                    } label: {
+                        row(for: item, showsPreview: true)
+                            // Без своей формы кнопка ловит нажатие только по
+                            // тексту и картинке — промежутки между ними
+                            // проваливались бы мимо, хотя выглядят частью
+                            // той же строки.
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    row(for: item, showsPreview: false)
+                }
             }
         }
+    }
+
+    private func row(for item: MediaItem, showsPreview: Bool) -> some View {
+        MediaFileRow(
+            item: item,
+            name: item.fileName,
+            detail: viewModel.detail(for: item),
+            thumbnail: viewModel.thumbnails,
+            showsPreview: showsPreview
+        )
     }
 }

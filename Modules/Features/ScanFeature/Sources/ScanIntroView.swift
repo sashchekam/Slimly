@@ -1,7 +1,12 @@
 import SwiftUI
 import SlimlyDesignSystem
+import SlimlyNavigation
 
 /// Выбор источника страниц: камера или галерея.
+///
+/// Шторка, а не экран: выбрать источник — это одно касание, и ради него
+/// уводить с хаба незачем. По тапу шторка уходит, а на её месте
+/// открывается уже сам источник.
 public struct ScanIntroView: View {
     @State private var viewModel: ScanIntroViewModel
 
@@ -10,58 +15,43 @@ public struct ScanIntroView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 0) {
-            SlimlyNavigationBar(onBack: { viewModel.goBack() })
+        SlimlySheetScaffold(
+            title: "Скан документа",
+            onCancel: { viewModel.cancel() }
+        ) {
+            VStack(alignment: .leading, spacing: 15) {
+                Text("Найдём границы листа, выпрямим страницу и соберём в PDF — рамку можно поправить вручную")
+                    .font(.slimlyBodySmall)
+                    .foregroundStyle(SlimlyColor.neutral400)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 15) {
-                    header
-
-                    Button {
-                        viewModel.openCamera()
-                    } label: {
-                        SourceRow(
-                            icon: .camera,
-                            title: "Снять на камеру",
-                            subtitle: "Границы страницы ловим автоматически",
-                            isAccented: true
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        viewModel.openGallery()
-                    } label: {
-                        SourceRow(
-                            icon: .gallery,
-                            title: "Выбрать фото",
-                            subtitle: "До 5 страниц из галереи",
-                            isAccented: false
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Text("Скан кладём в Файлы, оригиналы не трогаем")
-                        .font(.slimlyCaptionSmall)
-                        .foregroundStyle(SlimlyColor.neutral600)
+                Button {
+                    viewModel.openCamera()
+                } label: {
+                    SourceRow(
+                        icon: .camera,
+                        title: "Снять на камеру",
+                        subtitle: "Границы ловим на лету, поправить можно после",
+                        isAccented: true
+                    )
                 }
-                .padding(.horizontal, SlimlySpacing.screenHorizontal)
-                .padding(.bottom, 6)
-            }
-        }
-        .slimlyScreen()
-    }
+                .buttonStyle(.plain)
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Скан документа")
-                .font(.slimlyTitle)
-                .tracking(SlimlyTracking.title)
-            Text("Выпрямим страницу, уберём фон и соберём в PDF")
-                .font(.slimlyBodySmall)
-                .foregroundStyle(SlimlyColor.neutral400)
-                .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    viewModel.openGallery()
+                } label: {
+                    SourceRow(
+                        icon: .gallery,
+                        title: "Выбрать фото",
+                        subtitle: "До \(ScanFeature.pageLimit) страниц из галереи",
+                        isAccented: false
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .sheetHeight(310)
     }
 }
 

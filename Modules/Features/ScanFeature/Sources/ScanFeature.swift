@@ -35,20 +35,44 @@ public enum ScanFeature {
                         config: pickerConfig,
                         library: mediaLibrary,
                         router: router,
-                        destination: { .push(ScanRoute.format(items: $0)) }
+                        destination: { .push(ScanRoute.pages(items: $0)) }
                     ),
                     player: mediaPlayer
                 )
 
-            case let .format(items):
+            case let .pages(items):
+                ScanPagesView(
+                    viewModel: ScanPagesViewModel(
+                        items: items,
+                        detector: boundsDetector,
+                        thumbnails: mediaLibrary.thumbnailLoader,
+                        router: router
+                    )
+                )
+
+            case let .format(items, bounds):
                 FormatStepView(
                     viewModel: FormatStepViewModel(
-                        config: formatConfig,
+                        config: formatConfig(bounds: bounds),
                         items: items,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
+                        preview: { .push(ScanRoute.sourcePreview($0)) },
                         run: { ScanRoute.run($0) }
                     )
+                )
+
+            case let .sourcePreview(item):
+                SourcePreviewView(
+                    viewModel: SourcePreviewViewModel(
+                        item: item,
+                        library: mediaLibrary,
+                        // Вес страницы не показываем и здесь: в списке
+                        // его нет, и в просмотре ему взяться неоткуда.
+                        showsSize: false,
+                        router: router
+                    ),
+                    player: mediaPlayer
                 )
 
             case let .run(request):
@@ -87,6 +111,11 @@ public enum ScanFeature {
         }
     }
 
+    /// Поиск листа в снимке. Собирается здесь же, где и камера: это часть
+    /// механики скана, а не общий сервис приложения — больше он никому
+    /// не нужен.
+    private static let boundsDetector = VisionDocumentBoundsDetector()
+
     /// Сколько страниц берём за раз — и в галерее, и с камеры.
     ///
     /// Предел один на оба источника: это ограничение документа, а не способа
@@ -106,18 +135,23 @@ public enum ScanFeature {
 
     /// Режим — это вид страницы: у трёх вариантов одна и та же обработка,
     /// но разное количество цвета на выходе.
-    private static let formatConfig = FormatStepConfig(
-        title: "Как собрать скан",
-        note: """
-        Границы листа находим сами, кадр выпрямляем, фон добиваем до белого. \
-        Ч/б даёт самый чёткий текст, цвет нужен печатям и картинкам. \
-        Документ ляжет в «Файлы» — оригиналы останутся в медиатеке.
-        """,
-        actionTitle: "Собрать скан",
-        sourceFormat: "Фото",
-        formats: ScanMode.allCases.map { MediaFormat(target: .document($0)) },
-        noun: .page,
-        showsSize: false,
-        makeOperation: { .scan($0) }
-    )
+    ///
+    /// Границы приезжают с предыдущего шага и уходят в задание: обработка
+    /// не должна искать лист заново — рамку человек уже видел и принял.
+    private static func formatConfig(bounds: ScanBounds) -> FormatStepConfig {
+        FormatStepConfig(
+            title: "Как собрать скан",
+            note: """
+            Кадр выпрямляем по выбранным границам, фон добиваем до белого. \
+            Ч/б даёт самый чёткий текст, цвет нужен печатям и картинкам. \
+            Документ ляжет в «Файлы» — оригиналы останутся в медиатеке.
+            """,
+            actionTitle: "Собрать скан",
+            sourceFormat: "Фото",
+            formats: ScanMode.allCases.map { MediaFormat(target: .document($0)) },
+            noun: .page,
+            showsSize: false,
+            makeOperation: { .scan($0, bounds: bounds) }
+        )
+    }
 }

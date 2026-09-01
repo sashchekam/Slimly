@@ -186,10 +186,6 @@ public final class MediaPickerViewModel {
     public func proceed() {
         guard hasSelection else { return }
 
-        switch destination(selection) {
-        case let .push(route): router.push(route)
-        case let .present(route): router.present(route)
-        case let .cover(route): router.cover(route)
-        }
+        router.go(to: destination(selection))
     }
 }

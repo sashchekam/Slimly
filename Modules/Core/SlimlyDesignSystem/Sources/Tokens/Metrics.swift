@@ -21,6 +21,8 @@ public enum SlimlyRadius {
     /// Плитки галереи и мелкие превью.
     public static let tile: CGFloat = 10
     public static let thumbnail: CGFloat = 8
+    /// Верхние углы нижней шторки.
+    public static let sheet: CGFloat = 22
     /// Полностью скруглённые элементы: тумблеры, пилюли, прогресс-полосы.
     public static let pill: CGFloat = 999
 }

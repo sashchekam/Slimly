@@ -81,45 +81,47 @@ extension Double {
     var clampedToUnitInterval: Double { min(max(self, 0), 1) }
 }
 
-/// Бесконечный индикатор загрузки: акцентная дуга, тающая в хвосте, по тёмному
-/// ободу. Системный `ProgressView` в Nocturne выглядит чужим — он берёт
-/// толщину и цвет от платформы, а не от токенов.
+/// Бесконечный индикатор загрузки: разомкнутое кольцо, у которого хвост
+/// растворяется в фоне, плюс мягкое свечение под ним. Системный `ProgressView`
+/// в Nocturne выглядит чужим — он берёт толщину и цвет от платформы,
+/// а не от токенов.
 public struct SlimlySpinner: View {
     private let size: CGFloat
     private let lineWidth: CGFloat
 
     @State private var isSpinning = false
 
-    public init(size: CGFloat = 30, lineWidth: CGFloat = 3) {
+    /// Толщина по умолчанию — десятая часть диаметра: так кольцо весит
+    /// одинаково и на 24 пунктах в плеере, и на 60 в пустом экране.
+    public init(size: CGFloat = 30, lineWidth: CGFloat? = nil) {
         self.size = size
-        self.lineWidth = lineWidth
+        self.lineWidth = lineWidth ?? size / 10
     }
 
     public var body: some View {
-        ZStack {
-            Circle()
-                .strokeBorder(SlimlyColor.neutral900, lineWidth: lineWidth)
-
-            Circle()
-                .inset(by: lineWidth / 2)
-                .trim(from: 0, to: 0.3)
-                .stroke(
-                    AngularGradient(
-                        colors: [SlimlyColor.accent.opacity(0), SlimlyColor.accent],
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
-                )
-                .rotationEffect(.degrees(isSpinning ? 360 : 0))
-        }
-        .frame(width: size, height: size)
-        .onAppear {
-            // Анимация ставится в onAppear, а не в инициализаторе состояния:
-            // иначе при повторном показе вью вращение не перезапускается.
-            withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {
-                isSpinning = true
+        Circle()
+            .trim(from: 0.15, to: 0.85)
+            .stroke(
+                // Шов градиента уводим в разрыв кольца (он сверху): иначе
+                // на дуге виден скачок от тёмного хвоста к светлой голове.
+                AngularGradient(
+                    gradient: Gradient(colors: [SlimlyColor.accent200, SlimlyColor.accent700]),
+                    center: .center,
+                    angle: .degrees(-90)
+                ),
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+            )
+            .padding(lineWidth / 2)
+            .frame(width: size, height: size)
+            .rotationEffect(.degrees(isSpinning ? 360 : 0))
+            .shadow(color: SlimlyColor.accent.opacity(0.35), radius: size / 4)
+            .onAppear {
+                // Анимация ставится в onAppear, а не в инициализаторе состояния:
+                // иначе при повторном показе вью вращение не перезапускается.
+                withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) {
+                    isSpinning = true
+                }
             }
-        }
-        .accessibilityLabel("Загрузка")
+            .accessibilityLabel("Загрузка")
     }
 }

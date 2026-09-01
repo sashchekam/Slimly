@@ -123,7 +123,7 @@ public final class ScanCameraViewModel {
         router.dismiss()
     }
 
-    /// Дальше страницы идут общим путём флоу, поэтому шаг «в какой формат»
+    /// Дальше страницы идут общим путём флоу, поэтому шаг с границами
     /// встаёт в стек под камерой, а не внутри неё.
     public func finish() {
         guard hasPages else { return }
@@ -133,7 +133,7 @@ public final class ScanCameraViewModel {
 
         let parent = router.parent ?? router
         router.dismiss()
-        parent.push(ScanRoute.format(items: pages))
+        parent.push(ScanRoute.pages(items: pages))
     }
 
     // MARK: Сообщения

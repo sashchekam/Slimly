@@ -9,7 +9,11 @@ public enum ScanRoute: Route {
     /// свой полноэкранный мир без шапки и полей.
     case camera
     case picker
-    case format(items: [MediaItem])
+    /// Границы страниц: что нашла автоматика и что поправил человек.
+    case pages(items: [MediaItem])
+    case format(items: [MediaItem], bounds: ScanBounds)
+    /// Просмотр страницы до сборки документа.
+    case sourcePreview(MediaItem)
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
     /// Просмотр собранного документа с экрана итога.

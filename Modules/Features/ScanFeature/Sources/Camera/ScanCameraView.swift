@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import SlimlyCore
 import SlimlyDesignSystem
 import SlimlyMediaKit
 

@@ -4,7 +4,6 @@ import CoreImage.CIFilterBuiltins
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
-import Vision
 import SlimlyCore
 
 /// Превращение снимка страницы в страницу скана.
@@ -21,22 +20,20 @@ enum DocumentScanner {
     /// не открыть на телефоне.
     private static let maxPageSide: CGFloat = 2000
 
-    /// Ниже этой доли кадра найденный «документ» — не документ, а какой-то
-    /// прямоугольник на столе. Тогда честнее взять кадр целиком.
-    private static let minDocumentArea = 0.15
-
     /// Контекст один на все страницы: он держит текстурный кэш и скомпилированные
     /// шейдеры, и создавать его на каждую страницу — платить за это заново.
     private static let context = CIContext(options: [.cacheIntermediates: false])
 
-    static func page(at source: URL, mode: ScanMode) throws -> ScannedPage {
+    /// - Parameter quad: границы листа, выбранные до обработки. `nil` —
+    ///   их никто не задавал, и лист ищем сами.
+    static func page(at source: URL, mode: ScanMode, quad: DocumentQuad? = nil) throws -> ScannedPage {
         // Ориентацию применяем при чтении: снимок с телефона почти всегда
         // лежит в файле боком, а Vision ищет документ в том кадре, что видит.
         guard let input = CIImage(contentsOf: source, options: [.applyOrientationProperty: true]) else {
             throw ProcessingError.unreadableSource
         }
 
-        let page = enhance(downscaled(corrected(input)), mode: mode)
+        let page = enhance(downscaled(corrected(input, quad: quad)), mode: mode)
 
         guard
             let image = context.createCGImage(
@@ -61,30 +58,21 @@ enum DocumentScanner {
 
     // MARK: Границы страницы
 
-    /// Выпрямить лист по найденным углам.
+    /// Выпрямить лист по его углам.
     ///
-    /// Документ не найден — возвращаем кадр как есть: обрезать наугад хуже,
-    /// чем оставить поля. Пользователь увидит свою страницу, просто с фоном.
-    private static func corrected(_ image: CIImage) -> CIImage {
-        let request = VNDetectDocumentSegmentationRequest()
-        let handler = VNImageRequestHandler(ciImage: image, options: [:])
-        try? handler.perform([request])
+    /// Границы приходят с экрана правки, а если их там не задали — ищем сами.
+    /// Не нашли и сами — возвращаем кадр как есть: обрезать наугад хуже, чем
+    /// оставить поля. Пользователь увидит свою страницу, просто с фоном.
+    private static func corrected(_ image: CIImage, quad: DocumentQuad?) -> CIImage {
+        guard let quad = quad ?? DocumentQuad.detected(in: image) else { return image }
 
-        guard
-            let quad = request.results?.first,
-            quad.confidence > 0.5,
-            quad.boundingBox.width * quad.boundingBox.height > minDocumentArea
-        else {
-            return image
-        }
-
-        // Vision отдаёт доли кадра и, как и CoreImage, считает от левого
-        // нижнего угла — переворачивать ось не нужно, только размасштабировать.
+        // Доли считаются от левого верхнего угла, а CoreImage — от левого
+        // нижнего: переворачиваем ось на входе в фильтр.
         let extent = image.extent
         func point(_ normalized: CGPoint) -> CGPoint {
             CGPoint(
                 x: extent.origin.x + normalized.x * extent.width,
-                y: extent.origin.y + normalized.y * extent.height
+                y: extent.origin.y + (1 - normalized.y) * extent.height
             )
         }
 

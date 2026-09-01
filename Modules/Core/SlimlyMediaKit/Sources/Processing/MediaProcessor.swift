@@ -54,10 +54,11 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         // Скан идёт своей дорогой: из пачки снимков получается один документ,
         // а не файл на каждый файл, — и поштучная очередь для него не годится.
         let outcome: ProcessingOutcome?
-        if case let .scan(format) = request.operation, case let .document(mode) = format.target {
+        if case let .scan(format, bounds) = request.operation, case let .document(mode) = format.target {
             outcome = await assembleScan(
                 request,
                 mode: mode,
+                bounds: bounds,
                 tracker: tracker,
                 simulatedFailure: simulatedFailure
             )
@@ -292,6 +293,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
     private func assembleScan(
         _ request: ProcessingRequest,
         mode: ScanMode,
+        bounds: ScanBounds,
         tracker: ProgressTracker,
         simulatedFailure: String?
     ) async -> ProcessingOutcome? {
@@ -308,7 +310,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
             }
 
             do {
-                let page = try await preparePage(item, mode: mode)
+                let page = try await preparePage(item, mode: mode, quad: bounds[item])
                 prepared.append((item, page))
                 tracker.update(index: index, fraction: Self.pagePreparationShare)
             } catch is CancellationError {
@@ -340,10 +342,14 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         }
     }
 
-    private func preparePage(_ item: MediaItem, mode: ScanMode) async throws -> ScannedPage {
+    private func preparePage(
+        _ item: MediaItem,
+        mode: ScanMode,
+        quad: DocumentQuad?
+    ) async throws -> ScannedPage {
         let source = try await library.exportOriginal(item)
         defer { try? FileManager.default.removeItem(at: source) }
-        return try DocumentScanner.page(at: source, mode: mode)
+        return try DocumentScanner.page(at: source, mode: mode, quad: quad)
     }
 
     /// Документ ложится в «Файлы»: PDF в медиатеке не место, да iOS туда его

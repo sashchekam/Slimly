@@ -33,8 +33,20 @@ public enum ConvertFeature {
                         items: items,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
+                        preview: { .push(ConvertRoute.sourcePreview($0)) },
                         run: { ConvertRoute.run($0) }
                     )
+                )
+
+            case let .sourcePreview(item):
+                SourcePreviewView(
+                    viewModel: SourcePreviewViewModel(
+                        item: item,
+                        library: mediaLibrary,
+                        router: router
+                    ),
+                    viewer: fileViewer,
+                    player: mediaPlayer
                 )
 
             case let .run(request):

@@ -36,7 +36,11 @@ enum HomeTools {
             title: "Скан документа",
             subtitle: "Фото или камера → PDF",
             icon: .scan,
-            route: ScanRoute.intro
+            // Первый шаг скана — выбор источника, а не экран работы:
+            // шторка над хабом, из которой уже открывается камера
+            // или галерея.
+            route: ScanRoute.intro,
+            presentation: .sheet
         ),
         HomeTool(
             id: "audio",

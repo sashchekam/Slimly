@@ -1,6 +1,7 @@
 import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SlimlyNavigation
 
 /// Шторка «Степень сжатия»: ползунок, оценка веса и запуск.
 public struct LevelSheetView: View {
@@ -13,7 +14,6 @@ public struct LevelSheetView: View {
     public var body: some View {
         SlimlySheetScaffold(
             title: "Степень сжатия",
-            height: 420,
             onCancel: { viewModel.cancel() }
         ) {
             VStack(spacing: 18) {
@@ -24,6 +24,7 @@ public struct LevelSheetView: View {
                     .buttonStyle(.slimlyPrimary)
             }
         }
+        .sheetHeight(420)
     }
 
     private var slider: some View {
@@ -45,6 +46,7 @@ public struct LevelSheetView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, SlimlyLevelSlider.edgeInset)
 
             SlimlyLevelSlider(value: $viewModel.level.value, stops: viewModel.presets.count)
 

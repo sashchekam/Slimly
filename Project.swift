@@ -31,6 +31,14 @@ let project = Project(
                 "UIFileSharingEnabled": true,
                 "LSSupportsOpeningDocumentsInPlace": true,
                 "UIUserInterfaceStyle": "Dark",
+                // Все экраны свёрстаны под вертикаль, а камера скана рассчитывает
+                // на портретный кадр — поворот только ломает раскладку.
+                "UISupportedInterfaceOrientations": [
+                    "UIInterfaceOrientationPortrait",
+                ],
+                "UISupportedInterfaceOrientations~ipad": [
+                    "UIInterfaceOrientationPortrait",
+                ],
                 "CFBundleURLTypes": [
                     [
                         "CFBundleTypeRole": "Editor",

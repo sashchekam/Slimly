@@ -141,11 +141,7 @@ public final class OutcomeViewModel {
     public func openPreview(_ result: ProcessingResult) {
         guard let preview, canPreview(result) else { return }
 
-        switch preview(result) {
-        case let .push(route): router.push(route)
-        case let .present(route): router.present(route)
-        case let .cover(route): router.cover(route)
-        }
+        router.go(to: preview(result))
     }
 
     /// Удаление — отдельный шаг после итога, а не часть обработки:

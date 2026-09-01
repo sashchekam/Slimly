@@ -58,10 +58,11 @@ enum DeeplinkMap {
         return [HomeRoute.home, AudioRoute.picker]
     }
 
-    /// `slimly://scan`
+    /// `slimly://scan` — выбор источника шторкой над хабом, ровно так же,
+    /// как он открывается с карточки: ссылка не должна вести другим путём.
     private static let scan: DeeplinkRegistry.Mapper = { deeplink in
         guard deeplink.host == "scan", deeplink.pathComponents.isEmpty else { return nil }
-        return [HomeRoute.home, ScanRoute.intro]
+        return DeeplinkDestination(routes: [HomeRoute.home], sheet: ScanRoute.intro)
     }
 
     /// `slimly://profile`

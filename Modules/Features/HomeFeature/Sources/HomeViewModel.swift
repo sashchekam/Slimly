@@ -28,7 +28,7 @@ public final class HomeViewModel {
     }
 
     public func open(_ tool: HomeTool) {
-        router.push(tool.route)
+        router.show(tool.route, as: tool.presentation)
     }
 
     public func openProfile() {

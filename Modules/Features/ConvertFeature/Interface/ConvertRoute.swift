@@ -13,6 +13,8 @@ public enum ConvertKind: String, Sendable, Hashable, CaseIterable {
 public enum ConvertRoute: Route {
     case picker(ConvertKind)
     case format(kind: ConvertKind, items: [MediaItem])
+    /// Просмотр исходного файла с шага выбора формата.
+    case sourcePreview(MediaItem)
     case run(ProcessingRequest)
     case outcome(ProcessingOutcome)
     /// Просмотр одного готового файла с экрана итога.

@@ -2,11 +2,12 @@ import SwiftUI
 
 /// Обвязка нижней шторки: ручка, поверхность и заголовок с «Отменой».
 ///
-/// Высота фиксирована макетом, но контент лежит в скролле: при крупном
+/// Высоту экран объявляет сам — модификатором `sheetHeight` из
+/// SlimlyNavigation: изнутри слоя `presentationDetents` до шита не доходит,
+/// и применить его может только хост. Контент лежит в скролле: при крупном
 /// системном шрифте шторка не должна обрезать кнопку действия.
 public struct SlimlySheetScaffold<Content: View>: View {
     private let title: String
-    private let height: CGFloat
     /// Подпись кнопки закрытия. У шторки-настройки это «Отмена», но там,
     /// где отменять нечего — просмотр готового файла, — уместно «Готово».
     private let closeTitle: String
@@ -15,13 +16,11 @@ public struct SlimlySheetScaffold<Content: View>: View {
 
     public init(
         title: String,
-        height: CGFloat,
         closeTitle: String = "Отмена",
         onCancel: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
-        self.height = height
         self.closeTitle = closeTitle
         self.onCancel = onCancel
         self.content = content()
@@ -59,9 +58,19 @@ public struct SlimlySheetScaffold<Content: View>: View {
         .padding(.bottom, 30)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .foregroundStyle(SlimlyColor.text)
-        .presentationDetents([.height(height)])
+        // Поверхность рисуем сами: `presentationBackground` изнутри слоя до
+        // шита не доходит, как и `presentationDetents`. Фон уходит под
+        // домашний индикатор — иначе у нижнего края остаётся полоса окна.
+        .background {
+            UnevenRoundedRectangle(
+                topLeadingRadius: SlimlyRadius.sheet,
+                topTrailingRadius: SlimlyRadius.sheet,
+                style: .continuous
+            )
+            .fill(SlimlyColor.sheet)
+            .ignoresSafeArea(edges: .bottom)
+        }
         .presentationDragIndicator(.hidden)
-        .presentationBackground(SlimlyColor.sheet)
-        .presentationCornerRadius(22)
+        .presentationCornerRadius(SlimlyRadius.sheet)
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import SlimlyDesignSystem
 import SlimlyMediaFlow
+import SlimlyNavigation
 
 /// Шторка с готовой дорожкой: огибающая и одна кнопка — больше о звуке
 /// сказать нечем, а вес и формат уже стоят в строке итога.
@@ -22,12 +23,12 @@ public struct AudioPreviewSheetView: View {
     public var body: some View {
         SlimlySheetScaffold(
             title: viewModel.title,
-            height: 262,
             closeTitle: "Готово",
             onCancel: { viewModel.close() }
         ) {
             player
         }
+        .sheetHeight(262)
     }
 
     @ViewBuilder

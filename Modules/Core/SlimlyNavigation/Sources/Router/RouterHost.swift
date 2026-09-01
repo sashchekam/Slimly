@@ -20,11 +20,16 @@ public struct RouterHost: View {
                 }
         }
         .environment(router)
+        // Идентичность слоя — его маршрут: без неё SwiftUI переиспользует
+        // состояние хоста между шитом и кавером, и модалка, открытая взамен
+        // закрывающейся, приезжает с чужим корнем.
         .sheet(item: $router.sheet) { route in
             ModalRouterHost(route: route, parent: router, registry: registry)
+                .id(route)
         }
         .fullScreenCover(item: $router.fullScreenCover) { route in
             ModalRouterHost(route: route, parent: router, registry: registry)
+                .id(route)
         }
     }
 }
@@ -32,6 +37,7 @@ public struct RouterHost: View {
 /// Держит дочерний роутер модалки живым между перерисовками контента.
 private struct ModalRouterHost: View {
     @State private var router: Router
+    @State private var sheetHeight: CGFloat?
     private let registry: RouteRegistry
 
     init(route: AnyRoute, parent: Router, registry: RouteRegistry) {
@@ -41,5 +47,9 @@ private struct ModalRouterHost: View {
 
     var body: some View {
         RouterHost(router: router, registry: registry)
+            .onPreferenceChange(SheetHeightKey.self) { height in
+                if let height { sheetHeight = height }
+            }
+            .presentationDetents(sheetHeight.map { [.height($0)] } ?? [.large])
     }
 }

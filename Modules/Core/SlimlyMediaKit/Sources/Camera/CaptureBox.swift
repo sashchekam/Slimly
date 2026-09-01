@@ -3,6 +3,7 @@ import CoreMedia
 import Foundation
 import QuartzCore
 import Vision
+import SlimlyCore
 
 /// Снятый кадр — ровно то, что нужно унести с очереди камеры на главный поток.
 struct CapturedPhoto: Sendable {
@@ -248,20 +249,5 @@ private final class FrameAnalyzer: NSObject, AVCaptureVideoDataOutputSampleBuffe
             return
         }
         onFrame(DocumentQuad(quad), frame)
-    }
-}
-
-private extension DocumentQuad {
-    /// Vision отдаёт доли кадра от левого нижнего угла — переворачиваем ось.
-    init(_ observation: VNRectangleObservation) {
-        func flipped(_ point: CGPoint) -> CGPoint {
-            CGPoint(x: point.x, y: 1 - point.y)
-        }
-        self.init(
-            topLeft: flipped(observation.topLeft),
-            topRight: flipped(observation.topRight),
-            bottomRight: flipped(observation.bottomRight),
-            bottomLeft: flipped(observation.bottomLeft)
-        )
     }
 }

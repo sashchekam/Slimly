@@ -33,19 +33,61 @@ public final class ProcessingViewModel {
 
     public var thumbnails: MediaThumbnailLoader { thumbnailLoader }
 
+    /// Пара небольших файлов обрабатывается за доли секунды — быстрее, чем
+    /// кольцо успевает проехать хотя бы четверть круга. Экран в таком случае
+    /// мелькает, а анимации обрываются на полпути, поэтому прогресс показываем
+    /// не быстрее темпа «полный круг за это время».
+    private static let minimumRun: Duration = .seconds(2)
+
     /// Экран живёт ровно столько, сколько идёт поток: уход с экрана рвёт
     /// подписку, а вместе с ней — и саму обработку.
     public func run() async {
+        let clock = ContinuousClock()
+        let start = clock.now
+
         for await event in service.process(request) {
             switch event {
             case let .progress(progress):
-                self.progress = progress
+                self.progress = paced(progress, elapsed: clock.now - start)
             case let .finished(result):
+                await settle(start: start, clock: clock)
                 // Экран обработки из истории убираем: возврат с итога должен
                 // вести на главную, а не запускать всё заново.
                 router.setPath([outcome(result)])
             }
         }
+    }
+
+    /// Докручивает кольцо до конца за остаток минимального времени: иначе
+    /// последним кадром был бы скачок с 20% сразу на экран итога.
+    private func settle(start: ContinuousClock.Instant, clock: ContinuousClock) async {
+        let full = ProcessingProgress(
+            overall: 1,
+            items: request.items.map { ItemProgress(id: $0.id, fraction: 1) },
+            estimatedRemaining: .zero
+        )
+
+        while !Task.isCancelled {
+            let elapsed = clock.now - start
+            guard elapsed < Self.minimumRun else { break }
+            progress = paced(full, elapsed: elapsed)
+            try? await Task.sleep(for: .milliseconds(33))
+        }
+
+        progress = full
+    }
+
+    /// Придерживает показ темпом «круг за `minimumRun`». Доли отдельных файлов
+    /// сжимаются тем же коэффициентом, чтобы очередь не разошлась с кольцом.
+    private func paced(_ progress: ProcessingProgress, elapsed: Duration) -> ProcessingProgress {
+        let cap = min(elapsed.seconds / Self.minimumRun.seconds, 1)
+        guard progress.overall > cap else { return progress }
+        let scale = cap / progress.overall
+        return ProcessingProgress(
+            overall: cap,
+            items: progress.items.map { ItemProgress(id: $0.id, fraction: $0.fraction * scale) },
+            estimatedRemaining: progress.estimatedRemaining
+        )
     }
 
     public func cancel() {

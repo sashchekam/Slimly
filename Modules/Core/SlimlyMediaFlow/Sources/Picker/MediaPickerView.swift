@@ -25,17 +25,22 @@ public struct MediaPickerView: View {
             topBar
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 15) {
+                LazyVStack(alignment: .leading, spacing: 9, pinnedViews: [.sectionHeaders]) {
                     header
+                        .padding(.horizontal, SlimlySpacing.screenHorizontal)
 
-                    if viewModel.access.allowsBrowsing {
-                        albumMenu
+                    Section {
+                        VStack(alignment: .leading, spacing: 15) {
+                            content
+                        }
+                        .padding(.horizontal, SlimlySpacing.screenHorizontal)
+                        .padding(.bottom, 6)
+                    } header: {
+                        if viewModel.access.allowsBrowsing {
+                            stickyAlbumMenu
+                        }
                     }
-
-                    content
                 }
-                .padding(.horizontal, SlimlySpacing.screenHorizontal)
-                .padding(.bottom, 6)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 // Панель появляется вместе с первым выбранным файлом, поэтому
@@ -115,6 +120,27 @@ public struct MediaPickerView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: 160)
+    }
+
+    /// Меню альбомов прилипает к верху списка: пролистав сетку, всё ещё видно,
+    /// какой альбом открыт, и сменить его можно не возвращаясь наверх.
+    private var stickyAlbumMenu: some View {
+        albumMenu
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, SlimlySpacing.screenHorizontal)
+            .padding(.vertical, 6)
+            .background(SlimlyColor.background)
+            // Растушёвка снизу: плитки уезжают под шапку и гаснут,
+            // а не обрезаются о её край.
+            .overlay(alignment: .bottom) {
+                LinearGradient(
+                    colors: [SlimlyColor.background, SlimlyColor.background.opacity(0)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 10)
+                .offset(y: 10)
+            }
     }
 
     /// Список альбомов — системное меню: у него готовы блюр, галочка

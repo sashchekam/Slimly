@@ -220,7 +220,10 @@ public enum ProcessingOperation: Sendable, Hashable {
     case compress(CompressionLevel)
     case convert(MediaFormat)
     case extractAudio(MediaFormat)
-    case scan(MediaFormat)
+    /// Сборка PDF из страниц. Границы листа идут вместе с форматом: их
+    /// либо нашла автоматика, либо поправил человек, и обработка не должна
+    /// гадать, чьи они, — она просто берёт то, что ей дали.
+    case scan(MediaFormat, bounds: ScanBounds)
 
     public var kind: ProcessingKind {
         switch self {
@@ -235,7 +238,8 @@ public enum ProcessingOperation: Sendable, Hashable {
     public var targetFormat: MediaFormat? {
         switch self {
         case .compress: nil
-        case let .convert(format), let .extractAudio(format), let .scan(format): format
+        case let .convert(format), let .extractAudio(format): format
+        case let .scan(format, _): format
         }
     }
 
@@ -243,7 +247,8 @@ public enum ProcessingOperation: Sendable, Hashable {
     public var estimatedRatio: Double {
         switch self {
         case let .compress(level): level.ratio
-        case let .convert(format), let .extractAudio(format), let .scan(format): format.ratio
+        case let .convert(format), let .extractAudio(format): format.ratio
+        case let .scan(format, _): format.ratio
         }
     }
 }

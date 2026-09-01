@@ -12,3 +12,17 @@ public enum FlowDestination: Sendable {
     /// камера, системный просмотрщик документа.
     case cover(any Route)
 }
+
+public extension Router {
+    /// Исполнить решение фичи о способе показа.
+    ///
+    /// Разбор `FlowDestination` одинаков у всех шагов, и держать его копию
+    /// в каждой ViewModel значило бы трижды описывать одно и то же.
+    func go(to destination: FlowDestination) {
+        switch destination {
+        case let .push(route): push(route)
+        case let .present(route): present(route)
+        case let .cover(route): cover(route)
+        }
+    }
+}

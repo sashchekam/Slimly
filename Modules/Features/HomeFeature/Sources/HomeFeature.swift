@@ -13,19 +13,24 @@ public struct HomeTool: Identifiable, Sendable {
     public let subtitle: String
     public let icon: SlimlyIcon.Kind
     public let route: any Route
+    /// Как открывать инструмент. Большинство уходит экраном в стек, но там,
+    /// где первый шаг — короткий выбор, уместнее шторка над хабом.
+    public let presentation: RoutePresentation
 
     public init(
         id: String,
         title: String,
         subtitle: String,
         icon: SlimlyIcon.Kind,
-        route: any Route
+        route: any Route,
+        presentation: RoutePresentation = .push
     ) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.icon = icon
         self.route = route
+        self.presentation = presentation
     }
 }
 

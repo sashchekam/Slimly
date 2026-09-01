@@ -65,6 +65,11 @@ public struct SlimlySegmentedControl: View {
     private let options: [Option]
     @Binding private var selection: String
 
+    /// Выделение — одна пилюля, переезжающая между положениями, а не две
+    /// разные, гаснущие и загорающиеся: переезд показывает, что положение
+    /// сменилось, а не что экран перерисовали.
+    @Namespace private var highlight
+
     public init(options: [Option], selection: Binding<String>) {
         self.options = options
         _selection = selection
@@ -83,15 +88,27 @@ public struct SlimlySegmentedControl: View {
                         .foregroundStyle(isSelected ? SlimlyColor.accent200 : SlimlyColor.neutral400)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
-                        .background(isSelected ? SlimlyColor.accentTint(18) : .clear, in: Capsule())
-                        .contentShape(Capsule())
+                        // Мерка для пилюли: сама она лежит слоем ниже кнопок,
+                        // иначе на переезде перехватывала бы нажатия соседа.
+                        .matchedGeometryEffect(id: option.id, in: highlight)
+                        // Прямоугольник, а не капсула: у скруглённых торцов
+                        // углы сегмента выпадали бы из зоны нажатия.
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
             }
         }
+        .background {
+            Capsule()
+                .fill(SlimlyColor.accentTint(18))
+                .matchedGeometryEffect(id: selection, in: highlight, isSource: false)
+        }
         .padding(4)
         .background(SlimlyColor.text.opacity(0.07), in: Capsule())
+        // Пружина без раскачки: пилюля догоняет палец, но не проскакивает
+        // мимо края переключателя.
+        .animation(.spring(response: 0.3, dampingFraction: 0.85), value: selection)
     }
 }
 
@@ -150,8 +167,12 @@ public struct SlimlyLevelSlider: View {
     @Binding private var value: Double
     private let stops: Int
 
+    /// Половина кноба: на неё шкала отступает от краёв, эти же отступы берут
+    /// подписи, чтобы стоять ровно над крайними положениями кноба.
+    public static let edgeInset: CGFloat = 13
+
     private let trackHeight: CGFloat = 5
-    private let thumbSize: CGFloat = 26
+    private var thumbSize: CGFloat { Self.edgeInset * 2 }
 
     public init(value: Binding<Double>, stops: Int) {
         _value = value
@@ -162,6 +183,10 @@ public struct SlimlyLevelSlider: View {
         GeometryReader { proxy in
             let width = proxy.size.width
             let clamped = min(max(value, 0), 1)
+            // Центр кноба ходит по отрезку [edgeInset, width - edgeInset]:
+            // иначе на краях половина круга выезжает за границы и обрезается.
+            let travel = max(width - thumbSize, 0)
+            let center = Self.edgeInset + travel * clamped
 
             ZStack(alignment: .leading) {
                 Capsule()
@@ -176,7 +201,7 @@ public struct SlimlyLevelSlider: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: width * clamped, height: trackHeight)
+                    .frame(width: center, height: trackHeight)
 
                 ForEach(0 ..< stops, id: \.self) { index in
                     let position = Double(index) / Double(max(stops - 1, 1))
@@ -184,25 +209,26 @@ public struct SlimlyLevelSlider: View {
                     Circle()
                         .fill(position <= clamped ? SlimlyColor.onAccent.opacity(0.6) : SlimlyColor.neutral700)
                         .frame(width: 5, height: 5)
-                        .offset(x: width * position - 2.5)
+                        .offset(x: Self.edgeInset + travel * position - 2.5)
                 }
 
                 Circle()
                     .fill(SlimlyColor.neutral100)
                     .frame(width: thumbSize, height: thumbSize)
                     .shadow(color: .black.opacity(0.55), radius: 4, y: 2)
-                    .offset(x: width * clamped - thumbSize / 2)
+                    .offset(x: center - thumbSize / 2)
             }
             .frame(height: thumbSize, alignment: .center)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { drag in
-                        value = min(max(drag.location.x / width, 0), 1)
+                        guard travel > 0 else { return }
+                        value = min(max((drag.location.x - Self.edgeInset) / travel, 0), 1)
                     }
             )
         }
-        .frame(height: 28)
+        .frame(height: thumbSize)
         .accessibilityElement()
         .accessibilityLabel("Степень сжатия")
         .accessibilityValue("\(Int((value * 100).rounded()))%")
