@@ -1,6 +1,6 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Содержимое строки файла: превью, имя, что с ним стало, и опциональная дельта.
 ///

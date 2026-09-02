@@ -1,7 +1,7 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
+import UIKit
 
 /// Просмотр исходного файла: кадр целиком, а у ролика — плеер.
 public struct SourcePreviewView: View {
@@ -9,7 +9,8 @@ public struct SourcePreviewView: View {
     /// за нижний край, и о файле опять пришлось бы судить по одной картинке.
     private static let maxPreviewHeight: CGFloat = 460
 
-    @State private var viewModel: SourcePreviewViewModel
+    @State
+    private var viewModel: SourcePreviewViewModel
     /// Чем показать ролик. Без фабрики экран остаётся картиночным —
     /// для снимка этого и достаточно.
     private let viewer: MediaFileViewerFactory?

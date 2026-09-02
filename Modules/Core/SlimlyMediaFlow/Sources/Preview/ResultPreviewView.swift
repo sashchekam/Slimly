@@ -1,12 +1,13 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
+import UIKit
 
 /// Просмотр готового файла: у сжатия — с переключателем «до / после»,
 /// у остальных инструментов — один кадр результата.
 public struct ResultPreviewView: View {
-    @State private var viewModel: ResultPreviewViewModel
+    @State
+    private var viewModel: ResultPreviewViewModel
     /// Чем показывать ролик и документ. Без фабрики экран остаётся
     /// картиночным — для фото этого и достаточно.
     private let viewer: MediaFileViewerFactory?

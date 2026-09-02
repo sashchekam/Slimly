@@ -1,8 +1,8 @@
 import AVFoundation
 import Foundation
 import Photos
-import UIKit
 import SlimlyCore
+import UIKit
 
 /// Медиатека устройства через PhotoKit.
 ///

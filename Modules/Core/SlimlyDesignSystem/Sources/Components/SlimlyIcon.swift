@@ -97,6 +97,9 @@ private struct IconShape: Shape {
         )
     }
 
+    // Это не логика, а таблица: один case — одна иконка, и держать её
+    // целиком в одном месте нагляднее, чем резать на части.
+    // swiftlint:disable:next function_body_length
     private func build(_ path: inout Path) {
         switch kind {
         case .compress:

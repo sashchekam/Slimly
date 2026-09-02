@@ -1,7 +1,7 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
+import UIKit
 
 /// Шаг «границы страниц»: страница крупно с рамкой, лента остальных внизу.
 ///
@@ -12,7 +12,8 @@ public struct ScanPagesView: View {
     /// Высота строки действий — по компактной кнопке.
     private static let actionsHeight: CGFloat = 34
 
-    @State private var viewModel: ScanPagesViewModel
+    @State
+    private var viewModel: ScanPagesViewModel
 
     public init(viewModel: ScanPagesViewModel) {
         _viewModel = State(wrappedValue: viewModel)

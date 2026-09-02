@@ -5,11 +5,14 @@ import SwiftUI
 struct AppRootView: View {
     let container: AppContainer
 
-    @State private var isSplashVisible = true
+    @State
+    private var isSplashVisible = true
     /// Заставка остаётся в иерархии до конца растворения — снимаем её только
     /// после, иначе гаснуть будет уже нечему.
-    @State private var isSplashMounted = true
-    @State private var isAppVisible = false
+    @State
+    private var isSplashMounted = true
+    @State
+    private var isAppVisible = false
 
     var body: some View {
         ZStack {

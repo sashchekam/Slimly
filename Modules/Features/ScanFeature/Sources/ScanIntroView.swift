@@ -1,6 +1,6 @@
-import SwiftUI
 import SlimlyDesignSystem
 import SlimlyNavigation
+import SwiftUI
 
 /// Выбор источника страниц: камера или галерея.
 ///
@@ -8,7 +8,8 @@ import SlimlyNavigation
 /// уводить с хаба незачем. По тапу шторка уходит, а на её месте
 /// открывается уже сам источник.
 public struct ScanIntroView: View {
-    @State private var viewModel: ScanIntroViewModel
+    @State
+    private var viewModel: ScanIntroViewModel
 
     public init(viewModel: ScanIntroViewModel) {
         _viewModel = State(wrappedValue: viewModel)

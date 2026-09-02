@@ -27,10 +27,11 @@ public struct DocumentCameraPreview: UIViewRepresentable {
     /// `UIView` поверх слоя превью — так слой всегда точно по размеру вью
     /// и не требует ручной раскладки при поворотах и изменениях кадра.
     public final class PreviewView: UIView {
-        override public class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+        override public static var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
 
         var previewLayer: AVCaptureVideoPreviewLayer {
             // Класс слоя задан выше, поэтому другого типа здесь быть не может.
+            // swiftlint:disable:next force_cast
             layer as! AVCaptureVideoPreviewLayer
         }
 

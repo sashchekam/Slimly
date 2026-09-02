@@ -1,5 +1,5 @@
-import SwiftUI
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Метка «DEBUG» поверх приложения: горит, пока включена хоть одна подмена,
 /// и по нажатию открывает меню.

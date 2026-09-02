@@ -89,7 +89,8 @@ public struct SlimlySpinner: View {
     private let size: CGFloat
     private let lineWidth: CGFloat
 
-    @State private var isSpinning = false
+    @State
+    private var isSpinning = false
 
     /// Толщина по умолчанию — десятая часть диаметра: так кольцо весит
     /// одинаково и на 24 пунктах в плеере, и на 60 в пустом экране.

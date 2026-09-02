@@ -40,8 +40,14 @@ enum MediaTranscoder {
         let frameRate = nominalFrameRate > 1 ? Double(nominalFrameRate) : 30
         let displayRect = CGRect(origin: .zero, size: naturalSize).applying(transform)
         let scale = scale(for: displayRect.size, shortSideLimit: settings.shortSideLimit)
-        let renderSize = evenSize(
-            CGSize(width: displayRect.width * scale, height: displayRect.height * scale)
+        let geometry = VideoGeometry(
+            naturalSize: naturalSize,
+            renderSize: evenSize(
+                CGSize(width: displayRect.width * scale, height: displayRect.height * scale)
+            ),
+            transform: transform,
+            displayRect: displayRect,
+            scale: scale
         )
 
         let sourceBitrate = Double(dataRate) > 1 ? Double(dataRate) : fallbackBitrate(
@@ -57,11 +63,7 @@ enum MediaTranscoder {
         let videoOutput = try videoOutput(
             for: track,
             reader: reader,
-            naturalSize: naturalSize,
-            renderSize: renderSize,
-            transform: transform,
-            displayRect: displayRect,
-            scale: scale,
+            geometry: geometry,
             frameRate: frameRate,
             duration: duration
         )
@@ -119,14 +121,21 @@ enum MediaTranscoder {
         let needsTransform: Bool
     }
 
+    /// Геометрия кадра одним куском: по отдельности эти величины смысла
+    /// не имеют — поворот считается от исходного размера, сдвиг от рамки
+    /// после поворота, а масштаб связывает их с итоговым кадром.
+    private struct VideoGeometry {
+        let naturalSize: CGSize
+        let renderSize: CGSize
+        let transform: CGAffineTransform
+        let displayRect: CGRect
+        let scale: CGFloat
+    }
+
     private static func videoOutput(
         for track: AVAssetTrack,
         reader: AVAssetReader,
-        naturalSize: CGSize,
-        renderSize: CGSize,
-        transform: CGAffineTransform,
-        displayRect: CGRect,
-        scale: CGFloat,
+        geometry: VideoGeometry,
         frameRate: Double,
         duration: CMTime
     ) throws -> VideoOutput {
@@ -135,7 +144,7 @@ enum MediaTranscoder {
         ]
 
         let composition = AVMutableVideoComposition()
-        composition.renderSize = renderSize
+        composition.renderSize = geometry.renderSize
         composition.frameDuration = CMTime(value: 1, timescale: CMTimeScale(max(1, frameRate.rounded())))
 
         let instruction = AVMutableVideoCompositionInstruction()
@@ -145,11 +154,11 @@ enum MediaTranscoder {
         // координат — у файлов из мессенджеров это обычное дело. Сдвигаем
         // его в угол сами, иначе часть картинки уедет за рамку и станет
         // чёрной полосой.
-        let normalize = CGAffineTransform(translationX: -displayRect.minX, y: -displayRect.minY)
+        let normalize = CGAffineTransform(translationX: -geometry.displayRect.minX, y: -geometry.displayRect.minY)
         layer.setTransform(
-            transform
+            geometry.transform
                 .concatenating(normalize)
-                .concatenating(CGAffineTransform(scaleX: scale, y: scale)),
+                .concatenating(CGAffineTransform(scaleX: geometry.scale, y: geometry.scale)),
             at: .zero
         )
         instruction.layerInstructions = [layer]
@@ -164,7 +173,7 @@ enum MediaTranscoder {
 
         if reader.canAdd(compositionOutput) {
             reader.add(compositionOutput)
-            return VideoOutput(output: compositionOutput, size: renderSize, needsTransform: false)
+            return VideoOutput(output: compositionOutput, size: geometry.renderSize, needsTransform: false)
         }
 
         let trackOutput = AVAssetReaderTrackOutput(track: track, outputSettings: pixelSettings)
@@ -174,7 +183,7 @@ enum MediaTranscoder {
 
         return VideoOutput(
             output: trackOutput,
-            size: evenSize(naturalSize),
+            size: evenSize(geometry.naturalSize),
             needsTransform: true
         )
     }
@@ -358,7 +367,7 @@ enum MediaTranscoder {
     /// Битрейт по весу файла — на случай, если система его не сообщила.
     private static func fallbackBitrate(source: URL, seconds: Double) -> Double {
         guard seconds > 0 else { return 8_000_000 }
-        let size = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int64) ?? nil
+        let size = (try? FileManager.default.attributesOfItem(atPath: source.path)[.size] as? Int64)
         guard let size, size > 0 else { return 8_000_000 }
         return Double(size) * 8 / seconds
     }

@@ -63,12 +63,14 @@ public struct SlimlySegmentedControl: View {
     }
 
     private let options: [Option]
-    @Binding private var selection: String
+    @Binding
+    private var selection: String
 
     /// Выделение — одна пилюля, переезжающая между положениями, а не две
     /// разные, гаснущие и загорающиеся: переезд показывает, что положение
     /// сменилось, а не что экран перерисовали.
-    @Namespace private var highlight
+    @Namespace
+    private var highlight
 
     public init(options: [Option], selection: Binding<String>) {
         self.options = options
@@ -164,7 +166,8 @@ public struct SlimlyLimitPill: View {
 /// Значение непрерывное: пресеты — подписи шкалы, а не три кнопки, поэтому
 /// ползунок не «прилипает» к засечкам, но по тапу на подпись встаёт на неё.
 public struct SlimlyLevelSlider: View {
-    @Binding private var value: Double
+    @Binding
+    private var value: Double
     private let stops: Int
 
     /// Половина кноба: на неё шкала отступает от краёв, эти же отступы берут

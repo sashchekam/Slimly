@@ -2,8 +2,8 @@ import AVFoundation
 import CoreMedia
 import Foundation
 import QuartzCore
-import Vision
 import SlimlyCore
+import Vision
 
 /// Снятый кадр — ровно то, что нужно унести с очереди камеры на главный поток.
 struct CapturedPhoto: Sendable {

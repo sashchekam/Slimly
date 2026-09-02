@@ -1,6 +1,6 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Плитка файла в сетке выбора.
 struct MediaTile: View {

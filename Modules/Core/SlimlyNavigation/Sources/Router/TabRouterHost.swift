@@ -11,7 +11,8 @@ import SwiftUI
 /// добавленную снаружи, и всё, что экран сам вешает на нижний край —
 /// кнопка действия, баннер — уезжало бы под панель.
 public struct TabRouterHost<TabBar: View>: View {
-    @State private var tabRouter: TabRouter
+    @State
+    private var tabRouter: TabRouter
     private let registry: RouteRegistry
     private let tabBar: (TabRouter) -> TabBar
 

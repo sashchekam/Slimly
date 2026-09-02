@@ -11,6 +11,9 @@ xcodebuild -workspace Slimly.xcworkspace -scheme Slimly \
   -destination 'generic/platform=iOS Simulator' build
 
 xcrun simctl openurl booted "slimly://profile"   # проверить диплинк
+
+swiftlint lint --strict --quiet  # линтер: обязателен в конце любой доработки
+swiftlint --fix --quiet          # автоисправимое (порядок импортов, запятые, отступы)
 ```
 
 `.xcodeproj` и `.xcworkspace` — **генерируемые артефакты**, они в `.gitignore`.
@@ -67,6 +70,24 @@ Tuist/ProjectDescriptionHelpers/   — реестр модулей и прави
 5. **Маршрут не знает про способ показа.** Один и тот же `Route` можно и
    запушить, и показать модалкой — решает вызывающая сторона.
 
+## SwiftLint
+
+Правила лежат в `.swiftlint.yml` (в корне), сам линтер ставится через
+`brew install swiftlint`. Он же висит фазой `SwiftLint` перед компиляцией
+приложения, причём с `--strict`: **любое замечание валит сборку**, даже
+предупреждение.
+
+**Заканчивая любую доработку — прогони `swiftlint lint --strict --quiet` и
+почини всё, что он нашёл.** Целевое состояние репозитория — ноль замечаний,
+поэтому вывод линтера всегда либо пустой, либо про твои изменения.
+
+Порядок работы: сначала `swiftlint --fix --quiet` (он сам чинит импорты,
+запятые и отступы), потом руками остальное. Правило глушится точечным
+`// swiftlint:disable:next <rule>` с комментарием «почему» — и только когда
+нарушение осознанное (`layer as! AVPlayerLayer` при заданном `layerClass`).
+Массовые `disable` на файл и правку `.swiftlint.yml` под конкретный случай
+не используем: если правило мешает постоянно — обсуждаем его отключение.
+
 ## Конвенции кода
 
 - Комментарии, UI-строки и документация — **на русском**. Идентификаторы — английские.
@@ -76,6 +97,9 @@ Tuist/ProjectDescriptionHelpers/   — реестр модулей и прави
 - ViewModel — `@MainActor @Observable final class`, состояние наружу через
   `private(set)`, ввод пользователя — обычные `var`.
 - View принимает готовую ViewModel в `init` и держит её в `@State`.
+- Property wrapper (`@State`, `@Binding`, `@Environment`, `@ObservationIgnored`
+  и т.п.) и `@ViewBuilder` — на отдельной строке над объявлением; за этим
+  следит правило `attributes`.
 
 ## Грабли Swift 6 в этом проекте
 

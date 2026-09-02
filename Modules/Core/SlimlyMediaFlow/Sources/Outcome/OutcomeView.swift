@@ -1,10 +1,11 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Итог обработки: что получилось, из чего, и что с этим делать дальше.
 public struct OutcomeView: View {
-    @State private var viewModel: OutcomeViewModel
+    @State
+    private var viewModel: OutcomeViewModel
 
     public init(viewModel: OutcomeViewModel) {
         _viewModel = State(wrappedValue: viewModel)

@@ -1,7 +1,7 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
+import UIKit
 
 /// Кадр страницы с рамкой, за углы которой можно тянуть.
 ///
@@ -17,7 +17,8 @@ struct PageBoundsEditor: View {
     let quad: DocumentQuad
     let onMove: (DocumentQuad.Corner, CGPoint) -> Void
 
-    @State private var drag: Drag?
+    @State
+    private var drag: Drag?
 
     /// Начало перетаскивания. Точку считаем от него, а не от текущего угла:
     /// отклонённое перемещение (рамка сложилась бы бантиком) не должно

@@ -1,13 +1,15 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
+import UIKit
 
 /// Общий шаг выбора файлов: альбом, сетка, лимит и кнопка «Далее».
 /// Инструменты различаются заголовками и правилами выборки, а не экраном.
 public struct MediaPickerView: View {
-    @State private var viewModel: MediaPickerViewModel
-    @Environment(\.openURL) private var openURL
+    @State
+    private var viewModel: MediaPickerViewModel
+    @Environment(\.openURL)
+    private var openURL
 
     /// Чем оживить превью в контекстном меню. Без фабрики оно остаётся
     /// кадром — так экран работает и там, где играть нечего.

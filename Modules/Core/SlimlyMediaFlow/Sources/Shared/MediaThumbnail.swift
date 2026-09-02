@@ -1,6 +1,6 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Загрузчик миниатюр.
 ///
@@ -23,7 +23,8 @@ struct MediaThumbnail: View {
     let load: MediaThumbnailLoader
     var placeholder: SlimlyStripes = .thumbnail
 
-    @State private var image: Image?
+    @State
+    private var image: Image?
 
     var body: some View {
         // Кадр лежит именно оверлеем: `scaledToFill` сообщает размер больше

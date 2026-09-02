@@ -1,7 +1,7 @@
-import SwiftUI
 import SlimlyDesignSystem
 import SlimlyMediaFlow
 import SlimlyNavigation
+import SwiftUI
 
 /// Шторка с готовой дорожкой: огибающая и одна кнопка — больше о звуке
 /// сказать нечем, а вес и формат уже стоят в строке итога.
@@ -10,7 +10,8 @@ public struct AudioPreviewSheetView: View {
     /// место, а в шторке предложить ему нечего — она по нему и меряется.
     private static let playerHeight: CGFloat = 150
 
-    @State private var viewModel: AudioPreviewSheetViewModel
+    @State
+    private var viewModel: AudioPreviewSheetViewModel
     /// Чем играть дорожку. Плеер собирает модуль системной обработки —
     /// про AVFoundation фича не знает.
     private let viewer: MediaFileViewerFactory

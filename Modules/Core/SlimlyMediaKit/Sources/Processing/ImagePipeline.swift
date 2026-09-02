@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 import ImageIO
-import UniformTypeIdentifiers
 import SlimlyCore
+import UniformTypeIdentifiers
 
 /// Перекодирование изображений через ImageIO.
 ///

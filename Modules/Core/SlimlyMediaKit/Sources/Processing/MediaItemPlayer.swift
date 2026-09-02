@@ -1,8 +1,8 @@
 import AVFoundation
 import Photos
 import PhotosUI
-import SwiftUI
 import SlimlyCore
+import SwiftUI
 
 /// Воспроизведение файла медиатеки: ролик и живое фото оживают прямо
 /// в превью выбора, а не превращаются в застывший кадр.
@@ -39,7 +39,8 @@ private struct VideoPlayback: View {
     let item: MediaItem
     let library: any MediaLibrary
 
-    @State private var url: URL?
+    @State
+    private var url: URL?
 
     var body: some View {
         ZStack {
@@ -73,12 +74,17 @@ private struct LoopingPlayerView: UIViewRepresentable {
 /// Слой плеера — собственный слой вью: так кадр меняет размер вместе с ней,
 /// без ручной раскладки в `layoutSubviews`.
 private final class PlayerHostView: UIView {
-    override class var layerClass: AnyClass { AVPlayerLayer.self }
+    override static var layerClass: AnyClass { AVPlayerLayer.self }
 
+    // Класс слоя задан выше, поэтому другого типа здесь быть не может.
+    // swiftlint:disable:next force_cast
     private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
     /// Держим петлю: без сильной ссылки она умирает вместе с вызовом,
     /// и ролик останавливается на последнем кадре.
     private var looper: AVPlayerLooper?
+    /// Плеер продублирован полем, хотя он же лежит в слое: из `deinit`
+    /// доступны только хранимые свойства, а `playerLayer` — вычисляемое.
+    private var player: AVQueuePlayer?
     private var current: URL?
 
     func play(_ url: URL) {
@@ -90,6 +96,7 @@ private final class PlayerHostView: UIView {
         // здесь пугает, поэтому смотрим молча.
         player.isMuted = true
         looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
+        self.player = player
 
         playerLayer.player = player
         // Кадр заполняет плитку так же, как миниатюра под ним, — иначе при
@@ -100,9 +107,8 @@ private final class PlayerHostView: UIView {
 
     deinit {
         // Вью умирает вместе с закрытием меню, а плеер к этому моменту
-        // держит аудиосессию: снимаем предмет, чтобы не играть в пустоту.
-        playerLayer.player?.pause()
-        playerLayer.player = nil
+        // держит аудиосессию: останавливаем, чтобы не играть в пустоту.
+        player?.pause()
     }
 }
 
@@ -113,7 +119,8 @@ private final class PlayerHostView: UIView {
 private struct LivePhotoPlayback: View {
     let item: MediaItem
 
-    @State private var livePhoto: LivePhotoBox?
+    @State
+    private var livePhoto: LivePhotoBox?
 
     var body: some View {
         ZStack {

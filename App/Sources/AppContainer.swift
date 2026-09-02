@@ -1,6 +1,3 @@
-import Foundation
-import Observation
-import SwiftUI
 import AudioFeature
 import AudioFeatureInterface
 import CompressFeature
@@ -9,8 +6,10 @@ import ConvertFeature
 import ConvertFeatureInterface
 import DebugFeature
 import DebugFeatureInterface
+import Foundation
 import HomeFeature
 import HomeFeatureInterface
+import Observation
 import ProfileFeature
 import ProfileFeatureInterface
 import ScanFeature
@@ -19,6 +18,7 @@ import SlimlyCore
 import SlimlyMediaFlow
 import SlimlyMediaKit
 import SlimlyNavigation
+import SwiftUI
 
 /// Единственное место, которое знает про все фичи сразу: здесь живут сервисы,
 /// реестр «маршрут → экран», состав главного экрана и таблица диплинков.

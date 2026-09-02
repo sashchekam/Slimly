@@ -39,6 +39,10 @@ let project = Project(
                 "UISupportedInterfaceOrientations~ipad": [
                     "UIInterfaceOrientationPortrait",
                 ],
+                // На iPad портретной ориентации мало: без полноэкранного режима
+                // система требует поддержки всех четырёх поворотов, потому что
+                // в Split View окно можно развернуть как угодно.
+                "UIRequiresFullScreen": true,
                 "CFBundleURLTypes": [
                     [
                         "CFBundleTypeRole": "Editor",
@@ -49,6 +53,7 @@ let project = Project(
             ]),
             sources: ["App/Sources/**"],
             resources: ["App/Resources/**"],
+            scripts: [Slimly.swiftLintScript],
             dependencies: Module.validated.map(\.targetDependency),
             settings: .settings(base: Slimly.baseSettings)
         ),

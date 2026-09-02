@@ -1,12 +1,13 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Экран обработки: кольцо общего прогресса и очередь файлов.
 /// Возврата отсюда нет — только «Отменить», иначе работа продолжалась бы
 /// без экрана, который её показывает.
 public struct ProcessingView: View {
-    @State private var viewModel: ProcessingViewModel
+    @State
+    private var viewModel: ProcessingViewModel
 
     public init(viewModel: ProcessingViewModel) {
         _viewModel = State(wrappedValue: viewModel)

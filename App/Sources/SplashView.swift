@@ -9,9 +9,11 @@ struct SplashView: View {
     /// Круг закончился и знак сложился — можно уходить на первый экран.
     let onFinish: () -> Void
 
-    @State private var isMarkVisible = false
+    @State
+    private var isMarkVisible = false
     /// Считает посадки акцента: каждая — короткий удар в ладонь.
-    @State private var landings = 0
+    @State
+    private var landings = 0
 
     var body: some View {
         // 117 — сторона сетки знака в макете анимации (холст 150 × 0.78).

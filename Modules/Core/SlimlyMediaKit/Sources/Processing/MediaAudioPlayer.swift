@@ -17,7 +17,8 @@ public struct MediaAudioPlayer: View {
     private static let barCount = 56
 
     private let url: URL
-    @State private var playback = AudioTrackPlayback()
+    @State
+    private var playback = AudioTrackPlayback()
 
     public init(url: URL) {
         self.url = url
@@ -128,11 +129,16 @@ private final class AudioTrackPlayback {
     /// от него звуком.
     private(set) var progress: Double = 0
 
-    @ObservationIgnored private let player = AVPlayer()
-    @ObservationIgnored private var duration: Duration = .zero
-    @ObservationIgnored private var ticker: Any?
-    @ObservationIgnored private var endWatcher: (any NSObjectProtocol)?
-    @ObservationIgnored private var isScrubbing = false
+    @ObservationIgnored
+    private let player = AVPlayer()
+    @ObservationIgnored
+    private var duration: Duration = .zero
+    @ObservationIgnored
+    private var ticker: Any?
+    @ObservationIgnored
+    private var endWatcher: (any NSObjectProtocol)?
+    @ObservationIgnored
+    private var isScrubbing = false
 
     func open(_ url: URL, bars barCount: Int) async {
         player.replaceCurrentItem(with: AVPlayerItem(url: url))
@@ -145,7 +151,7 @@ private final class AudioTrackPlayback {
     }
 
     func toggle() {
-        isPlaying ? pause() : play()
+        if isPlaying { pause() } else { play() }
     }
 
     func stop() {

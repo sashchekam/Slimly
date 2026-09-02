@@ -1,11 +1,12 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
 import SlimlyNavigation
+import SwiftUI
 
 /// Шторка «Степень сжатия»: ползунок, оценка веса и запуск.
 public struct LevelSheetView: View {
-    @State private var viewModel: LevelSheetViewModel
+    @State
+    private var viewModel: LevelSheetViewModel
 
     public init(viewModel: LevelSheetViewModel) {
         _viewModel = State(wrappedValue: viewModel)

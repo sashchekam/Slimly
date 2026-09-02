@@ -1,8 +1,8 @@
-import SwiftUI
-import UIKit
 import SlimlyCore
 import SlimlyDesignSystem
 import SlimlyMediaKit
+import SwiftUI
+import UIKit
 
 /// Съёмка страниц документа.
 ///
@@ -10,8 +10,10 @@ import SlimlyMediaKit
 /// градиентный фон и поля Nocturne только мешали бы — здесь весь контраст
 /// держится на самом кадре, а интерфейс живёт поверх него.
 public struct ScanCameraView: View {
-    @State private var viewModel: ScanCameraViewModel
-    @Environment(\.openURL) private var openURL
+    @State
+    private var viewModel: ScanCameraViewModel
+    @Environment(\.openURL)
+    private var openURL
 
     public init(viewModel: ScanCameraViewModel) {
         _viewModel = State(wrappedValue: viewModel)

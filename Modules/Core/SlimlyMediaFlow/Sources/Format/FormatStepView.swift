@@ -1,10 +1,11 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Общий шаг «в какой формат»: пара «из → в», выбор формата и список файлов.
 public struct FormatStepView: View {
-    @State private var viewModel: FormatStepViewModel
+    @State
+    private var viewModel: FormatStepViewModel
 
     public init(viewModel: FormatStepViewModel) {
         _viewModel = State(wrappedValue: viewModel)

@@ -87,12 +87,13 @@ enum AudioWaveform {
             guard length > 0 else { continue }
 
             var samples = [Int16](repeating: 0, count: length)
-            let copied = samples.withUnsafeMutableBytes { raw in
-                CMBlockBufferCopyDataBytes(
+            let copied = samples.withUnsafeMutableBytes { raw -> OSStatus in
+                guard let destination = raw.baseAddress else { return kCMBlockBufferBadPointerParameterErr }
+                return CMBlockBufferCopyDataBytes(
                     block,
                     atOffset: 0,
                     dataLength: raw.count,
-                    destination: raw.baseAddress!
+                    destination: destination
                 )
             }
             guard copied == noErr else { continue }

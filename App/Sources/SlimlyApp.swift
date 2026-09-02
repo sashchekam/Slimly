@@ -1,9 +1,10 @@
-import SwiftUI
 import SlimlyCore
+import SwiftUI
 
 @main
 struct SlimlyApp: App {
-    @State private var container = AppContainer()
+    @State
+    private var container = AppContainer()
 
     var body: some Scene {
         WindowGroup {

@@ -34,13 +34,17 @@ public struct SlimlyLogoMarkAnimation: View {
     private let onLanding: () -> Void
     private let onFinish: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion)
+    private var reduceMotion
 
     /// Номер угла, на котором стоит акцент. Растёт до четырёх, а не сбрасывается
     /// в ноль: иначе последний перелёт SwiftUI отыграл бы задом наперёд.
-    @State private var corner = 0
-    @State private var stretch = CGSize(width: 1, height: 1)
-    @State private var isSettled = false
+    @State
+    private var corner = 0
+    @State
+    private var stretch = CGSize(width: 1, height: 1)
+    @State
+    private var isSettled = false
 
     public init(
         size: CGFloat,

@@ -4,7 +4,8 @@ import SwiftUI
 /// и `.fullScreenCover`. Внутри модалки поднимается такой же хост со своим
 /// роутером, поэтому вложенность произвольная.
 public struct RouterHost: View {
-    @State private var router: Router
+    @State
+    private var router: Router
     private let registry: RouteRegistry
 
     public init(router: Router, registry: RouteRegistry) {
@@ -36,8 +37,10 @@ public struct RouterHost: View {
 
 /// Держит дочерний роутер модалки живым между перерисовками контента.
 private struct ModalRouterHost: View {
-    @State private var router: Router
-    @State private var sheetHeight: CGFloat?
+    @State
+    private var router: Router
+    @State
+    private var sheetHeight: CGFloat?
     private let registry: RouteRegistry
 
     init(route: AnyRoute, parent: Router, registry: RouteRegistry) {

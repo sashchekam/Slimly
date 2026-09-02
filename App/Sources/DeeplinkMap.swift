@@ -1,8 +1,8 @@
-import Foundation
 import AudioFeatureInterface
 import CompressFeatureInterface
 import ConvertFeatureInterface
 import DebugFeatureInterface
+import Foundation
 import HomeFeatureInterface
 import ProfileFeatureInterface
 import ScanFeatureInterface

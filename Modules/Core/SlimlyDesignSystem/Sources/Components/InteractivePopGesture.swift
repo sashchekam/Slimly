@@ -180,7 +180,8 @@ public extension View {
 }
 
 private struct BackSwipeInstallerModifier: ViewModifier {
-    @Environment(\.isBackSwipeDisabled) private var isDisabled
+    @Environment(\.isBackSwipeDisabled)
+    private var isDisabled
 
     func body(content: Content) -> some View {
         content.background {

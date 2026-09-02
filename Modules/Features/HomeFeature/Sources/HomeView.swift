@@ -1,10 +1,11 @@
-import SwiftUI
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Главный экран — хаб инструментов. Дальше у всех инструментов один путь:
 /// выбор файлов → настройки → итог.
 public struct HomeView: View {
-    @State private var viewModel: HomeViewModel
+    @State
+    private var viewModel: HomeViewModel
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 2)
 

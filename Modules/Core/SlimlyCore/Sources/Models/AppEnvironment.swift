@@ -68,6 +68,9 @@ public extension AppEnvironment {
         var info = utsname()
         uname(&info)
         return withUnsafeBytes(of: &info.machine) { raw in
+            // Имя модели — всегда ASCII, и пустая строка тут лучше отсутствия
+            // значения: строка идёт прямо в отладочный экран.
+            // swiftlint:disable:next optional_data_string_conversion
             String(decoding: raw.prefix { $0 != 0 }, as: UTF8.self)
         }
     }

@@ -1,6 +1,6 @@
+import CompressFeatureInterface
 import Foundation
 import Observation
-import CompressFeatureInterface
 import SlimlyCore
 import SlimlyNavigation
 

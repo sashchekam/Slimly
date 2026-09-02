@@ -1,10 +1,9 @@
 import CoreGraphics
-import CoreImage
 import CoreImage.CIFilterBuiltins
 import Foundation
 import ImageIO
-import UniformTypeIdentifiers
 import SlimlyCore
+import UniformTypeIdentifiers
 
 /// Превращение снимка страницы в страницу скана.
 ///

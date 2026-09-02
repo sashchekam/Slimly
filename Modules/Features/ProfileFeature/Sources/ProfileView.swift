@@ -1,9 +1,10 @@
-import SwiftUI
 import SlimlyCore
 import SlimlyDesignSystem
+import SwiftUI
 
 public struct ProfileView: View {
-    @State private var viewModel: ProfileViewModel
+    @State
+    private var viewModel: ProfileViewModel
 
     public init(viewModel: ProfileViewModel) {
         _viewModel = State(wrappedValue: viewModel)

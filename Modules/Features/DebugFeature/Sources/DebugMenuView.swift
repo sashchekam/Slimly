@@ -1,5 +1,5 @@
-import SwiftUI
 import SlimlyDesignSystem
+import SwiftUI
 
 /// Сервисный экран, а не часть продукта: здесь подменяют поведение сборки
 /// и забирают данные о ней.
@@ -7,7 +7,8 @@ import SlimlyDesignSystem
 /// Шапка своя, а не ``SlimlyNavigationBar``: у меню есть заголовок и
 /// «Готово» вместо шеврона — это модалка, из неё не возвращаются, её закрывают.
 public struct DebugMenuView: View {
-    @State private var viewModel: DebugMenuViewModel
+    @State
+    private var viewModel: DebugMenuViewModel
 
     public init(viewModel: DebugMenuViewModel) {
         _viewModel = State(wrappedValue: viewModel)
@@ -34,7 +35,10 @@ public struct DebugMenuView: View {
 
                     actions
 
-                    Text("Меню открывается тряской устройства и живёт только во внутренних сборках — в App Store его нет.")
+                    Text(
+                        "Меню открывается тряской устройства и живёт только во внутренних "
+                            + "сборках — в App Store его нет."
+                    )
                         .font(.slimlyCaptionSmall)
                         .foregroundStyle(SlimlyColor.neutral600)
                         .fixedSize(horizontal: false, vertical: true)

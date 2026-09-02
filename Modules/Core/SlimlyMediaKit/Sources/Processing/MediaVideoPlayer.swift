@@ -8,7 +8,8 @@ import SwiftUI
 /// Экранам плеер приезжает вью-фабрикой из composition root.
 public struct MediaVideoPlayer: View {
     private let url: URL
-    @State private var player = AVPlayer()
+    @State
+    private var player = AVPlayer()
 
     public init(url: URL) {
         self.url = url

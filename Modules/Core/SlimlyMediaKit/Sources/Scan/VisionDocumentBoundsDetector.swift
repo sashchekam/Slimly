@@ -1,8 +1,8 @@
 import CoreGraphics
 import CoreImage
 import Foundation
-import Vision
 import SlimlyCore
+import Vision
 
 /// Поиск листа тем же запросом Vision, каким его ищет сборка страницы.
 ///
