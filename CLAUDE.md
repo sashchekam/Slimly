@@ -100,6 +100,11 @@ Tuist/ProjectDescriptionHelpers/   — реестр модулей и прави
 - Property wrapper (`@State`, `@Binding`, `@Environment`, `@ObservationIgnored`
   и т.п.) и `@ViewBuilder` — на отдельной строке над объявлением; за этим
   следит правило `attributes`.
+- **Никаких `enum` со `static func` вместо сервисов.** Работа — это объект
+  за протоколом, который приходит в `init` параметром со значением
+  по умолчанию (`init(images: any ImageEncoding = ImageEncoder())`).
+  Большой класс разбирается на маленькие воркеры, каждый в своём файле.
+  Подробности и чек-лист — в скилле `small-workers`.
 
 ## Грабли Swift 6 в этом проекте
 

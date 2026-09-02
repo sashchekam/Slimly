@@ -1,25 +1,57 @@
 import AVFoundation
 import Foundation
 
+/// Одна дорожка перекачки: откуда читаем и куда пишем.
+struct TransferLeg {
+    let input: AVAssetWriterInput
+    let output: AVAssetReaderOutput
+    /// Прогресс считаем по одной дорожке — обычно по видео: звук
+    /// кодируется быстрее и обгонял бы картинку.
+    let reportsProgress: Bool
+}
+
 /// Перекачка сэмплов из читателя в писателя.
+protocol SampleTransferring: Sendable {
+    func run(
+        reader: AVAssetReader,
+        writer: AVAssetWriter,
+        legs: [TransferLeg],
+        seconds: Double,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws
+}
+
+/// Сам воркер без состояния: всё, что живёт только на время одной перекачки,
+/// уходит в ``TransferSession`` — иначе воркер нельзя было бы держать
+/// в поле и переиспользовать.
+struct SampleTransfer: SampleTransferring {
+    func run(
+        reader: AVAssetReader,
+        writer: AVAssetWriter,
+        legs: [TransferLeg],
+        seconds: Double,
+        progress: @escaping @Sendable (Double) -> Void
+    ) async throws {
+        try await TransferSession(
+            reader: reader,
+            writer: writer,
+            legs: legs,
+            seconds: seconds,
+            progress: progress
+        ).run()
+    }
+}
+
+/// Одна перекачка от начала до конца.
 ///
 /// `@unchecked Sendable` здесь честный: объекты AVFoundation живут только
 /// внутри этого класса и трогаются исключительно из блоков
 /// `requestMediaDataWhenReady`, а общее изменяемое состояние — три поля
 /// под одним замком.
-final class Transfer: @unchecked Sendable {
-    /// Одна дорожка: откуда читаем и куда пишем.
-    struct Leg {
-        let input: AVAssetWriterInput
-        let output: AVAssetReaderOutput
-        /// Прогресс считаем по одной дорожке — обычно по видео: звук
-        /// кодируется быстрее и обгонял бы картинку.
-        let reportsProgress: Bool
-    }
-
+private final class TransferSession: @unchecked Sendable {
     private let reader: AVAssetReader
     private let writer: AVAssetWriter
-    private let legs: [Leg]
+    private let legs: [TransferLeg]
     private let seconds: Double
     private let progress: @Sendable (Double) -> Void
 
@@ -31,7 +63,7 @@ final class Transfer: @unchecked Sendable {
     init(
         reader: AVAssetReader,
         writer: AVAssetWriter,
-        legs: [Leg],
+        legs: [TransferLeg],
         seconds: Double,
         progress: @escaping @Sendable (Double) -> Void
     ) {

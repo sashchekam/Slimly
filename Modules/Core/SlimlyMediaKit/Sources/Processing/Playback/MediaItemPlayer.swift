@@ -12,17 +12,23 @@ import SwiftUI
 public struct MediaItemPlayer: View {
     private let item: MediaItem
     private let library: any MediaLibrary
+    private let livePhotos: any LivePhotoLoading
 
     public init(item: MediaItem, library: any MediaLibrary) {
+        self.init(item: item, library: library, livePhotos: PhotoKitLivePhotoLoader())
+    }
+
+    init(item: MediaItem, library: any MediaLibrary, livePhotos: any LivePhotoLoading) {
         self.item = item
         self.library = library
+        self.livePhotos = livePhotos
     }
 
     public var body: some View {
         // Живое фото — тоже фото, поэтому проверяем его первым: у такого
         // ассета есть и кадр, и ролик, и играть нужно именно ролик.
         if item.isLivePhoto {
-            LivePhotoPlayback(item: item)
+            LivePhotoPlayback(item: item, livePhotos: livePhotos)
         } else if item.kind == .video {
             VideoPlayback(item: item, library: library)
         }
@@ -118,6 +124,7 @@ private final class PlayerHostView: UIView {
 /// с движением, а не ролик, и бесконечный повтор читался бы как видео.
 private struct LivePhotoPlayback: View {
     let item: MediaItem
+    let livePhotos: any LivePhotoLoading
 
     @State
     private var livePhoto: LivePhotoBox?
@@ -129,7 +136,7 @@ private struct LivePhotoPlayback: View {
             }
         }
         .task(id: item.id) {
-            livePhoto = await LivePhotoBox.load(id: item.id)
+            livePhoto = await livePhotos.livePhoto(id: item.id)
         }
     }
 }
@@ -151,64 +158,5 @@ private struct LivePhotoView: UIViewRepresentable {
         guard view.livePhoto !== livePhoto else { return }
         view.livePhoto = livePhoto
         view.startPlayback(with: .full)
-    }
-}
-
-/// Ссылочная ячейка вокруг `PHLivePhoto`: сам тип не `Sendable`, а забрать
-/// его нужно из колбэка PhotoKit в главный актор.
-private final class LivePhotoBox: @unchecked Sendable {
-    let value: PHLivePhoto
-
-    private init(_ value: PHLivePhoto) {
-        self.value = value
-    }
-
-    /// Ассет ищем здесь же: живое фото — это пара «кадр + ролик» внутри
-    /// PhotoKit, и ссылки на файл, которую можно было бы отдать плееру
-    /// через протокол медиатеки, у него нет.
-    static func load(id: String) async -> LivePhotoBox? {
-        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
-            return nil
-        }
-
-        let options = PHLivePhotoRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.isNetworkAccessAllowed = true
-
-        return await withCheckedContinuation { continuation in
-            let box = ResumeBox(continuation)
-            PHImageManager.default().requestLivePhoto(
-                for: asset,
-                targetSize: PHImageManagerMaximumSize,
-                contentMode: .aspectFill,
-                options: options
-            ) { photo, info in
-                // Как и с миниатюрами, система вправе позвать обработчик
-                // дважды — сначала с черновым вариантом.
-                let isDegraded = (info?[PHImageResultIsDegradedKey] as? NSNumber)?.boolValue ?? false
-                guard !isDegraded || photo == nil else { return }
-                box.resume(with: photo.map(LivePhotoBox.init))
-            }
-        }
-    }
-}
-
-/// Однократное возобновление продолжения: PhotoKit зовёт обработчик столько
-/// раз, сколько сочтёт нужным, а продолжение принимает ответ один.
-private final class ResumeBox: @unchecked Sendable {
-    private let continuation: CheckedContinuation<LivePhotoBox?, Never>
-    private let lock = NSLock()
-    private var isResumed = false
-
-    init(_ continuation: CheckedContinuation<LivePhotoBox?, Never>) {
-        self.continuation = continuation
-    }
-
-    func resume(with box: LivePhotoBox?) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !isResumed else { return }
-        isResumed = true
-        continuation.resume(returning: box)
     }
 }

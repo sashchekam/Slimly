@@ -18,10 +18,15 @@ public struct MediaAudioPlayer: View {
 
     private let url: URL
     @State
-    private var playback = AudioTrackPlayback()
+    private var playback: AudioTrackPlayback
 
     public init(url: URL) {
+        self.init(url: url, waveforms: AudioWaveformReader())
+    }
+
+    init(url: URL, waveforms: any AudioWaveformReading) {
         self.url = url
+        _playback = State(initialValue: AudioTrackPlayback(waveforms: waveforms))
     }
 
     public var body: some View {
@@ -130,6 +135,8 @@ private final class AudioTrackPlayback {
     private(set) var progress: Double = 0
 
     @ObservationIgnored
+    private let waveforms: any AudioWaveformReading
+    @ObservationIgnored
     private let player = AVPlayer()
     @ObservationIgnored
     private var duration: Duration = .zero
@@ -140,6 +147,10 @@ private final class AudioTrackPlayback {
     @ObservationIgnored
     private var isScrubbing = false
 
+    init(waveforms: any AudioWaveformReading) {
+        self.waveforms = waveforms
+    }
+
     func open(_ url: URL, bars barCount: Int) async {
         player.replaceCurrentItem(with: AVPlayerItem(url: url))
         watchProgress()
@@ -147,7 +158,7 @@ private final class AudioTrackPlayback {
 
         let asset = AVURLAsset(url: url)
         duration = .seconds((try? await asset.load(.duration).seconds) ?? 0)
-        bars = await AudioWaveform.peaks(at: url, count: barCount)
+        bars = await waveforms.peaks(at: url, count: barCount)
     }
 
     func toggle() {

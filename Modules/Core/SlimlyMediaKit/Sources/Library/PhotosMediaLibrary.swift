@@ -19,8 +19,12 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
     private static let fetchLimit = 300
 
     private let thumbnails = NSCache<NSString, NSData>()
+    /// Кадр из файла: страница с камеры — не ассет, и миниатюру для неё
+    /// система не отдаст.
+    private let previews: any MediaPreviewRenderer
 
-    public init() {
+    public init(previews: any MediaPreviewRenderer = SystemMediaPreviewRenderer()) {
+        self.previews = previews
         thumbnails.countLimit = 400
     }
 
@@ -244,7 +248,7 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         // Страница с камеры — обычный файл, а не ассет: PhotoKit о ней
         // не знает, и кадр достаём прямо из него.
         if let source = item.sourceURL {
-            guard let data = await MediaPreview.image(at: source, maxPixel: size * 3) else { return nil }
+            guard let data = await previews.preview(at: source, maxPixel: size * 3) else { return nil }
             thumbnails.setObject(data as NSData, forKey: key)
             return data
         }

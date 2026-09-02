@@ -34,3 +34,10 @@ enum ProcessingError: LocalizedError {
         }
     }
 }
+
+extension Error {
+    /// Причина отказа так, как её увидят на экране итога.
+    var processingMessage: String {
+        (self as? LocalizedError)?.errorDescription ?? localizedDescription
+    }
+}
