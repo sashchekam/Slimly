@@ -20,6 +20,7 @@ public struct SlimlyIcon: View {
         // Управление
         case flash
         case check
+        case close
         case chevronLeft
         case chevronRight
         case chevronDown
@@ -59,7 +60,7 @@ extension SlimlyIcon.Kind {
     /// Система координат макета. Все точки ниже заданы в ней.
     var viewBox: CGSize {
         switch self {
-        case .check: CGSize(width: 12, height: 12)
+        case .check, .close: CGSize(width: 12, height: 12)
         case .chevronLeft, .chevronRight: CGSize(width: 8, height: 14)
         case .chevronDown: CGSize(width: 10, height: 7)
         case .arrowRight: CGSize(width: 16, height: 10)
@@ -71,6 +72,7 @@ extension SlimlyIcon.Kind {
     var lineWidth: CGFloat {
         switch self {
         case .check: 2
+        case .close: 1.7
         case .chevronLeft: 1.8
         case .chevronRight, .chevronDown: 1.6
         case .arrowRight: 1.4
@@ -210,6 +212,10 @@ private struct IconShape: Shape {
 
         case .check:
             path.polyline([CGPoint(x: 2, y: 6.3), CGPoint(x: 4.6, y: 8.9), CGPoint(x: 10, y: 3.4)])
+
+        case .close:
+            path.line(from: CGPoint(x: 1.6, y: 1.6), to: CGPoint(x: 10.4, y: 10.4))
+            path.line(from: CGPoint(x: 10.4, y: 1.6), to: CGPoint(x: 1.6, y: 10.4))
 
         case .chevronLeft:
             path.polyline([CGPoint(x: 6.5, y: 1), CGPoint(x: 1, y: 7), CGPoint(x: 6.5, y: 13)])

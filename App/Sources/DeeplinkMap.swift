@@ -4,6 +4,7 @@ import ConvertFeatureInterface
 import DebugFeatureInterface
 import Foundation
 import HomeFeatureInterface
+import OnboardingFeatureInterface
 import ProfileFeatureInterface
 import ScanFeatureInterface
 import SlimlyCore
@@ -18,6 +19,7 @@ enum DeeplinkMap {
     static let mappers: [DeeplinkRegistry.Mapper] = {
         var mappers: [DeeplinkRegistry.Mapper] = [
             home,
+            onboarding,
             compress,
             convert,
             audio,
@@ -63,6 +65,14 @@ enum DeeplinkMap {
     private static let scan: DeeplinkRegistry.Mapper = { deeplink in
         guard deeplink.host == "scan", deeplink.pathComponents.isEmpty else { return nil }
         return DeeplinkDestination(routes: [HomeRoute.home], sheet: ScanRoute.intro)
+    }
+
+    /// `slimly://onboarding` — вводный тур целиком, без главного экрана
+    /// под ним: тур не открывается поверх хаба, он его заменяет и сам же
+    /// возвращает обратно.
+    private static let onboarding: DeeplinkRegistry.Mapper = { deeplink in
+        guard deeplink.host == "onboarding", deeplink.pathComponents.isEmpty else { return nil }
+        return [OnboardingRoute.tour]
     }
 
     /// `slimly://profile`

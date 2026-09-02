@@ -71,6 +71,21 @@ public enum SlimlyColor {
     /// Заливка галочки на акцентном кружке — тёмная, а не чёрная.
     public static let onAccent = Color(hex: 0x181A2C)
 
+    // MARK: Вводный тур
+
+    /// Центр свечения на экране тура. Оно идёт сверху по центру, а не от угла:
+    /// на этих экранах смотрят в иллюстрацию, и свет собран вокруг неё.
+    public static let tourGlow = Color(hex: 0x23253A)
+    /// Низ экрана тура — темнее основного фона, чтобы кнопка внизу лежала
+    /// на самом глухом участке и читалась без подложки.
+    public static let tourEdge = Color(hex: 0x101220)
+
+    /// Лист бумаги в иллюстрациях: скан документа и карточка формата.
+    /// Единственное светлое пятно в тёмной системе — поэтому не чисто белое,
+    /// а с холодной тенью к нижнему углу.
+    public static let paperLight = Color(hex: 0xDCDCE2)
+    public static let paperDark = Color(hex: 0xA9A9B4)
+
     // MARK: Полоски-заглушки вместо превью
 
     public static let stripeLight = Color(hex: 0x252838)

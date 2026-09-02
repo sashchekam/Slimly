@@ -30,6 +30,8 @@ public enum Module: CaseIterable {
     case profile
     case debugInterface
     case debug
+    case onboardingInterface
+    case onboarding
 
     public enum Kind {
         case core
@@ -42,8 +44,9 @@ public enum Module: CaseIterable {
         case .core, .designSystem, .navigation, .mediaKit, .mediaFlow: .core
         case .homeInterface, .compressInterface, .convertInterface,
              .audioInterface, .scanInterface, .profileInterface,
-             .debugInterface: .featureInterface
-        case .home, .compress, .convert, .audio, .scan, .profile, .debug: .feature
+             .debugInterface, .onboardingInterface: .featureInterface
+        case .home, .compress, .convert, .audio, .scan, .profile, .debug,
+             .onboarding: .feature
         }
     }
 
@@ -68,6 +71,8 @@ public enum Module: CaseIterable {
         case .profile: "ProfileFeature"
         case .debugInterface: "DebugFeatureInterface"
         case .debug: "DebugFeature"
+        case .onboardingInterface: "OnboardingFeatureInterface"
+        case .onboarding: "OnboardingFeature"
         }
     }
 
@@ -90,6 +95,8 @@ public enum Module: CaseIterable {
             "Modules/Features/ProfileFeature"
         case .debugInterface, .debug:
             "Modules/Features/DebugFeature"
+        case .onboardingInterface, .onboarding:
+            "Modules/Features/OnboardingFeature"
         }
     }
 
@@ -133,6 +140,10 @@ public enum Module: CaseIterable {
         case .profile: [.core, .designSystem, .navigation, .profileInterface]
         case .debugInterface: [.navigation]
         case .debug: [.core, .designSystem, .navigation, .debugInterface]
+        case .onboardingInterface: [.navigation]
+        // Маршрут главного экрана тур получает значением от App, поэтому
+        // интерфейсов чужих фич ему не нужно.
+        case .onboarding: [.core, .designSystem, .navigation, .onboardingInterface]
         }
     }
 

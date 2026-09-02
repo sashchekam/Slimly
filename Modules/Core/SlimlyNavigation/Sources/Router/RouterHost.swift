@@ -15,10 +15,17 @@ public struct RouterHost: View {
 
     public var body: some View {
         NavigationStack(path: $router.path) {
-            registry.view(for: router.root, router: router)
-                .navigationDestination(for: AnyRoute.self) { route in
-                    registry.view(for: route, router: router)
-                }
+            ZStack {
+                registry.view(for: router.root, router: router)
+                    // Идентичность корня — сам маршрут: без неё SwiftUI считает
+                    // новый мир тем же экраном и меняет содержимое без перехода.
+                    .id(router.root)
+                    .transition(RootSlideTransition())
+            }
+            .animation(.rootChange, value: router.root)
+            .navigationDestination(for: AnyRoute.self) { route in
+                registry.view(for: route, router: router)
+            }
         }
         .environment(router)
         // Идентичность слоя — его маршрут: без неё SwiftUI переиспользует

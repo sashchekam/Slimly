@@ -10,6 +10,8 @@ import Foundation
 import HomeFeature
 import HomeFeatureInterface
 import Observation
+import OnboardingFeature
+import OnboardingFeatureInterface
 import ProfileFeature
 import ProfileFeatureInterface
 import ScanFeature
@@ -35,6 +37,9 @@ final class AppContainer {
     /// результат обработки — файл на диске, а не ассет.
     let previewRenderer: any MediaPreviewRenderer
     let debugSettings = DebugSettings()
+    /// Отметка о показанном туре. Живёт здесь, а не в фиче: с неё начинается
+    /// выбор корня, и тот же экземпляр потом ставит отметку.
+    let onboardingState: any OnboardingState
 
     // MARK: Навигация
 
@@ -49,7 +54,8 @@ final class AppContainer {
     init(
         mediaLibrary: any MediaLibrary = PhotosMediaLibrary(),
         processingService: (any MediaProcessingService)? = nil,
-        previewRenderer: any MediaPreviewRenderer = SystemMediaPreviewRenderer()
+        previewRenderer: any MediaPreviewRenderer = SystemMediaPreviewRenderer(),
+        onboardingState: any OnboardingState = DefaultsOnboardingState()
     ) {
         // Хранилище статистики создаётся здесь, а не внутри обработчика:
         // отладочное меню сбрасывает те же цифры, что показывает профиль,
@@ -60,14 +66,23 @@ final class AppContainer {
         self.mediaLibrary = mediaLibrary
         self.processingService = processing
         self.previewRenderer = previewRenderer
+        self.onboardingState = onboardingState
 
-        router = Router(root: HomeRoute.home)
+        // Тур — это корень первого запуска, а не окно поверх хаба: показать
+        // его — значит начать приложение с другого мира, и заканчивается он
+        // сменой корня, а не закрытием модалки.
+        router = Router(
+            root: onboardingState.hasSeenTour
+                ? AnyRoute(HomeRoute.home)
+                : AnyRoute(OnboardingRoute.tour)
+        )
 
         // Плеер превью знает медиатеку, из которой пришёл файл: ролик она
         // отдаёт ссылкой, и другого экземпляра для этого заводить незачем.
         let mediaPlayer = Self.mediaPlayer(library: mediaLibrary)
 
         var resolvers: [RouteResolver] = [
+            OnboardingFeature.resolver(state: onboardingState, home: HomeRoute.home),
             HomeFeature.resolver(tools: HomeTools.all, profile: ProfileRoute.profile),
             CompressFeature.resolver(
                 mediaLibrary: mediaLibrary,

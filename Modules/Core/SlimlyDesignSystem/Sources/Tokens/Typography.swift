@@ -51,10 +51,14 @@ public enum SlimlyTracking {
 
 public extension View {
     /// Надпись-кикер над блоком: «ОСВОБОЖДЕНО ВСЕГО», «БУДЕТ», «ГОТОВО».
-    func slimlyKicker() -> some View {
+    ///
+    /// Обычно кикер приглушён — он подписывает то, что под ним, и не спорит
+    /// с ним за внимание. Цвет задают там, где кикер сам ведёт раздел:
+    /// в туре он единственная метка над картинкой.
+    func slimlyKicker(color: Color = SlimlyColor.neutral500) -> some View {
         font(.slimlyMicro)
             .tracking(SlimlyTracking.kicker)
             .textCase(.uppercase)
-            .foregroundStyle(SlimlyColor.neutral500)
+            .foregroundStyle(color)
     }
 }
