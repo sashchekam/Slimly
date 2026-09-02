@@ -55,7 +55,7 @@ final class AppContainer {
         mediaLibrary: any MediaLibrary = PhotosMediaLibrary(),
         processingService: (any MediaProcessingService)? = nil,
         previewRenderer: any MediaPreviewRenderer = SystemMediaPreviewRenderer(),
-        onboardingState: any OnboardingState = DefaultsOnboardingState()
+        onboardingState: any OnboardingState = StoredOnboardingState()
     ) {
         // Хранилище статистики создаётся здесь, а не внутри обработчика:
         // отладочное меню сбрасывает те же цифры, что показывает профиль,
@@ -120,7 +120,11 @@ final class AppContainer {
         // которому не соответствует ни один экран, и меню недостижимо.
         #if DEBUG
         resolvers.append(
-            DebugFeature.resolver(settings: debugSettings, statsStore: statsStore)
+            DebugFeature.resolver(
+                settings: debugSettings,
+                statsStore: statsStore,
+                onboardingState: onboardingState
+            )
         )
         #endif
 

@@ -22,7 +22,7 @@ public struct DocumentCameraPreview: UIViewRepresentable {
         return view
     }
 
-    public func updateUIView(_ uiView: PreviewView, context: Context) {}
+    public func updateUIView(_ uiView: PreviewView, context: Context) { }
 
     /// `UIView` поверх слоя превью — так слой всегда точно по размеру вью
     /// и не требует ручной раскладки при поворотах и изменениях кадра.

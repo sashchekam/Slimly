@@ -4,7 +4,7 @@ import SwiftUI
 /// как в макете, — но остаётся настоящим `Toggle`, поэтому VoiceOver читает
 /// его состоянием, а не картинкой.
 public struct SlimlyToggleStyle: ToggleStyle {
-    public init() {}
+    public init() { }
 
     public func makeBody(configuration: Configuration) -> some View {
         Button {

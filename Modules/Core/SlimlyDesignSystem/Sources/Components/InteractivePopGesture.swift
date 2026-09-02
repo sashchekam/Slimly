@@ -84,7 +84,7 @@ struct BackSwipeInstaller: UIViewControllerRepresentable {
 }
 
 /// Маркер: по типу находим свой распознаватель среди чужих и не ставим второй.
-private final class FullWidthBackSwipe: UIPanGestureRecognizer {}
+private final class FullWidthBackSwipe: UIPanGestureRecognizer { }
 
 /// Общий делегат обоих жестов: экраны появляются и исчезают, а делегат у
 /// распознавателя слабый — экземпляр, привязанный к экрану, умер бы вместе с

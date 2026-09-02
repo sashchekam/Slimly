@@ -48,8 +48,8 @@ public struct SlimlyLogoMarkAnimation: View {
 
     public init(
         size: CGFloat,
-        onLanding: @escaping () -> Void = {},
-        onFinish: @escaping () -> Void = {}
+        onLanding: @escaping () -> Void = { },
+        onFinish: @escaping () -> Void = { }
     ) {
         self.size = size
         self.onLanding = onLanding

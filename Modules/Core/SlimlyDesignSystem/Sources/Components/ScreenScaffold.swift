@@ -34,7 +34,7 @@ struct SlimlyScreenGlow: View {
 
 /// Фон целого экрана — то же пятно, отсчитанное от угла окна.
 public struct SlimlyScreenBackground: View {
-    public init() {}
+    public init() { }
 
     public var body: some View {
         SlimlyScreenGlow()

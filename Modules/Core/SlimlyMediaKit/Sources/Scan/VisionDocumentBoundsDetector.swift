@@ -9,7 +9,7 @@ import Vision
 /// Один запрос на всё приложение — иначе рамка на экране правки обещала бы
 /// одни границы, а документ собрался бы по другим.
 public struct VisionDocumentBoundsDetector: DocumentBoundsDetector {
-    public init() {}
+    public init() { }
 
     public func bounds(in imageData: Data) async -> DocumentQuad? {
         // Поиск идёт десятки миллисекунд на кадр — на главном потоке это

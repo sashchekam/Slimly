@@ -149,4 +149,19 @@ opening_brace:
   ignore_multiline_function_signatures: true
   ignore_multiline_type_headers: true
 
+# Пустое тело пишется как `{ }`: пара скобок с пробелом видна на строке,
+# а слипшееся `{}` глазами путается с `()` и теряется в хвосте объявления.
+custom_rules:
+  empty_braces_spacing:
+    name: "Пробел в пустых скобках"
+    regex: '\{\}'
+    message: "Пустое тело пишется как { }, а не {}"
+    severity: warning
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - doccomment.field
+      - string
+      - string_interpolation_anchor
+
 reporter: "xcode"

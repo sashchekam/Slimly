@@ -28,7 +28,7 @@ public struct SlimlyFadingRule: View {
 
 /// Вертикальный разделитель между колонками показателей — гаснет к торцам.
 public struct SlimlyColumnDivider: View {
-    public init() {}
+    public init() { }
 
     public var body: some View {
         LinearGradient(

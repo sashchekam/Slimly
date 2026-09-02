@@ -38,6 +38,10 @@ public struct AppEnvironment: Sendable, Hashable {
     }
 }
 
+public extension StorageKey where Value == String {
+    static var installID: StorageKey { StorageKey("slimly.install.id") }
+}
+
 public extension AppEnvironment {
     /// Текущая сборка. Считается один раз: за время работы приложения
     /// ни одно из этих значений не меняется.
@@ -84,13 +88,12 @@ public extension AppEnvironment {
     /// Свой идентификатор установки, а не системный: `identifierForVendor`
     /// живёт в UIKit, которого в этом модуле быть не должно, а нужен он только
     /// затем, чтобы два обращения из одной установки узнавались как одно.
-    private static func installID(in defaults: UserDefaults = .standard) -> String {
-        let key = "slimly.install.id"
-        if let stored = defaults.string(forKey: key) { return stored }
+    private static func installID(in storage: any KeyValueStorage = DefaultsStorage()) -> String {
+        if let stored: String = storage.value(for: .installID) { return stored }
 
         let raw = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8).uppercased()
         let generated = "\(raw.prefix(4))-\(raw.suffix(4))"
-        defaults.set(generated, forKey: key)
+        storage.set(generated, for: .installID)
         return generated
     }
 }

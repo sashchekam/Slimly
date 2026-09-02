@@ -5,11 +5,13 @@ import SlimlyNavigation
 public enum DebugFeature {
     /// Хранилище статистики приходит тем же экземпляром, что и у обработчика:
     /// сброс из меню должен обнулять те цифры, которые показывает профиль,
-    /// а не свою копию.
+    /// а не свою копию. По той же причине отметка о туре — тот экземпляр,
+    /// по которому старт выбирает корень.
     @MainActor
     public static func resolver(
         settings: DebugSettings,
         statsStore: ProcessingStatsStore,
+        onboardingState: any OnboardingState,
         environment: AppEnvironment = .current
     ) -> RouteResolver {
         RouteResolver(for: DebugRoute.self) { route, router in
@@ -19,6 +21,7 @@ public enum DebugFeature {
                     viewModel: DebugMenuViewModel(
                         settings: settings,
                         statsStore: statsStore,
+                        onboardingState: onboardingState,
                         environment: environment,
                         router: router
                     )

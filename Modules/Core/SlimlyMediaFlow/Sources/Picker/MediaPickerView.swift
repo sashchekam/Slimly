@@ -226,7 +226,7 @@ public struct MediaPickerView: View {
         title: String,
         text: String,
         actionTitle: String? = nil,
-        action: @escaping () -> Void = {}
+        action: @escaping () -> Void = { }
     ) -> some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 10) {

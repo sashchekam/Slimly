@@ -6,4 +6,4 @@ import Foundation
 /// Каждая фича объявляет свои маршруты в тонком `*FeatureInterface`-модуле:
 /// там нет UI, поэтому импортировать его может кто угодно, не создавая
 /// зависимости между фичами.
-public protocol Route: Hashable, Sendable {}
+public protocol Route: Hashable, Sendable { }

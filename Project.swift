@@ -43,6 +43,9 @@ let project = Project(
                 // система требует поддержки всех четырёх поворотов, потому что
                 // в Split View окно можно развернуть как угодно.
                 "UIRequiresFullScreen": true,
+                // Быстрые действия в контекстном меню иконки: те же инструменты,
+                // что и на главной. Список — в `Slimly.quickActions`.
+                "UIApplicationShortcutItems": Slimly.quickActions,
                 "CFBundleURLTypes": [
                     [
                         "CFBundleTypeRole": "Editor",

@@ -11,6 +11,7 @@ public final class DebugMenuViewModel {
     public struct Knob: Identifiable, Sendable {
         public enum ID: String, Sendable {
             case failure
+            case onboarding
         }
 
         public let id: ID
@@ -50,12 +51,31 @@ public final class DebugMenuViewModel {
         }
     }
 
+    /// Варианты отметки о туре: у крутилки те же чипы, что и у остальных,
+    /// поэтому булев флаг разложен в пару значений.
+    private enum TourMark: String {
+        case seen
+        case unseen
+
+        var title: String {
+            switch self {
+            case .seen: "Показан"
+            case .unseen: "Не показан"
+            }
+        }
+    }
+
     public private(set) var toast: String?
 
     private let settings: DebugSettings
     private let statsStore: ProcessingStatsStore
+    private let onboardingState: any OnboardingState
     private let environment: AppEnvironment
     private let router: Router
+
+    /// Копия отметки о туре: хранилище об изменениях не сообщает, а чип
+    /// выбранного варианта должен перекрашиваться сразу.
+    private var isTourSeen: Bool
 
     @ObservationIgnored
     private var toastTask: Task<Void, Never>?
@@ -63,13 +83,16 @@ public final class DebugMenuViewModel {
     public init(
         settings: DebugSettings,
         statsStore: ProcessingStatsStore,
+        onboardingState: any OnboardingState,
         environment: AppEnvironment,
         router: Router
     ) {
         self.settings = settings
         self.statsStore = statsStore
+        self.onboardingState = onboardingState
         self.environment = environment
         self.router = router
+        isTourSeen = onboardingState.hasSeenTour
     }
 
     /// Шапка меню: с неё начинается любое обращение в поддержку.
@@ -78,7 +101,7 @@ public final class DebugMenuViewModel {
     }
 
     public var knobs: [Knob] {
-        [failureKnob]
+        [failureKnob, onboardingKnob]
     }
 
     public var actions: [Action] {
@@ -100,11 +123,31 @@ public final class DebugMenuViewModel {
         )
     }
 
+    /// Тур — корень первого запуска, а не окно поверх хаба: пересобрать корень
+    /// на живом экране значит выкинуть пользователя из текущего флоу, поэтому
+    /// меню только переставляет отметку, а увидят её при следующем запуске.
+    private var onboardingKnob: Knob {
+        Knob(
+            id: .onboarding,
+            title: "Вводный тур",
+            hint: "Отметка о показе тура — снимите её и перезапустите приложение, чтобы начать с тура",
+            options: [
+                Option(id: TourMark.seen.rawValue, title: TourMark.seen.title, isSelected: isTourSeen),
+                Option(id: TourMark.unseen.rawValue, title: TourMark.unseen.title, isSelected: !isTourSeen),
+            ]
+        )
+    }
+
     public func select(_ option: Option, in knob: Knob) {
         switch knob.id {
         case .failure:
             guard let failure = SimulatedFailure(rawValue: option.id) else { return }
             settings.setSimulatedFailure(failure)
+        case .onboarding:
+            guard let mark = TourMark(rawValue: option.id) else { return }
+            isTourSeen = mark == .seen
+            onboardingState.setTourSeen(isTourSeen)
+            say(mark == .seen ? "Тур отмечен показанным" : "Тур покажется при следующем запуске")
         }
     }
 

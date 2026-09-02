@@ -9,27 +9,34 @@ import Foundation
 public protocol OnboardingState: Sendable {
     var hasSeenTour: Bool { get }
 
-    func markTourSeen()
+    /// Отметку умеет и снимать: отладочному меню нужно вернуть сборку
+    /// в состояние первого запуска, а не только отметить показ.
+    func setTourSeen(_ seen: Bool)
 }
 
-/// Отметка в `UserDefaults`: тур показывается один раз за установку.
-///
-/// `@unchecked` — потому что `UserDefaults` потокобезопасен по контракту,
-/// но `Sendable` в SDK не помечен.
-public struct DefaultsOnboardingState: OnboardingState, @unchecked Sendable {
-    private static let key = "slimly.onboarding.tourSeen"
+public extension OnboardingState {
+    func markTourSeen() {
+        setTourSeen(true)
+    }
+}
 
-    private let defaults: UserDefaults
+public extension StorageKey where Value == Bool {
+    static var onboardingTourSeen: StorageKey { StorageKey("slimly.onboarding.tourSeen") }
+}
 
-    public init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
+/// Отметка в хранилище: тур показывается один раз за установку.
+public struct StoredOnboardingState: OnboardingState {
+    private let storage: any KeyValueStorage
+
+    public init(storage: any KeyValueStorage = DefaultsStorage()) {
+        self.storage = storage
     }
 
     public var hasSeenTour: Bool {
-        defaults.bool(forKey: Self.key)
+        storage.value(for: .onboardingTourSeen, default: false)
     }
 
-    public func markTourSeen() {
-        defaults.set(true, forKey: Self.key)
+    public func setTourSeen(_ seen: Bool) {
+        storage.set(seen, for: .onboardingTourSeen)
     }
 }

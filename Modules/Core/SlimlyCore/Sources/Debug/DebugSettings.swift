@@ -38,18 +38,10 @@ public enum SimulatedFailure: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-public extension SimulatedFailure {
-    private static let key = "slimly.debug.simulatedFailure"
+extension SimulatedFailure: StorageValue { }
 
-    /// Читать подмену умеет кто угодно: обработчик файлов живёт вне главного
-    /// актора, и дотянуться до ``DebugSettings`` ему нечем.
-    static func stored(in defaults: UserDefaults = .standard) -> SimulatedFailure {
-        defaults.string(forKey: key).flatMap(SimulatedFailure.init(rawValue:)) ?? .off
-    }
-
-    func store(in defaults: UserDefaults = .standard) {
-        defaults.set(rawValue, forKey: Self.key)
-    }
+public extension StorageKey where Value == SimulatedFailure {
+    static var simulatedFailure: StorageKey { StorageKey("slimly.debug.simulatedFailure") }
 }
 
 /// Состояние отладочного меню: что именно сборка сейчас подменяет.
@@ -62,11 +54,11 @@ public extension SimulatedFailure {
 public final class DebugSettings {
     public private(set) var simulatedFailure: SimulatedFailure
 
-    private let defaults: UserDefaults
+    private let storage: any KeyValueStorage
 
-    public init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-        simulatedFailure = SimulatedFailure.stored(in: defaults)
+    public init(storage: any KeyValueStorage = DefaultsStorage()) {
+        self.storage = storage
+        simulatedFailure = storage.value(for: .simulatedFailure, default: .off)
     }
 
     /// Хоть одна подмена включена. Пока это так, поверх экранов горит метка
@@ -78,7 +70,7 @@ public final class DebugSettings {
 
     public func setSimulatedFailure(_ failure: SimulatedFailure) {
         simulatedFailure = failure
-        failure.store(in: defaults)
+        storage.set(failure, for: .simulatedFailure)
     }
 
     public func reset() {
