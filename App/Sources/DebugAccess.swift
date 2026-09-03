@@ -1,5 +1,7 @@
 #if DEBUG
 import DebugFeature
+import DebugFeatureInterface
+import SlimlyNavigation
 import SwiftUI
 import UIKit
 
@@ -24,6 +26,15 @@ struct DebugAccessOverlay: View {
             ShakeReporter { container.openDebugMenu() }
                 .frame(width: 0, height: 0)
         }
+        // Тряска — жест без визуального отклика: пока меню выезжает, удар
+        // подтверждает, что система жест распознала, а не приложение зависло.
+        .sensoryFeedback(trigger: isMenuPresented) { _, isPresented in
+            isPresented ? .impact(weight: .medium) : nil
+        }
+    }
+
+    private var isMenuPresented: Bool {
+        container.router.fullScreenCover?.unwrap(as: DebugRoute.self) == .menu
     }
 }
 

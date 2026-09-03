@@ -65,7 +65,12 @@ public protocol MediaLibrary: Sendable {
 
     /// Положить готовый файл в медиатеку. Возвращает идентификатор
     /// созданного ассета.
-    func saveToLibrary(_ file: URL, kind: MediaKind) async throws -> String
+    ///
+    /// - Parameter source: элемент, из которого файл получен. Его дата съёмки
+    ///   и геометка переезжают на результат: иначе перекодированное видео
+    ///   встаёт в конец галереи сегодняшним числом, а не рядом с оригиналом.
+    ///   `nil` — у файла нет прошлого: страницу с камеры сняли только что.
+    func saveToLibrary(_ file: URL, kind: MediaKind, inheritingFrom source: MediaItem?) async throws -> String
 
     /// Удалить оригиналы. iOS показывает собственный запрос подтверждения,
     /// поэтому своего мы не рисуем.

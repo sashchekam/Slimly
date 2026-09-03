@@ -72,6 +72,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
                     file,
                     kind: result.item.kind,
                     name: result.outputName,
+                    source: result.item,
                     destination: result.destination
                 )
                 saved.append(result.stored(at: stored))

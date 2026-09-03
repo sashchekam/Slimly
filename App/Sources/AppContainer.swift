@@ -48,6 +48,12 @@ final class AppContainer {
 
     private let deeplinks: DeeplinkRegistry
 
+    /// Первый экран показан: до этого момента ссылкам открывать нечего.
+    private var isScreenReady = false
+    /// Ссылка, пришедшая раньше первого экрана. Хранится последняя: нажатие
+    /// в меню иконки одно, и открыть оно должно один инструмент.
+    private var deferredDeeplink: DeeplinkURL?
+
     /// Обработчику нужна та же медиатека, из которой выбирали файлы:
     /// он забирает у неё оригиналы и возвращает результат. Поэтому сервис
     /// собирается после библиотеки, а не значением по умолчанию.
@@ -164,9 +170,25 @@ final class AppContainer {
 
     /// Диплинк — это одно присвоение состояния: маршруты раскладываются
     /// в корень, стек и модалку, SwiftUI сам дорисовывает иерархию.
+    ///
+    /// До конца заставки ссылка только откладывается: при холодном старте
+    /// быстрое действие приходит раньше первого экрана, и открытая сразу
+    /// шторка выехала бы поверх заставки.
     func handle(_ deeplink: DeeplinkURL) {
+        guard isScreenReady else {
+            deferredDeeplink = deeplink
+            return
+        }
         guard let destination = deeplinks.destination(for: deeplink) else { return }
         router.apply(destination)
+    }
+
+    /// Заставка ушла, первый экран на месте — отложенная ссылка открывается.
+    func screenDidAppear() {
+        isScreenReady = true
+        guard let deeplink = deferredDeeplink else { return }
+        deferredDeeplink = nil
+        handle(deeplink)
     }
 
     #if DEBUG

@@ -57,6 +57,13 @@ struct AppRootView: View {
             isSplashMounted = false
         }
 
-        withAnimation(.easeInOut(duration: 0.35).delay(0.26)) { isAppVisible = true }
+        // Отложенная ссылка открывается только после проявления: шторка,
+        // выехавшая на полупрозрачном экране, читается как сбой, а не как
+        // открытый инструмент.
+        withAnimation(.easeInOut(duration: 0.35).delay(0.26)) {
+            isAppVisible = true
+        } completion: {
+            container.screenDidAppear()
+        }
     }
 }

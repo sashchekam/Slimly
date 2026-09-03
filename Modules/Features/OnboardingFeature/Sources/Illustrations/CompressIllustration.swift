@@ -33,15 +33,23 @@ struct CompressIllustration: View {
 
 /// Миниатюра файла и полоса его размера.
 private struct ShrinkRow: View {
+    /// Ширина полосы и прозрачность строки. Прозрачность нужна, чтобы круг
+    /// замыкался: сжатая полоса не растягивается обратно на глазах,
+    /// а гаснет и возвращается уже целой — как следующая пачка файлов.
+    private struct Phase {
+        var width = 1.0
+        var opacity = 1.0
+    }
+
     let delay: Double
 
     var body: some View {
-        HStack(spacing: 10) {
-            SlimlyStripes.thumbnail
-                .frame(width: 34, height: 34)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        KeyframeAnimator(initialValue: Phase(), repeating: true) { phase in
+            HStack(spacing: 10) {
+                SlimlyStripes.thumbnail
+                    .frame(width: 34, height: 34)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
 
-            KeyframeAnimator(initialValue: 1.0, repeating: true) { fraction in
                 GeometryReader { proxy in
                     Capsule()
                         .fill(
@@ -51,22 +59,35 @@ private struct ShrinkRow: View {
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: proxy.size.width * fraction)
+                        .frame(width: proxy.size.width * phase.width)
                 }
-            } keyframes: { _ in
-                LinearKeyframe(1, duration: 0.47 + delay)
+                .frame(height: 9)
+                .background(SlimlyColor.text.opacity(0.09), in: Capsule())
+            }
+            .opacity(phase.opacity)
+        } keyframes: { _ in
+            KeyframeTrack(\.width) {
+                LinearKeyframe(1, duration: 0.5 + delay)
                 CubicKeyframe(0.34, duration: 1.35)
                 // Круг у всех строк одной длины: задержка съедается хвостом,
                 // иначе полосы за минуту расходятся и стая распадается.
-                LinearKeyframe(0.34, duration: 0.78 - delay)
+                LinearKeyframe(0.34, duration: 0.95 - delay)
+                // Ширина возвращается в единицу, пока строка уже невидима.
+                LinearKeyframe(1, duration: 0.01)
+                LinearKeyframe(1, duration: 0.39)
             }
-            .frame(height: 9)
-            .background(SlimlyColor.text.opacity(0.09), in: Capsule())
+            KeyframeTrack(\.opacity) {
+                LinearKeyframe(1, duration: 2.5)
+                CubicKeyframe(0, duration: 0.3)
+                LinearKeyframe(0, duration: 0.01)
+                CubicKeyframe(1, duration: 0.39)
+            }
         }
     }
 }
 
-/// «−58 % · 1,4 ГБ → 590 МБ» — появляется, когда полосы уже ужались.
+/// «−58 % · 1,4 ГБ → 590 МБ» — появляется, когда полосы уже ужались,
+/// и гаснет вместе с ними.
 private struct SavingLabel: View {
     private struct Phase {
         var opacity = 0.0
@@ -89,15 +110,19 @@ private struct SavingLabel: View {
             .offset(y: phase.offset)
         } keyframes: { _ in
             KeyframeTrack(\.opacity) {
-                LinearKeyframe(0, duration: 0.57)
-                CubicKeyframe(1, duration: 0.52)
-                LinearKeyframe(1, duration: 1.25)
-                LinearKeyframe(0, duration: 0.26)
+                LinearKeyframe(0, duration: 1.4)
+                CubicKeyframe(1, duration: 0.5)
+                LinearKeyframe(1, duration: 0.6)
+                CubicKeyframe(0, duration: 0.3)
+                LinearKeyframe(0, duration: 0.4)
             }
             KeyframeTrack(\.offset) {
-                LinearKeyframe(4, duration: 0.57)
-                CubicKeyframe(0, duration: 0.52)
-                LinearKeyframe(0, duration: 1.51)
+                LinearKeyframe(4, duration: 1.4)
+                CubicKeyframe(0, duration: 0.5)
+                LinearKeyframe(0, duration: 0.9)
+                // Смещение сбрасывается на невидимой подписи, поэтому
+                // возврат к четырём пунктам не читается как рывок.
+                LinearKeyframe(4, duration: 0.4)
             }
         }
     }

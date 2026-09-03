@@ -52,13 +52,13 @@ public struct OnboardingView: View {
     }
 
     private var steps: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             ForEach(viewModel.pages.indices, id: \.self) { index in
                 let isCurrent = index == viewModel.pageIndex
 
                 Capsule()
-                    .fill(isCurrent ? SlimlyColor.accent : SlimlyColor.divider)
-                    .frame(width: isCurrent ? 22 : 10, height: 3)
+                    .fill(isCurrent ? SlimlyColor.accent : SlimlyColor.neutral800)
+                    .frame(width: isCurrent ? 30 : 14, height: 6)
             }
         }
         .padding(.leading, 4)

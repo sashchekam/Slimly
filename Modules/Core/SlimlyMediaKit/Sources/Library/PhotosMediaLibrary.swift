@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreLocation
 import Foundation
 import Photos
 import SlimlyCore
@@ -351,8 +352,17 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         }
     }
 
-    public func saveToLibrary(_ file: URL, kind: MediaKind) async throws -> String {
+    public func saveToLibrary(
+        _ file: URL,
+        kind: MediaKind,
+        inheritingFrom source: MediaItem?
+    ) async throws -> String {
         let identifier = IdentifierBox()
+        let origin = source.flatMap { Self.asset(for: $0.id) }
+        // Читаем до блока изменений: внутрь него ассет пришлось бы тащить
+        // через границу изоляции, а дата с координатой переезжают сами.
+        let creationDate = origin?.creationDate
+        let coordinate = origin?.location?.coordinate
 
         try await PHPhotoLibrary.shared().performChanges {
             let request = PHAssetCreationRequest.forAsset()
@@ -364,6 +374,17 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
                 fileURL: file,
                 options: options
             )
+            // Дату проставляем явно, а не полагаемся на содержимое файла:
+            // EXIF есть только у картинок, а перекодированное видео приезжает
+            // без метаданных контейнера — и вставало бы в конец галереи
+            // сегодняшним числом вместо места рядом с оригиналом.
+            request.creationDate = creationDate
+            if let coordinate {
+                request.location = CLLocation(
+                    latitude: coordinate.latitude,
+                    longitude: coordinate.longitude
+                )
+            }
             identifier.value = request.placeholderForCreatedAsset?.localIdentifier
         }
 
