@@ -6,3 +6,6 @@ Derived/
 *.xcuserdatad
 
 .claude/settings.local.json
+
+# Резолвленные SPM-зависимости: восстанавливаются `tuist install`.
+Tuist/.build/

@@ -16,6 +16,7 @@ public enum Module: CaseIterable {
     case mediaKit
     case mediaFlow
     case shortcuts
+    case firebase
     // Features
     case homeInterface
     case home
@@ -42,7 +43,8 @@ public enum Module: CaseIterable {
 
     public var kind: Kind {
         switch self {
-        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts: .core
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts,
+             .firebase: .core
         case .homeInterface, .compressInterface, .convertInterface,
              .audioInterface, .scanInterface, .profileInterface,
              .debugInterface, .onboardingInterface: .featureInterface
@@ -59,6 +61,7 @@ public enum Module: CaseIterable {
         case .mediaKit: "SlimlyMediaKit"
         case .mediaFlow: "SlimlyMediaFlow"
         case .shortcuts: "SlimlyShortcuts"
+        case .firebase: "SlimlyFirebase"
         case .homeInterface: "HomeFeatureInterface"
         case .home: "HomeFeature"
         case .compressInterface: "CompressFeatureInterface"
@@ -81,7 +84,8 @@ public enum Module: CaseIterable {
     /// Папка модуля на диске.
     public var path: String {
         switch self {
-        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts:
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts,
+             .firebase:
             "Modules/Core/\(name)"
         case .homeInterface, .home:
             "Modules/Features/HomeFeature"
@@ -128,6 +132,10 @@ public enum Module: CaseIterable {
         // иконки. Иконка и подписи у них те же, что на главной, — отсюда
         // дизайн-система, а адрес собирается из схемы, которую знает core.
         case .shortcuts: [.core, .designSystem]
+        // Единственный модуль, который знает про Firebase SDK: наружу он
+        // отдаёт только протоколы аналитики и конфига из core, поэтому
+        // ни одна фича с SDK не связывается.
+        case .firebase: [.core]
         case .homeInterface: [.navigation]
         case .home: [.core, .designSystem, .navigation, .homeInterface]
         // Маршруты инструментов несут модели медиатеки и задание
@@ -153,7 +161,29 @@ public enum Module: CaseIterable {
         }
     }
 
+    /// Пакеты SPM, которые линкует модуль.
+    ///
+    /// Список именно здесь, а не в манифесте таргета: правило «фича не тянет
+    /// чужой SDK» проверяется по этому же реестру — внешняя зависимость
+    /// видна рядом с внутренними.
+    public var externalDependencies: [String] {
+        switch self {
+        case .firebase: ["FirebaseAnalytics", "FirebaseRemoteConfig"]
+        default: []
+        }
+    }
+
     public var targetDependency: TargetDependency { .target(name: name) }
+
+    /// Настройки сборки модуля поверх общих.
+    public var settings: SettingsDictionary {
+        guard !externalDependencies.isEmpty else { return Slimly.baseSettings }
+
+        // Зависимости SPM приезжают статическими, а категории Objective-C
+        // из статической библиотеки без `-ObjC` в бинарник не попадают:
+        // Firebase падает в рантайме на «unrecognized selector».
+        return Slimly.baseSettings.merging(["OTHER_LDFLAGS": "$(inherited) -ObjC"]) { _, new in new }
+    }
 
     /// Все модули, проверенные на соблюдение правил связей.
     /// Нарушение валит `tuist generate` с внятным сообщением.
@@ -199,8 +229,9 @@ public extension Target {
             deploymentTargets: Slimly.deploymentTargets,
             sources: ["\(module.sourcesPath)/**"],
             resources: resourcesIfExist(at: "\(module.path)/Resources"),
-            dependencies: module.dependencies.map(\.targetDependency),
-            settings: .settings(base: Slimly.baseSettings)
+            dependencies: module.dependencies.map(\.targetDependency)
+                + module.externalDependencies.map { .external(name: $0) },
+            settings: .settings(base: module.settings)
         )
     }
 

@@ -17,6 +17,7 @@ import ProfileFeatureInterface
 import ScanFeature
 import ScanFeatureInterface
 import SlimlyCore
+import SlimlyFirebase
 import SlimlyMediaFlow
 import SlimlyMediaKit
 import SlimlyNavigation
@@ -40,6 +41,14 @@ final class AppContainer {
     /// Отметка о показанном туре. Живёт здесь, а не в фиче: с неё начинается
     /// выбор корня, и тот же экземпляр потом ставит отметку.
     let onboardingState: any OnboardingState
+    /// Общая аналитика приложения. Фича её не создаёт: она заводит свою
+    /// поверх этой и получает её параметром резолвера.
+    let analytics: any AnalyticsService
+    /// Значения, которыми можно управлять без выпуска сборки.
+    let remoteConfig: any RemoteConfigService
+
+    /// События самого приложения — то, что случается вне экранов.
+    private let appAnalytics: AppAnalytics
 
     // MARK: Навигация
 
@@ -61,7 +70,8 @@ final class AppContainer {
         mediaLibrary: any MediaLibrary = PhotosMediaLibrary(),
         processingService: (any MediaProcessingService)? = nil,
         previewRenderer: any MediaPreviewRenderer = SystemMediaPreviewRenderer(),
-        onboardingState: any OnboardingState = StoredOnboardingState()
+        onboardingState: any OnboardingState = StoredOnboardingState(),
+        firebase: FirebaseServices = FirebaseServices()
     ) {
         // Хранилище статистики создаётся здесь, а не внутри обработчика:
         // отладочное меню сбрасывает те же цифры, что показывает профиль,
@@ -73,6 +83,21 @@ final class AppContainer {
         self.processingService = processing
         self.previewRenderer = previewRenderer
         self.onboardingState = onboardingState
+
+        // В отладочной сборке событие дублируется в консоль: иначе увидеть,
+        // что именно ушло, можно только в веб-консоли и только назавтра.
+        #if DEBUG
+        analytics = CompositeAnalytics([firebase.analytics, ConsoleAnalytics()])
+        #else
+        analytics = firebase.analytics
+        #endif
+        remoteConfig = firebase.remoteConfig
+        appAnalytics = AppAnalytics(analytics: analytics)
+
+        // Свежие значения нужны первому же экрану, но ждать их старт не
+        // должен: до ответа сети работают умолчания ключей.
+        let remote = firebase.remoteConfig
+        Task { await remote.refresh() }
 
         // Тур — это корень первого запуска, а не окно поверх хаба: показать
         // его — значит начать приложение с другого мира, и заканчивается он
@@ -179,8 +204,12 @@ final class AppContainer {
             deferredDeeplink = deeplink
             return
         }
-        guard let destination = deeplinks.destination(for: deeplink) else { return }
+        guard let destination = deeplinks.destination(for: deeplink) else {
+            appAnalytics.didFailDeeplink(deeplink)
+            return
+        }
         router.apply(destination)
+        appAnalytics.didOpenDeeplink(deeplink)
     }
 
     /// Заставка ушла, первый экран на месте — отложенная ссылка открывается.
