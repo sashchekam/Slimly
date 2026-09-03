@@ -57,8 +57,12 @@ let project = Project(
             sources: ["App/Sources/**"],
             resources: ["App/Resources/**"],
             scripts: [Slimly.swiftLintScript],
-            dependencies: Module.validated.map(\.targetDependency),
+            // Расширение с виджетами едет внутрь бандла приложения —
+            // Tuist сам кладёт его в фазу «Embed App Extensions».
+            dependencies: Module.validated.map(\.targetDependency)
+                + [.target(name: Slimly.widgetName)],
             settings: .settings(base: Slimly.baseSettings)
         ),
+        .slimlyWidget,
     ] + Module.validated.map(Target.module)
 )

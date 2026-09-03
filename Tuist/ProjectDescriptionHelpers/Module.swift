@@ -15,6 +15,7 @@ public enum Module: CaseIterable {
     case navigation
     case mediaKit
     case mediaFlow
+    case shortcuts
     // Features
     case homeInterface
     case home
@@ -41,7 +42,7 @@ public enum Module: CaseIterable {
 
     public var kind: Kind {
         switch self {
-        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow: .core
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts: .core
         case .homeInterface, .compressInterface, .convertInterface,
              .audioInterface, .scanInterface, .profileInterface,
              .debugInterface, .onboardingInterface: .featureInterface
@@ -57,6 +58,7 @@ public enum Module: CaseIterable {
         case .navigation: "SlimlyNavigation"
         case .mediaKit: "SlimlyMediaKit"
         case .mediaFlow: "SlimlyMediaFlow"
+        case .shortcuts: "SlimlyShortcuts"
         case .homeInterface: "HomeFeatureInterface"
         case .home: "HomeFeature"
         case .compressInterface: "CompressFeatureInterface"
@@ -79,7 +81,7 @@ public enum Module: CaseIterable {
     /// Папка модуля на диске.
     public var path: String {
         switch self {
-        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow:
+        case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts:
             "Modules/Core/\(name)"
         case .homeInterface, .home:
             "Modules/Features/HomeFeature"
@@ -122,6 +124,10 @@ public enum Module: CaseIterable {
         // Общие шаги флоу — это экраны, поэтому нужны и дизайн-система,
         // и роутер: шаг сам решает, куда положить следующий маршрут.
         case .mediaFlow: [.core, .designSystem, .navigation]
+        // Каталог инструментов для точек входа снаружи экрана: виджеты и меню
+        // иконки. Иконка и подписи у них те же, что на главной, — отсюда
+        // дизайн-система, а адрес собирается из схемы, которую знает core.
+        case .shortcuts: [.core, .designSystem]
         case .homeInterface: [.navigation]
         case .home: [.core, .designSystem, .navigation, .homeInterface]
         // Маршруты инструментов несут модели медиатеки и задание
