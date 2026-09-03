@@ -45,6 +45,24 @@ public enum Slimly {
     ///
     /// Отсутствие SwiftLint сборку не валит: на чужой машине без него
     /// приложение всё равно должно собираться.
+    /// Реестр событий аналитики собирается из кода, поэтому в сборке он
+    /// только проверяется: разошёлся с `ANALYTICS.md` — сборка падает.
+    ///
+    /// Без этой фазы реестр устаревает молча, а вспоминают о нём ровно
+    /// тогда, когда по нему настраивают отчёт.
+    public static let analyticsRegistryScript: TargetScript = .pre(
+        script: """
+        # Xcode отдаёт фазе свой SDK — тот, которым собирается приложение.
+        # Скрипт же запускается на маке, и с SDK симулятора компилятор
+        # не находит даже стандартную библиотеку.
+        export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+
+        swift "$SRCROOT/Tools/AnalyticsRegistry.swift" --check "$SRCROOT"
+        """,
+        name: "AnalyticsRegistry",
+        basedOnDependencyAnalysis: false
+    )
+
     public static let swiftLintScript: TargetScript = .pre(
         script: """
         # Xcode запускает фазы не из shell пользователя: в PATH нет ни

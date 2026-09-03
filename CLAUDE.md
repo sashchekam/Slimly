@@ -13,6 +13,8 @@ xcodebuild -workspace Slimly.xcworkspace -scheme Slimly \
 
 xcrun simctl openurl booted "slimly://profile"   # проверить диплинк
 
+swift Tools/AnalyticsRegistry.swift  # пересобрать ANALYTICS.md после правки событий
+
 swiftlint lint --strict --quiet  # линтер: обязателен в конце любой доработки
 swiftlint --fix --quiet          # автоисправимое (порядок импортов, запятые, отступы)
 ```
@@ -95,6 +97,11 @@ struct CompressAnalytics: FeatureAnalytics {
     }
 }
 ```
+
+Все события лежат в `ANALYTICS.md`. Файл собирается из кода скриптом
+`Tools/AnalyticsRegistry.swift` и руками не правится; фаза сборки
+`AnalyticsRegistry` валит сборку, если он отстал от кода. Конвенция имён
+и порядок работы — в скилле `analytics-event`.
 
 Ключ удалённого конфига объявляется расширением `RemoteConfigKey` рядом
 с тем, кто им пользуется, — как `StorageKey`. Умолчание лежит в самом ключе,
