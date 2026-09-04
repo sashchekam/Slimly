@@ -5,11 +5,46 @@ import Foundation
 /// Все инструменты идут одним путём «выбор → настройки → обработка → итог»,
 /// и различаются как раз этим: от вида работы зависят и тексты шагов,
 /// и то, как результат ложится в статистику.
-public enum ProcessingKind: String, Sendable, Hashable, CaseIterable {
+public enum ProcessingKind: String, Sendable, Hashable, Codable, CaseIterable {
     case compression
     case conversion
     case audioExtraction
     case scan
+
+    /// Как работа называется в отчёте о сделанном.
+    ///
+    /// Каталог инструментов сюда не годится: там пять карточек, а конвертация
+    /// фото и видео — одна и та же работа, и в статистике они складываются.
+    public var title: String {
+        switch self {
+        case .compression: "Сжатие"
+        case .conversion: "Конвертация"
+        case .audioExtraction: "Извлечение звука"
+        case .scan: "Скан документов"
+        }
+    }
+
+    /// Имя для тесных мест — легенды под полосой долей, где полное
+    /// не помещается.
+    public var shortTitle: String {
+        switch self {
+        case .compression: "Сжатие"
+        case .conversion: "Конвертация"
+        case .audioExtraction: "Звук"
+        case .scan: "Сканы"
+        }
+    }
+
+    /// Что считает счётчик операций у этого вида работы: сжатие и конвертация
+    /// работают с файлами, звук достаётся из видео, а скан считается
+    /// документами, а не страницами.
+    public var unit: CountFormatter.Noun {
+        switch self {
+        case .compression, .conversion: .file
+        case .audioExtraction: .video
+        case .scan: .scan
+        }
+    }
 }
 
 // MARK: - Форматы результата

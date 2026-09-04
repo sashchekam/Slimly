@@ -176,6 +176,7 @@ final class AppContainer {
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
                 processingService: processing,
+                analytics: analytics,
                 debugMenu: Self.debugMenuRoute
             ),
         ]

@@ -37,6 +37,10 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
     /// Файл на диске, если элемент пришёл не из медиатеки: страница, снятая
     /// камерой, ассетом не является, и достать её по `id` неоткуда.
     public let sourceURL: URL?
+    /// Когда снят файл. По ней подписана сетка выбора: в медиатеке файлы
+    /// идут от свежих к старым, и дата — единственный ориентир при листании.
+    /// У страницы, снятой камерой, её нет: медиатеке она не принадлежит.
+    public let creationDate: Date?
 
     public init(
         id: String,
@@ -49,7 +53,8 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         isLivePhoto: Bool = false,
         pixelWidth: Int = 0,
         pixelHeight: Int = 0,
-        sourceURL: URL? = nil
+        sourceURL: URL? = nil,
+        creationDate: Date? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -62,6 +67,7 @@ public struct MediaItem: Sendable, Hashable, Identifiable {
         self.pixelWidth = pixelWidth
         self.pixelHeight = pixelHeight
         self.sourceURL = sourceURL
+        self.creationDate = creationDate
     }
 
     /// Имя без расширения — основа для имени результата.
@@ -106,6 +112,21 @@ public struct MediaAlbum: Sendable, Hashable, Identifiable {
     }
 
     public var isRecent: Bool { id == Self.recentID }
+}
+
+/// Порция витрины: медиатеку читаем страницами, поэтому кроме файлов нужен
+/// признак, осталось ли что грузить дальше. Считать его по длине страницы
+/// нельзя: последняя порция может ровно совпасть с размером окна.
+public struct MediaPage: Sendable, Hashable {
+    public let items: [MediaItem]
+    public let hasMore: Bool
+
+    public init(items: [MediaItem], hasMore: Bool) {
+        self.items = items
+        self.hasMore = hasMore
+    }
+
+    public static let empty = MediaPage(items: [], hasMore: false)
 }
 
 public extension Duration {

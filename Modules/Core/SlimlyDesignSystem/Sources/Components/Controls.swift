@@ -12,11 +12,21 @@ public struct SlimlyChip: View {
     private let title: String
     private let isSelected: Bool
     private let style: Style
+    private let fillsWidth: Bool
 
-    public init(_ title: String, isSelected: Bool, style: Style = .standalone) {
+    /// `fillsWidth` — для ряда, который делит ширину поровну: переключатель
+    /// среза времени. Без него чип сжимается по надписи, и «30 дней»
+    /// оказывается уже «Всё время».
+    public init(
+        _ title: String,
+        isSelected: Bool,
+        style: Style = .standalone,
+        fillsWidth: Bool = false
+    ) {
         self.title = title
         self.isSelected = isSelected
         self.style = style
+        self.fillsWidth = fillsWidth
     }
 
     public var body: some View {
@@ -25,6 +35,7 @@ public struct SlimlyChip: View {
             .foregroundStyle(foreground)
             .padding(.horizontal, style == .standalone ? 15 : 12)
             .padding(.vertical, style == .standalone ? 10 : 8)
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
             .background(background, in: shape)
             .overlay { shape.strokeBorder(border, lineWidth: 1) }
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)

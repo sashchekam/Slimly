@@ -46,7 +46,11 @@ public protocol MediaLibrary: Sendable {
 
     func snapshot() async -> LibrarySnapshot
     func albums(kind: MediaKind?) async -> [MediaAlbum]
-    func items(in albumID: String, kind: MediaKind?) async -> [MediaItem]
+    /// Страница файлов альбома. Медиатека может быть на десятки тысяч
+    /// файлов, и вес каждого система отдаёт поштучно, поэтому витрина
+    /// читается окнами: экран открывается сразу, а остальное догружается
+    /// по мере прокрутки.
+    func items(in albumID: String, kind: MediaKind?, offset: Int, limit: Int) async -> MediaPage
 
     /// Миниатюра в JPEG. Данные, а не картинка, — чтобы модель не зависела
     /// от UIKit и спокойно ездила между акторами.

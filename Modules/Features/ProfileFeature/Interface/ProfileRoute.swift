@@ -4,4 +4,7 @@ import SlimlyNavigation
 /// не описаны, поэтому маршрутов под них здесь пока нет.
 public enum ProfileRoute: Route {
     case profile
+    /// Подробный разрез сделанного: срезы по времени и карточка
+    /// на каждый инструмент.
+    case statistics
 }

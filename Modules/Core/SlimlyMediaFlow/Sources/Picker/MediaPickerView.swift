@@ -11,6 +11,13 @@ public struct MediaPickerView: View {
     @Environment(\.openURL)
     private var openURL
 
+    /// Где у списка кадр и какие даты в него попали — считается по геометрии
+    /// плиток, поэтому живёт во вью, а не в модели.
+    @State
+    private var window = MediaScrollWindow()
+    @State
+    private var visibleDates: MediaDateSpan?
+
     /// Чем оживить превью в контекстном меню. Без фабрики оно остаётся
     /// кадром — так экран работает и там, где играть нечего.
     private let player: MediaItemPlayerFactory?
@@ -44,6 +51,10 @@ public struct MediaPickerView: View {
                     }
                 }
             }
+            .coordinateSpace(.named(MediaScrollWindow.space))
+            .reportsWindowBottom()
+            .onPreferenceChange(MediaScrollWindowKey.self) { window = $0 }
+            .onPreferenceChange(MediaVisibleDatesKey.self) { visibleDates = $0 }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 // Панель появляется вместе с первым выбранным файлом, поэтому
                 // выезжает снизу: резкое появление читалось бы как скачок вёрстки.
@@ -127,11 +138,34 @@ public struct MediaPickerView: View {
     /// Меню альбомов прилипает к верху списка: пролистав сетку, всё ещё видно,
     /// какой альбом открыт, и сменить его можно не возвращаясь наверх.
     private var stickyAlbumMenu: some View {
-        albumMenu
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, SlimlySpacing.screenHorizontal)
-            .padding(.vertical, 6)
-            .slimlyStickyBackground()
+        HStack(spacing: 10) {
+            albumMenu
+
+            visibleDatesLabel
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .animation(.easeInOut(duration: 0.2), value: visibleDates == nil)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, SlimlySpacing.screenHorizontal)
+        .padding(.vertical, 6)
+        .slimlyStickyBackground()
+        .reportsWindowTop()
+    }
+
+    /// Даты плиток, которые сейчас в кадре, — как в системной галерее.
+    /// Медиатека идёт от свежих файлов к старым, поэтому надпись читается
+    /// как «докуда долистали», и по ней видно, что листать дальше.
+    @ViewBuilder
+    private var visibleDatesLabel: some View {
+        if let visibleDates {
+            Text(MediaDateFormatter.string(from: visibleDates.earliest, to: visibleDates.latest))
+                .font(.slimlyCaptionSmall)
+                .monospacedDigit()
+                .foregroundStyle(SlimlyColor.neutral500)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .transition(.opacity)
+        }
     }
 
     /// Список альбомов — системное меню: у него готовы блюр, галочка
@@ -182,6 +216,7 @@ public struct MediaPickerView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    @ViewBuilder
     private var grid: some View {
         LazyVGrid(columns: columns, spacing: 7) {
             ForEach(viewModel.items) { item in
@@ -218,8 +253,24 @@ public struct MediaPickerView: View {
                         player: player
                     )
                 }
+                .reportsVisibleDate(item.creationDate, in: window)
+                .onAppear { viewModel.willShow(item) }
             }
         }
+
+        if viewModel.hasMore {
+            gridFooter
+        }
+    }
+
+    /// Подвал сетки: пока медиатека дочитывается, под последним рядом видно,
+    /// что список не кончился. Он же просит следующую страницу — на случай,
+    /// если быстрая прокрутка проскочила плитку-триггер.
+    private var gridFooter: some View {
+        SlimlySpinner()
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .onAppear { viewModel.loadMoreIfNeeded() }
     }
 
     private func notice(

@@ -49,6 +49,10 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         await statsStore.stats()
     }
 
+    public func history() async -> ProcessingHistory {
+        await statsStore.history()
+    }
+
     public func process(_ request: ProcessingRequest) -> AsyncStream<ProcessingEvent> {
         AsyncStream { continuation in
             let task = Task { await run(request, into: continuation) }

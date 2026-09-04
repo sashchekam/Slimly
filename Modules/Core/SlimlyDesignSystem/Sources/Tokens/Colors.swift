@@ -48,6 +48,10 @@ public enum SlimlyColor {
     public static let tileCaption = Color(hex: 0x0C0D14).opacity(0.74)
     /// Дно прогресс-кольца и другие «утопленные» участки.
     public static let surfaceSunken = Color(hex: 0x1A1C2B)
+    /// Ячейка внутри карточки: на ступень темнее поверхности, но светлее
+    /// фона экрана — так вложенный блок читается как часть карточки,
+    /// а не как дырка в ней.
+    public static let surfaceInset = Color(hex: 0x20222F)
     /// Поверхность нижней шторки — на ступень светлее фона, чтобы её край
     /// читался поверх затемнённого экрана.
     public static let sheet = Color(hex: 0x1C1E2C)

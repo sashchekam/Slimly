@@ -4,7 +4,8 @@ import SwiftUI
 public struct SlimlyProgressBar: View {
     /// Толстые полосы-итоги заливаются градиентом рампы, тонкие строчные —
     /// сплошным акцентом: на трёх пунктах высоты градиент всё равно не читается.
-    public enum Fill: Sendable { case gradient, solid }
+    /// Приглушённая — для полосок в ряду, где акцент занят ведущим показателем.
+    public enum Fill: Sendable { case gradient, solid, muted }
 
     private let value: Double
     private let height: CGFloat
@@ -38,6 +39,8 @@ public struct SlimlyProgressBar: View {
             )
         case .solid:
             AnyShapeStyle(SlimlyColor.accent)
+        case .muted:
+            AnyShapeStyle(SlimlyColor.neutral700)
         }
     }
 }

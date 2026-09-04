@@ -47,6 +47,13 @@
 | `onboarding_finished` | `page`, `skipped` | Тур закончен. |
 | `onboarding_page_opened` | `page` | Открыта следующая страница тура. |
 
+## profile · `Modules/Features/ProfileFeature/Sources/ProfileAnalytics.swift`
+
+| Событие | Параметры | Что значит |
+| --- | --- | --- |
+| `profile_statistics_opened` | `source` | Открыт разбор по инструментам. |
+| `profile_statistics_range_changed` | `range` | Сменили срез времени. |
+
 ## scan · `Modules/Features/ScanFeature/Sources/ScanAnalytics.swift`
 
 | Событие | Параметры | Что значит |

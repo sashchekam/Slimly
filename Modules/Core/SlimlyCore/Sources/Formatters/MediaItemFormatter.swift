@@ -52,6 +52,19 @@ public enum DurationFormatter {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
+    /// Суммарная длительность: «46 мин», «2 ч 14 мин», «5 ч 02 мин».
+    ///
+    /// Секунд здесь нет: это итог за месяцы, и точность до секунды в нём
+    /// была бы шумом. Минуты у часов дополнены нулём, чтобы столбик чисел
+    /// не прыгал при смене среза.
+    public static func total(seconds: Double) -> String {
+        let minutes = max(0, Int((seconds / 60).rounded()))
+        let hours = minutes / 60
+
+        guard hours > 0 else { return "\(minutes) мин" }
+        return String(format: "%d ч %02d мин", hours, minutes % 60)
+    }
+
     /// «12 с», «3 мин» — грубая оценка, поэтому без долей и без секунд
     /// после минуты: точность, которой у прогноза всё равно нет.
     public static func remaining(_ duration: Duration) -> String {

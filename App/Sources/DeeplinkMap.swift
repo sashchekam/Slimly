@@ -75,10 +75,16 @@ enum DeeplinkMap {
         return [OnboardingRoute.tour]
     }
 
-    /// `slimly://profile`
+    /// `slimly://profile`, `slimly://profile/stats` — подробная статистика
+    /// открывается стеком поверх профиля: возврат из неё должен вести
+    /// в профиль, а не сразу на хаб.
     private static let profile: DeeplinkRegistry.Mapper = { deeplink in
-        guard deeplink.host == "profile", deeplink.pathComponents.isEmpty else { return nil }
-        return [HomeRoute.home, ProfileRoute.profile]
+        guard deeplink.host == "profile" else { return nil }
+        switch deeplink.pathComponents {
+        case []: return [HomeRoute.home, ProfileRoute.profile]
+        case ["stats"]: return [HomeRoute.home, ProfileRoute.profile, ProfileRoute.statistics]
+        default: return nil
+        }
     }
 
     #if DEBUG

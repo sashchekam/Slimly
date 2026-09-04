@@ -46,6 +46,30 @@ public final class MediaPickerViewModel {
     public private(set) var albumID = MediaAlbum.recentID
     public private(set) var access: MediaAccess = .notDetermined
     public private(set) var isLoading = true
+    /// Догрузка следующей страницы: сетка уже видна, поэтому индикатор
+    /// у неё свой, под последним рядом.
+    public private(set) var isLoadingMore = false
+
+    /// Сколько файлов читаем за раз. Вес каждого система отдаёт поштучно,
+    /// поэтому окно небольшое: экран открывается сразу, а остальное
+    /// подтягивается по мере прокрутки.
+    private static let pageSize = 150
+    /// За сколько плиток до конца просим следующую страницу. Пары рядов
+    /// запаса хватает, чтобы догрузка прошла до того, как список кончится.
+    private static let prefetchDistance = 24
+
+    /// Есть ли что грузить дальше — по этому признаку сетка держит внизу
+    /// подвал, который и просит следующую страницу.
+    public private(set) var hasMore = false
+    /// Плитка, на которой пора просить продолжение. Хранится идентификатором,
+    /// а не индексом: искать позицию при каждом появлении плитки — обход
+    /// списка, который к концу медиатеки станет длинным.
+    private var prefetchTriggerID: String?
+    /// Докуда дочитали. Считается страницами, а не длиной витрины: повторы
+    /// из неё выбрасываются, и по ней окно бы не двигалось.
+    private var offset = 0
+    private var shownIDs: Set<String> = []
+    private var pageTask: Task<Void, Never>?
 
     private let library: any MediaLibrary
     private let analytics: FlowAnalytics
@@ -91,10 +115,10 @@ public final class MediaPickerViewModel {
         }
 
         async let albums = library.albums(kind: config.kind)
-        async let items = library.items(in: albumID, kind: config.kind)
+        async let page = library.items(in: albumID, kind: config.kind, offset: 0, limit: Self.pageSize)
 
         self.albums = await albums
-        self.items = await items
+        apply(await page)
         isLoading = false
     }
 
@@ -103,13 +127,70 @@ public final class MediaPickerViewModel {
         albumID = album.id
         isLoading = true
         // Выбор не сбрасываем: альбом — это фильтр витрины, а не новая сессия.
-        Task {
-            items = await library.items(in: album.id, kind: config.kind)
+        reset()
+
+        pageTask = Task {
+            let page = await library.items(in: album.id, kind: config.kind, offset: 0, limit: Self.pageSize)
             // Пока читался альбом, пользователь мог переключиться на другой:
-            // тогда индикатор снимает уже та, более поздняя загрузка.
-            guard albumID == album.id else { return }
+            // тогда витрину заполняет уже та, более поздняя загрузка.
+            guard !Task.isCancelled, albumID == album.id else { return }
+            apply(page)
             isLoading = false
         }
+    }
+
+    /// Сетка сообщает, какая плитка появилась в списке. Продолжение просим
+    /// не по кнопке и не в самом низу: пользователь листает медиатеку
+    /// непрерывно, и пауза посреди прокрутки читалась бы как конец списка.
+    public func willShow(_ item: MediaItem) {
+        guard item.id == prefetchTriggerID else { return }
+        loadMoreIfNeeded()
+    }
+
+    /// Страховка на быструю прокрутку: подвал сетки просит продолжение сам,
+    /// если плитку-триггер список успел проскочить.
+    public func loadMoreIfNeeded() {
+        guard hasMore, !isLoadingMore else { return }
+        isLoadingMore = true
+        prefetchTriggerID = nil
+
+        let album = albumID
+        let start = offset
+        pageTask = Task {
+            let page = await library.items(in: album, kind: config.kind, offset: start, limit: Self.pageSize)
+            guard !Task.isCancelled, albumID == album else { return }
+            apply(page, appending: true)
+            isLoadingMore = false
+        }
+    }
+
+    private func apply(_ page: MediaPage, appending: Bool = false) {
+        if !appending {
+            shownIDs.removeAll()
+            offset = 0
+        }
+        // Медиатека могла измениться между страницами — тогда окно сдвинется
+        // и файл придёт вторым экземпляром. Для `ForEach` это одинаковые
+        // идентификаторы, поэтому повторы отсекаем здесь.
+        let fresh = page.items.filter { shownIDs.insert($0.id).inserted }
+        items = appending ? items + fresh : fresh
+        offset += page.items.count
+        hasMore = page.hasMore
+        // Когда до конца ближе запаса, ждать нечего: следующую страницу
+        // просит первая же плитка, которая появится.
+        let trigger = max(items.count - Self.prefetchDistance, 0)
+        prefetchTriggerID = hasMore && trigger < items.count ? items[trigger].id : nil
+    }
+
+    private func reset() {
+        pageTask?.cancel()
+        pageTask = nil
+        items = []
+        shownIDs = []
+        offset = 0
+        hasMore = false
+        prefetchTriggerID = nil
+        isLoadingMore = false
     }
 
     public var currentAlbum: MediaAlbum? {

@@ -9,16 +9,28 @@ public enum ProfileFeature {
     public static func resolver(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        analytics: any AnalyticsService,
         debugMenu: (any Route)? = nil
     ) -> RouteResolver {
-        RouteResolver(for: ProfileRoute.self) { route, router in
+        let profileAnalytics = ProfileAnalytics(analytics: analytics)
+
+        return RouteResolver(for: ProfileRoute.self) { route, router in
             switch route {
             case .profile:
                 ProfileView(
                     viewModel: ProfileViewModel(
                         mediaLibrary: mediaLibrary,
                         processingService: processingService,
+                        analytics: profileAnalytics,
                         debugMenu: debugMenu,
+                        router: router
+                    )
+                )
+            case .statistics:
+                StatisticsView(
+                    viewModel: StatisticsViewModel(
+                        processingService: processingService,
+                        analytics: profileAnalytics,
                         router: router
                     )
                 )

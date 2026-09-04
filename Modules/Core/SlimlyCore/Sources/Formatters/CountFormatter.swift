@@ -13,6 +13,7 @@ public enum CountFormatter {
         case page
         case track
         case conversion
+        case scan
 
         /// Формы для 1, 2–4 и 5+ — в этом порядке.
         var forms: (one: String, few: String, many: String) {
@@ -24,6 +25,7 @@ public enum CountFormatter {
             case .page: ("страница", "страницы", "страниц")
             case .track: ("дорожка", "дорожки", "дорожек")
             case .conversion: ("конвертация", "конвертации", "конвертаций")
+            case .scan: ("скан", "скана", "сканов")
             }
         }
     }

@@ -12,13 +12,6 @@ import UIKit
 /// Изменяемое состояние здесь только одно — кэш миниатюр, а `NSCache`
 /// синхронизирован сам.
 public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
-    /// Сколько файлов показываем в сетке.
-    ///
-    /// Витрина, а не вся библиотека: вес каждого файла приходится спрашивать
-    /// у системы поштучно, и на двенадцати тысячах ассетов экран открывался бы
-    /// секундами. Альбом и сортировка по дате оставляют нужное сверху.
-    private static let fetchLimit = 300
-
     private let thumbnails = NSCache<NSString, NSData>()
     /// Кадр из файла: страница с камеры — не ассет, и миниатюру для неё
     /// система не отдаст.
@@ -124,9 +117,11 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         return collections
     }
 
-    public func items(in albumID: String, kind: MediaKind?) async -> [MediaItem] {
+    /// Выборку система отдаёт целиком, но ассеты в ней ленивые: дорого
+    /// не найти файлы, а разобрать каждый — вес PhotoKit сообщает поштучно.
+    /// Поэтому фетч без предела, а разбираем только запрошенное окно.
+    public func items(in albumID: String, kind: MediaKind?, offset: Int, limit: Int) async -> MediaPage {
         let options = Self.fetchOptions(kind: kind)
-        options.fetchLimit = Self.fetchLimit
 
         let assets: PHFetchResult<PHAsset>
         if albumID == MediaAlbum.recentID {
@@ -136,16 +131,20 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
                 withLocalIdentifiers: [albumID],
                 options: nil
             )
-            guard let collection = collections.firstObject else { return [] }
+            guard let collection = collections.firstObject else { return .empty }
             assets = PHAsset.fetchAssets(in: collection, options: options)
         }
 
+        let total = assets.count
+        let end = min(offset + limit, total)
+        guard offset < end else { return MediaPage(items: [], hasMore: false) }
+
         var items: [MediaItem] = []
-        items.reserveCapacity(assets.count)
-        assets.enumerateObjects { asset, _, _ in
+        items.reserveCapacity(end - offset)
+        assets.enumerateObjects(at: IndexSet(integersIn: offset ..< end), options: []) { asset, _, _ in
             if let item = Self.item(from: asset) { items.append(item) }
         }
-        return items
+        return MediaPage(items: items, hasMore: end < total)
     }
 
     private static func fetchOptions(kind: MediaKind?) -> PHFetchOptions {
@@ -193,7 +192,8 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
             isHEIC: type == "public.heic" || type == "public.heif" || name.lowercased().hasSuffix(".heic"),
             isLivePhoto: asset.mediaSubtypes.contains(.photoLive),
             pixelWidth: asset.pixelWidth,
-            pixelHeight: asset.pixelHeight
+            pixelHeight: asset.pixelHeight,
+            creationDate: asset.creationDate
         )
     }
 

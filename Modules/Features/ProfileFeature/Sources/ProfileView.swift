@@ -22,6 +22,7 @@ public struct ProfileView: View {
 
                     libraryCard
                     savedCard
+                    usageCard
                     settings
                 }
                 .padding(.horizontal, SlimlySpacing.screenHorizontal)
@@ -121,6 +122,88 @@ public struct ProfileView: View {
                 .padding(.top, 12)
             }
         }
+    }
+
+    // MARK: Чем пользовались
+
+    private var usageCard: some View {
+        SlimlyCard(padding: EdgeInsets(top: 15, leading: 16, bottom: 13, trailing: 16)) {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack(spacing: 10) {
+                    Text("чем вы пользовались")
+                        .slimlyKicker()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(viewModel.usageCaption)
+                        .font(.slimlyCaptionSmall)
+                        .foregroundStyle(SlimlyColor.neutral500)
+                }
+
+                LazyVGrid(columns: Self.usageColumns, spacing: 8) {
+                    ForEach(viewModel.usage) { tile in
+                        Button {
+                            viewModel.openStatistics(from: .tile)
+                        } label: {
+                            usageTile(tile)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                    }
+                }
+
+                Button {
+                    viewModel.openStatistics(from: .link)
+                } label: {
+                    HStack(spacing: 7) {
+                        Text("Вся статистика")
+                        SlimlyIcon(.chevronRight, width: 6)
+                    }
+                    .padding(.vertical, 2)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(SlimlyLinkButtonStyle(font: .slimlyButtonSmall))
+            }
+        }
+    }
+
+    private static let usageColumns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8),
+    ]
+
+    private func usageTile(_ tile: ProfileViewModel.UsageTile) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(alignment: .lastTextBaseline, spacing: 7) {
+                Text(tile.countText)
+                    .font(.system(size: 20, weight: .medium))
+                    .tracking(-0.5)
+                    .foregroundStyle(tile.isLeading ? SlimlyColor.accent200 : SlimlyColor.neutral100)
+                Text(tile.unit)
+                    .font(.slimlyMicro)
+                    .foregroundStyle(SlimlyColor.neutral500)
+            }
+
+            Text(tile.title)
+                .font(.slimlyCaption)
+                .foregroundStyle(SlimlyColor.neutral300)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            SlimlyProgressBar(
+                value: tile.share,
+                height: 3,
+                fill: tile.isLeading ? .solid : .muted
+            )
+        }
+        .padding(EdgeInsets(top: 12, leading: 13, bottom: 11, trailing: 13))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            SlimlyColor.background,
+            in: RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: SlimlyRadius.md, style: .continuous)
+                .strokeBorder(SlimlyColor.text.opacity(0.08), lineWidth: 1)
+        }
+        .contentShape(Rectangle())
     }
 
     // MARK: Настройки
