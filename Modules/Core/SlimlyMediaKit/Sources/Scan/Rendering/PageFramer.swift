@@ -3,25 +3,31 @@ import CoreImage.CIFilterBuiltins
 import Foundation
 import SlimlyCore
 
-/// Достать страницу из снимка: прочитать кадр, выпрямить лист, привести
-/// его к рабочему разрешению.
+/// Достать страницу из снимка: прочитать кадр, выпрямить лист, вернуть ему
+/// истинные пропорции и привести к рабочему разрешению.
 ///
-/// Три шага одной работы — «где на снимке страница и какого она размера».
-/// Порознь ни один из них не имеет смысла: выпрямлять нечего, пока кадр
-/// не прочитан, а масштаб считается от уже выпрямленного листа.
+/// Одна работа — «где на снимке страница, какой она формы и какого размера».
+/// Порознь шаги не имеют смысла: выпрямлять нечего, пока кадр не прочитан,
+/// пропорции считаются по тем же углам, что и выпрямление, а масштаб — уже
+/// по исправленным пропорциям.
 protocol PageFraming: Sendable {
     func image(at source: URL) throws -> CIImage
     /// - Parameter quad: границы листа, выбранные до обработки. `nil` —
     ///   их никто не задавал, и лист ищем сами.
-    func corrected(_ image: CIImage, quad: DocumentQuad?) -> CIImage
-    func resized(_ image: CIImage, to resolution: PageResolution) -> CIImage
+    func page(from image: CIImage, quad: DocumentQuad?, resolution: PageResolution) -> CIImage
 }
 
 struct PageFramer: PageFraming {
-    /// Насколько масштаб должен разойтись с единицей, чтобы пересчёт имел
-    /// смысл. Прогон через фильтр ради процента размера — только лишняя
-    /// интерполяция.
-    private static let tolerance: CGFloat = 0.01
+    /// Насколько преобразование должно разойтись с тождественным, чтобы
+    /// пересчёт имел смысл. Прогон через фильтр ради процента размера —
+    /// только лишняя интерполяция.
+    private static let tolerance: CGFloat = 0.005
+
+    private let aspects: any PageAspectEstimating
+
+    init(aspects: any PageAspectEstimating = PageAspectEstimator()) {
+        self.aspects = aspects
+    }
 
     func image(at source: URL) throws -> CIImage {
         // Ориентацию применяем при чтении: снимок с телефона почти всегда
@@ -35,9 +41,23 @@ struct PageFramer: PageFraming {
     /// Границы приходят с экрана правки, а если их там не задали — ищем сами.
     /// Не нашли и сами — возвращаем кадр как есть: обрезать наугад хуже, чем
     /// оставить поля. Пользователь увидит свою страницу, просто с фоном.
-    func corrected(_ image: CIImage, quad: DocumentQuad?) -> CIImage {
-        guard let quad = quad ?? DocumentQuad.detected(in: image) else { return image }
+    func page(from image: CIImage, quad: DocumentQuad?, resolution: PageResolution) -> CIImage {
+        guard let quad = quad ?? DocumentQuad.detected(in: image) else {
+            return resized(image, to: resolution, aspect: 1)
+        }
 
+        let frame = image.extent.size
+        let straightened = corrected(image, quad: quad)
+        return resized(
+            straightened,
+            to: resolution,
+            aspect: correction(for: straightened, quad: quad, frame: frame)
+        )
+    }
+
+    // MARK: Ракурс
+
+    private func corrected(_ image: CIImage, quad: DocumentQuad) -> CIImage {
         // Доли считаются от левого верхнего угла, а CoreImage — от левого
         // нижнего: переворачиваем ось на входе в фильтр.
         let extent = image.extent
@@ -62,22 +82,45 @@ struct PageFramer: PageFraming {
         return output
     }
 
+    /// Во сколько раз растянуть выпрямленный лист по ширине, чтобы он стал
+    /// той формы, какой лежал на столе.
+    ///
+    /// `CIPerspectiveCorrection` снимает наклон, но размер готовой картинки
+    /// берёт по длинам сторон четырёхугольника как они есть — а дальний край
+    /// листа в кадре короче ближнего. Ошибка доходит до четверти ширины
+    /// и на глаз читается как «буквы растянуло».
+    private func correction(for image: CIImage, quad: DocumentQuad, frame: CGSize) -> CGFloat {
+        guard
+            let wanted = aspects.ratio(of: quad, in: frame),
+            image.extent.height > 0
+        else {
+            return 1
+        }
+        let actual = image.extent.width / image.extent.height
+        guard actual > 0 else { return 1 }
+        return wanted / actual
+    }
+
+    // MARK: Размер
+
     /// Ланцош, а не билинейная интерполяция: на уменьшении он единственный
     /// сохраняет тонкие штрихи букв — билинейная усредняет их с бумагой,
     /// и строчка расплывается в серую полосу.
-    func resized(_ image: CIImage, to resolution: PageResolution) -> CIImage {
-        let side = max(image.extent.width, image.extent.height)
+    private func resized(_ image: CIImage, to resolution: PageResolution, aspect: CGFloat) -> CIImage {
+        // Фильтр умножает ширину на `scale · aspectRatio`, а высоту — только
+        // на `scale`: длинную сторону считаем уже по исправленной форме.
+        let side = max(image.extent.width * aspect, image.extent.height)
         guard side > 1 else { return image }
 
         // Растягиваем только в разрешённых пределах: новых букв интерполяция
         // не рисует, а вес страницы растит честно.
         let scale = min(resolution.pageSide / side, resolution.maxUpscale)
-        guard abs(scale - 1) > Self.tolerance else { return image }
+        guard abs(scale - 1) > Self.tolerance || abs(aspect - 1) > Self.tolerance else { return image }
 
         let filter = CIFilter.lanczosScaleTransform()
         filter.inputImage = image
         filter.scale = Float(scale)
-        filter.aspectRatio = 1
+        filter.aspectRatio = Float(aspect)
         return filter.outputImage ?? image
     }
 }

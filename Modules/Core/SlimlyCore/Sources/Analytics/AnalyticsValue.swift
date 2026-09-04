@@ -13,6 +13,19 @@ public enum AnalyticsValue: Sendable, Hashable {
     case flag(Bool)
 }
 
+public extension AnalyticsValue {
+    /// Значение строкой — для лога и отладочных экранов. Наружу параметр
+    /// уходит своим типом: приведение к строке — дело показа, а не отправки.
+    var text: String {
+        switch self {
+        case let .text(text): text
+        case let .int(number): String(number)
+        case let .double(number): String(number)
+        case let .flag(flag): String(flag)
+        }
+    }
+}
+
 // Литералы избавляют место вызова от обёрток: словарь параметров пишется
 // как обычный — `["count": 3, "level": "high"]`.
 extension AnalyticsValue: ExpressibleByStringLiteral {

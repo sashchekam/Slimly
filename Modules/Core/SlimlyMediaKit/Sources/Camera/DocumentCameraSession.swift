@@ -33,6 +33,9 @@ public final class DocumentCameraSession {
     public private(set) var access: Access = .notDetermined
     /// Границы листа в текущем кадре или `nil`, если листа не видно.
     public private(set) var quad: DocumentQuad?
+    /// Камера ещё наводится. Автоспуск в это время не срабатывает, и экрану
+    /// стоит сказать об этом человеку — иначе пауза выглядит как зависание.
+    public private(set) var isFocusing = false
     /// Пропорции кадра — по ним рамка ложится поверх превью.
     public private(set) var frameAspectRatio: CGFloat = 3 / 4
     /// Снятые страницы в порядке съёмки.
@@ -90,9 +93,9 @@ public final class DocumentCameraSession {
         }
 
         if !isConfigured {
-            isConfigured = await box.configure { [weak self] quad, frame in
+            isConfigured = await box.configure { [weak self] frame in
                 Task { @MainActor [weak self] in
-                    self?.handle(quad, frame: frame)
+                    self?.handle(frame)
                 }
             }
         }
@@ -106,6 +109,7 @@ public final class DocumentCameraSession {
     public func stop() {
         box.stop()
         quad = nil
+        isFocusing = false
         steadyFrames = 0
     }
 
@@ -175,22 +179,29 @@ public final class DocumentCameraSession {
 
     // MARK: Кадр
 
-    private func handle(_ found: DocumentQuad?, frame: CGSize) {
+    private func handle(_ frame: CameraFrame) {
         // Присваиваем только изменившееся: кадры идут шесть раз в секунду,
         // и каждая запись в наблюдаемое свойство перерисовывает экран.
-        if frame.height > 0 {
-            let aspect = frame.width / frame.height
+        if frame.size.height > 0 {
+            let aspect = frame.size.width / frame.size.height
             if abs(aspect - frameAspectRatio) > 0.001 {
                 frameAspectRatio = aspect
             }
         }
 
         let previous = quad
+        let found = frame.quad
         if quad != found {
             quad = found
         }
+        if isFocusing == frame.isSettled {
+            isFocusing = !frame.isSettled
+        }
 
-        guard isAutomatic, !isBusy, !isAtLimit, let found else {
+        // Пока камера наводится, отсчёт спокойных кадров начинаем заново.
+        // Лист может лежать неподвижно, а резкость в этот момент ещё едет —
+        // и снимок уйдёт размытым ровно на буквах.
+        guard isAutomatic, !isBusy, !isAtLimit, frame.isSettled, let found else {
             steadyFrames = 0
             return
         }

@@ -27,16 +27,15 @@ struct ScanPageRenderer: ScanPageRendering {
 
     /// Порядок шагов не переставляется.
     ///
-    /// Перспективу правим по полному кадру — у выпрямления тем больше
-    /// материала, чем больше пикселей. Размер приводим сразу после неё,
-    /// до чистки: так `CIDocumentEnhancer` видит ту же страницу, что уедет
-    /// в PDF, и его локальные окна попадают по буквам, а не по размеру
-    /// исходного снимка.
+    /// Геометрию правим по полному кадру — у выпрямления тем больше
+    /// материала, чем больше пикселей. Размер приводим там же, до чистки:
+    /// так `CIDocumentEnhancer` видит ту же страницу, что уедет в PDF,
+    /// и его локальные окна попадают по буквам, а не по размеру исходного
+    /// снимка.
     func page(at source: URL, mode: ScanMode, quad: DocumentQuad?) throws -> ScannedPage {
         let frame = try frames.image(at: source)
-        let straightened = frames.corrected(frame, quad: quad)
-        let scaled = frames.resized(straightened, to: mode.resolution)
+        let page = frames.page(from: frame, quad: quad, resolution: mode.resolution)
 
-        return try pages.page(from: cleaner.cleaned(scaled, mode: mode), mode: mode)
+        return try pages.page(from: cleaner.cleaned(page, mode: mode), mode: mode)
     }
 }

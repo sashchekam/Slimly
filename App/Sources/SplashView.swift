@@ -3,14 +3,13 @@ import SwiftUI
 
 /// Заставка при запуске: знак обходит круг, потом открывается приложение.
 ///
-/// Экран запуска из Info.plist — просто заливка цветом фона, поэтому заставка
-/// подхватывает уже тёмный кадр, а не проявляется из вспышки.
+/// Экран запуска (`LaunchScreen.storyboard`) уже показывает первый кадр —
+/// ту же заливку и тот же знак в центре, — поэтому заставка ничего не
+/// проявляет: она подхватывает готовый кадр и просто оживляет его.
 struct SplashView: View {
     /// Круг закончился и знак сложился — можно уходить на первый экран.
     let onFinish: () -> Void
 
-    @State
-    private var isMarkVisible = false
     /// Считает посадки акцента: каждая — короткий удар в ладонь.
     @State
     private var landings = 0
@@ -23,8 +22,6 @@ struct SplashView: View {
             onLanding: { landings += 1 },
             onFinish: onFinish
         )
-        .scaleEffect(isMarkVisible ? 1 : 0.94)
-        .opacity(isMarkVisible ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(glow)
         .ignoresSafeArea()
@@ -32,9 +29,6 @@ struct SplashView: View {
         // заканчивается, раньше, чем это замечает глаз.
         .sensoryFeedback(trigger: landings) { _, count in
             count > 0 ? .impact(weight: .light, intensity: 0.35 + 0.12 * Double(count)) : nil
-        }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.34)) { isMarkVisible = true }
         }
     }
 

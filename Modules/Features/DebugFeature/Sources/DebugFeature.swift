@@ -10,12 +10,15 @@ public enum DebugFeature {
     ///
     /// - Parameter remoteConfig: источник значений без подмен поверх — экран
     ///   конфига показывает, что реально приехало с сервера, и подмену рядом.
+    /// - Parameter analyticsLog: тот же журнал, в который пишет аналитика
+    ///   сборки: меню показывает отправленное, а не свою копию.
     @MainActor
     public static func resolver(
         settings: DebugSettings,
         statsStore: ProcessingStatsStore,
         onboardingState: any OnboardingState,
         remoteConfig: any RemoteConfigService,
+        analyticsLog: AnalyticsLog,
         environment: AppEnvironment = .current
     ) -> RouteResolver {
         RouteResolver(for: DebugRoute.self) { route, router in
@@ -26,6 +29,7 @@ public enum DebugFeature {
                         settings: settings,
                         statsStore: statsStore,
                         onboardingState: onboardingState,
+                        analyticsLog: analyticsLog,
                         environment: environment,
                         router: router
                     )
@@ -37,6 +41,10 @@ public enum DebugFeature {
                         remoteConfig: remoteConfig,
                         router: router
                     )
+                )
+            case .analytics:
+                DebugAnalyticsView(
+                    viewModel: DebugAnalyticsViewModel(log: analyticsLog, router: router)
                 )
             }
         }

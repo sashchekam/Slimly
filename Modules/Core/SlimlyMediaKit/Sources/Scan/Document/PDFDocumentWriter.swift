@@ -12,6 +12,11 @@ protocol DocumentWriting: Sendable {
 /// снимок: скан должен выходить из принтера тем, чем был на столе.
 struct PDFDocumentWriter: DocumentWriting {
     private static let a4 = CGSize(width: 595, height: 842)
+    /// Насколько пропорции страницы могут разойтись с A4, чтобы она всё ещё
+    /// считалась им. Шесть процентов — это погрешность углов, поставленных
+    /// пальцем на экране правки. Letter в допуск не попадает, и правильно:
+    /// у него своя форма, и лист под него нужен свой.
+    private static let a4Tolerance: CGFloat = 0.06
 
     func write(pages: [ScannedPage], to destination: URL, title: String) throws {
         let info: [CFString: Any] = [
@@ -90,11 +95,26 @@ struct PDFDocumentWriter: DocumentWriting {
         )
     }
 
-    /// Альбомный лист для широкого кадра, книжный — для всего остального.
+    /// Лист под страницу: её собственной формы, длинной стороной в A4.
+    ///
+    /// Геометрия теперь возвращает листу истинные пропорции, и вписывать
+    /// его в A4 значило бы обрамлять чек полями в половину листа. Ровно A4
+    /// оставляем для страницы, которая им и является: такая печатается
+    /// один в один, без пересчёта.
     private func box(for image: CGImage) -> CGRect {
-        let size = image.width > image.height
+        let sheet = image.width > image.height
             ? CGSize(width: Self.a4.height, height: Self.a4.width)
             : Self.a4
+        let ratio = CGFloat(image.width) / CGFloat(image.height)
+
+        guard abs(ratio / (sheet.width / sheet.height) - 1) > Self.a4Tolerance else {
+            return CGRect(origin: .zero, size: sheet)
+        }
+
+        let long = max(sheet.width, sheet.height)
+        let size = ratio > 1
+            ? CGSize(width: long, height: long / ratio)
+            : CGSize(width: long * ratio, height: long)
         return CGRect(origin: .zero, size: size)
     }
 

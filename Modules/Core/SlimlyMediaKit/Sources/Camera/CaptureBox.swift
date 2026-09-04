@@ -12,6 +12,17 @@ struct CapturedPhoto: Sendable {
     let pixelHeight: Int
 }
 
+/// Что видно в живом кадре прямо сейчас.
+struct CameraFrame: Sendable {
+    /// Границы листа или `nil`, если листа в кадре не видно.
+    let quad: DocumentQuad?
+    /// Размер кадра в пикселях — по нему рамка ложится поверх превью.
+    let size: CGSize
+    /// Автофокус и замер экспозиции уже сошлись. Пока `false`, кадр может
+    /// уехать в файл размытым, и никакая обработка этого не вернёт.
+    let isSettled: Bool
+}
+
 enum DocumentCameraError: LocalizedError {
     case unavailable
     case captureFailed(String)
@@ -45,6 +56,10 @@ final class CaptureBox: @unchecked Sendable {
     private var pendingShots: [Int64: PhotoCaptureDelegate] = [:]
     private var analyzer: FrameAnalyzer?
     private var isConfigured = false
+    /// Разрешение снимка, о котором договорились при сборке сессии.
+    /// Настройки кадра по умолчанию берут не его, а самый мелкий размер
+    /// формата, — поэтому его приходится помнить и повторять на каждый снимок.
+    private var photoDimensions: CMVideoDimensions?
 
     /// Портретный кадр: буферы поворачивает сама система, поэтому и Vision,
     /// и превью работают в одной системе координат — той, что видит человек.
@@ -53,7 +68,7 @@ final class CaptureBox: @unchecked Sendable {
     // MARK: Настройка
 
     /// - Returns: `false`, если камеры нет или система не дала её собрать.
-    func configure(onFrame: @escaping @Sendable (DocumentQuad?, CGSize) -> Void) async -> Bool {
+    func configure(onFrame: @escaping @Sendable (CameraFrame) -> Void) async -> Bool {
         await withCheckedContinuation { continuation in
             queue.async { [self] in
                 continuation.resume(returning: setUp(onFrame: onFrame))
@@ -61,7 +76,7 @@ final class CaptureBox: @unchecked Sendable {
         }
     }
 
-    private func setUp(onFrame: @escaping @Sendable (DocumentQuad?, CGSize) -> Void) -> Bool {
+    private func setUp(onFrame: @escaping @Sendable (CameraFrame) -> Void) -> Bool {
         guard !isConfigured else { return true }
 
         guard
@@ -90,6 +105,7 @@ final class CaptureBox: @unchecked Sendable {
                 .max(by: { $0.width * $0.height < $1.width * $1.height })
         {
             photoOutput.maxPhotoDimensions = largest
+            photoDimensions = largest
         }
 
         // Кадр собирается дольше, зато со склейкой нескольких экспозиций
@@ -98,7 +114,9 @@ final class CaptureBox: @unchecked Sendable {
         // никакая последующая обработка этого уже не вернёт.
         photoOutput.maxPhotoQualityPrioritization = .quality
 
-        let analyzer = FrameAnalyzer(onFrame: onFrame)
+        tune(device)
+
+        let analyzer = FrameAnalyzer(device: device, onFrame: onFrame)
         self.analyzer = analyzer
         videoOutput.setSampleBufferDelegate(analyzer, queue: frameQueue)
         // Поиск границ идёт медленнее съёмки: копить очередь кадров незачем,
@@ -119,6 +137,37 @@ final class CaptureBox: @unchecked Sendable {
 
         isConfigured = true
         return true
+    }
+
+    /// Настроить камеру под лист на столе.
+    ///
+    /// Без этого автофокус ищет резкость по всей шкале — от двадцати
+    /// сантиметров до бесконечности, — и на однородном белом поле ему не
+    /// за что зацепиться: он проезжает мимо и возвращается. Ровно в эту
+    /// секунду и уходит автоспуск.
+    private func tune(_ device: AVCaptureDevice) {
+        guard (try? device.lockForConfiguration()) != nil else { return }
+        defer { device.unlockForConfiguration() }
+
+        // Документ снимают с расстояния вытянутой руки и ближе.
+        if device.isAutoFocusRangeRestrictionSupported {
+            device.autoFocusRangeRestriction = .near
+        }
+        if device.isFocusModeSupported(.continuousAutoFocus) {
+            device.focusMode = .continuousAutoFocus
+        }
+        if device.isExposureModeSupported(.continuousAutoExposure) {
+            device.exposureMode = .continuousAutoExposure
+        }
+        // Бумага бывает и под лампой накаливания, и под окном: без этого
+        // белый фон уезжает то в жёлтое, то в синее, и чистка страницы
+        // вычитает не тот оттенок.
+        if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+            device.whiteBalanceMode = .continuousAutoWhiteBalance
+        }
+        // Лист убрали, положили следующий — камера должна навестись заново,
+        // а не остаться на резкости прошлой страницы.
+        device.isSubjectAreaChangeMonitoringEnabled = true
     }
 
     // MARK: Работа
@@ -161,6 +210,12 @@ final class CaptureBox: @unchecked Sendable {
                 let settings = AVCapturePhotoSettings(format: format)
                 settings.photoQualityPrioritization = .quality
                 settings.flashMode = photoOutput.supportedFlashModes.contains(flash) ? flash : .off
+                // Размер повторяем явно. Договорённость с выходом задаёт
+                // только потолок, а сам кадр по умолчанию снимается в самом
+                // мелком размере формата — на нём мелкий шрифт не вычитать.
+                if let photoDimensions {
+                    settings.maxPhotoDimensions = photoDimensions
+                }
 
                 let uniqueID = settings.uniqueID
                 let delegate = PhotoCaptureDelegate { [weak self] result in
@@ -231,11 +286,13 @@ private final class FrameAnalyzer: NSObject, AVCaptureVideoDataOutputSampleBuffe
     /// не становится точнее — только дрожит.
     private static let interval: CFTimeInterval = 1.0 / 6
 
-    private let onFrame: @Sendable (DocumentQuad?, CGSize) -> Void
+    private let device: AVCaptureDevice
+    private let onFrame: @Sendable (CameraFrame) -> Void
     /// Меняется только на очереди кадров — она последовательная.
     private var lastAnalysis: CFTimeInterval = 0
 
-    init(onFrame: @escaping @Sendable (DocumentQuad?, CGSize) -> Void) {
+    init(device: AVCaptureDevice, onFrame: @escaping @Sendable (CameraFrame) -> Void) {
+        self.device = device
         self.onFrame = onFrame
     }
 
@@ -249,18 +306,21 @@ private final class FrameAnalyzer: NSObject, AVCaptureVideoDataOutputSampleBuffe
         lastAnalysis = now
 
         guard let buffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        let frame = CGSize(
+        let size = CGSize(
             width: CVPixelBufferGetWidth(buffer),
             height: CVPixelBufferGetHeight(buffer)
         )
+        // Состояние наводки снимаем здесь же: автоспуску нужно знать про
+        // тот самый кадр, в котором он увидел неподвижный лист.
+        let isSettled = !device.isAdjustingFocus && !device.isAdjustingExposure
 
         let request = VNDetectDocumentSegmentationRequest()
         try? VNImageRequestHandler(cvPixelBuffer: buffer, options: [:]).perform([request])
 
         guard let quad = request.results?.first, quad.confidence > 0.5 else {
-            onFrame(nil, frame)
+            onFrame(CameraFrame(quad: nil, size: size, isSettled: isSettled))
             return
         }
-        onFrame(DocumentQuad(quad), frame)
+        onFrame(CameraFrame(quad: DocumentQuad(quad), size: size, isSettled: isSettled))
     }
 }

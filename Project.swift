@@ -13,9 +13,11 @@ let project = Project(
             bundleId: Slimly.bundleIdPrefix,
             deploymentTargets: Slimly.deploymentTargets,
             infoPlist: .extendingDefault(with: [
-                // Экран запуска — сплошная заливка цветом фона: белая вспышка
-                // между иконкой и заставкой ломает всё впечатление от старта.
-                "UILaunchScreen": ["UIColorName": "LaunchBackground"],
+                // Экран запуска повторяет первый кадр заставки: та же заливка
+                // и тот же знак в центре. Заставка подхватывает его как есть,
+                // поэтому вместо белой вспышки и второго проявления знака
+                // с системного экрана сразу начинается анимация.
+                "UILaunchStoryboardName": "LaunchScreen",
                 "UIApplicationSceneManifest": [
                     "UIApplicationSupportsMultipleScenes": false,
                 ],

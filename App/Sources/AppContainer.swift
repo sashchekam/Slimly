@@ -47,6 +47,12 @@ final class AppContainer {
     /// Значения, которыми можно управлять без выпуска сборки.
     let remoteConfig: any RemoteConfigService
 
+    #if DEBUG
+    /// Копия отправленного на устройстве — её показывает отладочное меню.
+    /// В релизе журнала нет: писать в него некому и показывать негде.
+    let analyticsLog: AnalyticsLog
+    #endif
+
     /// События самого приложения — то, что случается вне экранов.
     private let appAnalytics: AppAnalytics
 
@@ -88,10 +94,14 @@ final class AppContainer {
         self.previewRenderer = previewRenderer
         self.onboardingState = onboardingState
 
-        // В отладочной сборке событие дублируется в консоль: иначе увидеть,
-        // что именно ушло, можно только в веб-консоли и только назавтра.
+        // В отладочной сборке событие дублируется в консоль и в журнал:
+        // иначе увидеть, что именно ушло, можно только в веб-консоли и только
+        // назавтра. Журнал держится локальной переменной, потому что до конца
+        // инициализации своё же свойство читать нельзя.
         #if DEBUG
-        analytics = CompositeAnalytics([firebase.analytics, ConsoleAnalytics()])
+        let log = AnalyticsLog()
+        analyticsLog = log
+        analytics = CompositeAnalytics([firebase.analytics, ConsoleAnalytics(), RecordingAnalytics(log: log)])
         #else
         analytics = firebase.analytics
         #endif
@@ -178,7 +188,8 @@ final class AppContainer {
                 settings: debugSettings,
                 statsStore: statsStore,
                 onboardingState: onboardingState,
-                remoteConfig: firebase.remoteConfig
+                remoteConfig: firebase.remoteConfig,
+                analyticsLog: log
             )
         )
         #endif

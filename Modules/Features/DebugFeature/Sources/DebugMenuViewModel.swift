@@ -30,12 +30,14 @@ public final class DebugMenuViewModel {
     /// Раздел меню — отдельный экран, а не переключатель в списке.
     public enum Section: String, CaseIterable, Identifiable, Sendable {
         case remoteConfig
+        case analytics
 
         public var id: String { rawValue }
 
         public var title: String {
             switch self {
             case .remoteConfig: "Remote Config"
+            case .analytics: "Аналитика"
             }
         }
     }
@@ -84,6 +86,7 @@ public final class DebugMenuViewModel {
     private let settings: DebugSettings
     private let statsStore: ProcessingStatsStore
     private let onboardingState: any OnboardingState
+    private let analyticsLog: AnalyticsLog
     private let environment: AppEnvironment
     private let router: Router
 
@@ -98,12 +101,14 @@ public final class DebugMenuViewModel {
         settings: DebugSettings,
         statsStore: ProcessingStatsStore,
         onboardingState: any OnboardingState,
+        analyticsLog: AnalyticsLog,
         environment: AppEnvironment,
         router: Router
     ) {
         self.settings = settings
         self.statsStore = statsStore
         self.onboardingState = onboardingState
+        self.analyticsLog = analyticsLog
         self.environment = environment
         self.router = router
         isTourSeen = onboardingState.hasSeenTour
@@ -134,6 +139,9 @@ public final class DebugMenuViewModel {
         case .remoteConfig:
             let count = settings.remoteConfigOverrides.names.count
             return count == 0 ? "значения с сервера" : "подмен: \(count)"
+        case .analytics:
+            let count = analyticsLog.records.count
+            return count == 0 ? "пусто" : "записей: \(count)"
         }
     }
 
@@ -183,14 +191,14 @@ public final class DebugMenuViewModel {
     public func open(_ section: Section) {
         switch section {
         case .remoteConfig: router.push(DebugRoute.remoteConfig)
+        case .analytics: router.push(DebugRoute.analytics)
         }
     }
 
     public func perform(_ action: Action) {
         switch action {
         case .copyDiagnostics:
-            // Единственное место фичи, которому нужен UIKit: буфер обмена
-            // SwiftUI не отдаёт.
+            // Буфер обмена SwiftUI не отдаёт — за ним приходится идти в UIKit.
             UIPasteboard.general.string = environment.summary
             say("Диагностика скопирована в буфер")
         case .resetStats:

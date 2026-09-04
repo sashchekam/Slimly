@@ -24,16 +24,7 @@ public struct ConsoleAnalytics: AnalyticsService {
 
         let pairs = parameters
             .sorted { $0.key < $1.key }
-            .map { "\($0.key)=\(text(of: $0.value))" }
+            .map { "\($0.key)=\($0.value.text)" }
         return "[\(pairs.joined(separator: ", "))]"
-    }
-
-    private static func text(of value: AnalyticsValue) -> String {
-        switch value {
-        case let .text(text): text
-        case let .int(number): String(number)
-        case let .double(number): String(number)
-        case let .flag(flag): String(flag)
-        }
     }
 }

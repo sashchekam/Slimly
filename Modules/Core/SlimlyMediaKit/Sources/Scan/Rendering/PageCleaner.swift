@@ -9,39 +9,53 @@ protocol PageCleaning: Sendable {
     func cleaned(_ image: CIImage, mode: ScanMode) -> CIImage
 }
 
-/// Четыре шага. `CIDocumentEnhancer` убирает тень от руки и серизну бумаги,
-/// режим решает, сколько цвета оставить, маска нерезкости возвращает краю
-/// штриха контраст, а кривая плотности переводит серую букву в чёрную.
+/// Пять шагов. `CIDocumentEnhancer` убирает тень и серизну бумаги, режим
+/// решает, сколько цвета оставить, шумодав снимает зерно матрицы, маска
+/// нерезкости возвращает краю штриха контраст, а кривая плотности переводит
+/// серую букву в чёрную.
 ///
 /// Без последнего шага страница остаётся фотографией текста: фон белый,
 /// а буквы серые и мягкие. Именно это отличает снимок от скана — не фон,
 /// а то, сколько в букве чёрного.
 struct PageCleaner: PageCleaning {
-    /// Лёгкий подъём контраста для серой страницы: цвета в ней уже нет,
-    /// и разводить чернила с бумагой приходится одной яркостью.
-    private static let grayscaleContrast: Float = 1.1
+    /// Сила выравнивания фона. Шкала фильтра — от нуля до двух, и половина
+    /// её оставляет на странице тень от руки: на снимке с жёсткой тенью
+    /// единица вдвое хуже полутора по расхождению с эталоном, а на ровно
+    /// освещённом листе разницы между ними уже нет. Дороже единицы этот
+    /// шаг не становится, поэтому платить за худший случай можно всегда.
+    private static let enhancement: Float = 1.6
+
+    /// Порог шумодава. Зерно матрицы само по себе почти не видно, но маска
+    /// нерезкости следом поднимает его наравне с буквами — и на пустом поле
+    /// появляется крупа, которой в исходнике не было.
+    private static let noiseLevel: Float = 0.02
+    /// Сколько резкости шумодав оставляет себе. Значение фильтра
+    /// по умолчанию: он всё равно идёт перед маской нерезкости.
+    private static let noiseSharpness: Float = 0.4
 
     /// Радиус резкости привязан к размеру страницы, а не задан числом:
-    /// на трёхстах dpi штрих буквы шире, чем на ста пятидесяти, и один
-    /// и тот же радиус в пикселях означал бы там и там разное.
-    private static let sharpenRadius: CGFloat = 1 / 3000
+    /// на четырёхстах dpi штрих буквы шире, чем на трёхстах, и один и тот же
+    /// радиус в пикселях означал бы там и там разное. Доля подобрана
+    /// по расхождению с эталонной страницей — это примерно ширина штриха
+    /// основного текста.
+    private static let sharpenRadius: CGFloat = 1 / 1750
     /// Ниже этого радиуса фильтр работает уже по шуму матрицы, а не по буквам.
-    private static let minimumRadius: CGFloat = 0.8
-    /// Сила подъёма. Больше — и вокруг букв появляется белый ореол, который
-    /// на печати виден отчётливее, чем сама прибавка резкости.
-    private static let sharpenIntensity: Float = 0.6
+    private static let minimumRadius: CGFloat = 1.2
+    /// Сила подъёма. Верх шкалы: ореол вокруг буквы появляется от радиуса,
+    /// а не от силы, и при радиусе в один штрих его ещё нет.
+    private static let sharpenIntensity: Float = 1
 
-    /// Ступеней в таблице кривой. Шестидесяти четырёх хватает: кривая
-    /// пологая везде, кроме перехода от бумаги к чернилам, а между
-    /// ступенями CoreImage доводит значения сам.
-    private static let curveSteps = 64
+    /// Ступеней в таблице кривой. Крутой участок кривой узкий, и на
+    /// шестидесяти четырёх ступенях он занимает три-четыре из них —
+    /// перепад бумага-чернила получается ступенчатым.
+    private static let curveSteps = 128
 
     func cleaned(_ image: CIImage, mode: ScanMode) -> CIImage {
         // Свёртки расширяют кадр на свой радиус — страница должна остаться
         // ровно той, какой её отдала геометрия.
         let bounds = image.extent
 
-        let page = sharpened(enhanced(image, mode: mode))
+        let page = sharpened(denoised(enhanced(image, mode: mode)))
         guard let curve = mode.inkCurve else { return page.cropped(to: bounds) }
 
         return inked(page, with: curve).cropped(to: bounds)
@@ -52,24 +66,26 @@ struct PageCleaner: PageCleaning {
     private func enhanced(_ image: CIImage, mode: ScanMode) -> CIImage {
         let enhancer = CIFilter.documentEnhancer()
         enhancer.inputImage = image
-        enhancer.amount = 1
+        enhancer.amount = Self.enhancement
         let cleaned = enhancer.outputImage ?? image
 
-        switch mode {
-        case .color:
-            return cleaned
-        case .grayscale:
-            return desaturated(cleaned, contrast: Self.grayscaleContrast)
-        case .blackAndWhite:
-            return desaturated(cleaned, contrast: 1)
-        }
+        return mode.isMonochrome ? desaturated(cleaned) : cleaned
     }
 
-    private func desaturated(_ image: CIImage, contrast: Float) -> CIImage {
+    private func desaturated(_ image: CIImage) -> CIImage {
         let filter = CIFilter.colorControls()
         filter.inputImage = image
         filter.saturation = 0
-        filter.contrast = contrast
+        return filter.outputImage ?? image
+    }
+
+    // MARK: Зерно
+
+    private func denoised(_ image: CIImage) -> CIImage {
+        let filter = CIFilter.noiseReduction()
+        filter.inputImage = image
+        filter.noiseLevel = Self.noiseLevel
+        filter.sharpness = Self.noiseSharpness
         return filter.outputImage ?? image
     }
 
@@ -83,10 +99,12 @@ struct PageCleaner: PageCleaning {
         guard side > 1 else { return image }
 
         let filter = CIFilter.unsharpMask()
-        filter.inputImage = image
+        // Фильтр читает пиксели за краем страницы: без растяжки края
+        // он берёт там прозрачность и обводит лист тёмной рамкой.
+        filter.inputImage = image.clampedToExtent()
         filter.radius = Float(max(Self.minimumRadius, side * Self.sharpenRadius))
         filter.intensity = Self.sharpenIntensity
-        return filter.outputImage ?? image
+        return (filter.outputImage ?? image).cropped(to: image.extent)
     }
 
     // MARK: Плотность чернил

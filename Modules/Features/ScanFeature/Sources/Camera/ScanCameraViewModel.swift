@@ -85,6 +85,9 @@ public final class ScanCameraViewModel {
         guard camera.quad != nil else {
             return "Наведите камеру на страницу"
         }
+        if camera.isFocusing {
+            return "Наводим резкость · держите ровно"
+        }
         return "Границы найдены · держите ровно"
     }
 

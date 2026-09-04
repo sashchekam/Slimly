@@ -8,4 +8,6 @@ public enum DebugRoute: Route {
     case menu
     /// Значения удалённого конфига и локальные подмены к ним.
     case remoteConfig
+    /// Журнал отправленной аналитики: события, их параметры и свойства.
+    case analytics
 }
