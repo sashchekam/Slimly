@@ -15,14 +15,21 @@ public final class ScanCameraViewModel {
     public private(set) var toast: String?
 
     private let pageLimit: Int
+    private let analytics: ScanAnalytics
     private let router: Router
 
     @ObservationIgnored
     private var toastTask: Task<Void, Never>?
 
-    public init(camera: DocumentCameraSession, pageLimit: Int, router: Router) {
+    public init(
+        camera: DocumentCameraSession,
+        pageLimit: Int,
+        analytics: ScanAnalytics,
+        router: Router
+    ) {
         self.camera = camera
         self.pageLimit = pageLimit
+        self.analytics = analytics
         self.router = router
 
         camera.onAutomaticShot = { [weak self] in
@@ -118,6 +125,7 @@ public final class ScanCameraViewModel {
     /// Отказ от съёмки выбрасывает снятое: возвращаться к этим страницам
     /// уже некуда — экран закрывается вместе со своим состоянием.
     public func cancel() {
+        analytics.didCancelCamera(count: pageCount)
         camera.stop()
         camera.discardPages()
         router.dismiss()
@@ -129,6 +137,7 @@ public final class ScanCameraViewModel {
         guard hasPages else { return }
 
         let pages = camera.pages
+        analytics.didCapturePages(count: pages.count, isAutomatic: isAutomatic)
         camera.stop()
 
         let parent = router.parent ?? router

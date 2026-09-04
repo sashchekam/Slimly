@@ -48,17 +48,20 @@ public final class MediaPickerViewModel {
     public private(set) var isLoading = true
 
     private let library: any MediaLibrary
+    private let analytics: FlowAnalytics
     private let router: Router
     private let destination: ([MediaItem]) -> FlowDestination
 
     public init(
         config: MediaPickerConfig,
         library: any MediaLibrary,
+        analytics: FlowAnalytics,
         router: Router,
         destination: @escaping ([MediaItem]) -> FlowDestination
     ) {
         self.config = config
         self.library = library
+        self.analytics = analytics
         self.router = router
         self.destination = destination
     }
@@ -73,9 +76,13 @@ public final class MediaPickerViewModel {
     public func load() async {
         if !access.allowsBrowsing {
             access = await library.access()
+            // Событие шлём только после настоящего системного запроса:
+            // на втором заходе диалога уже нет, и «ответ» был бы выдумкой.
             if access == .notDetermined {
                 access = await library.requestAccess()
+                analytics.didAnswerAccess(access)
             }
+            analytics.setAccess(access)
         }
 
         guard access.allowsBrowsing else {
@@ -186,6 +193,7 @@ public final class MediaPickerViewModel {
     public func proceed() {
         guard hasSelection else { return }
 
+        analytics.didPickFiles(selection)
         router.go(to: destination(selection))
     }
 }

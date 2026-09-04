@@ -1,3 +1,4 @@
+import DebugFeatureInterface
 import Foundation
 import Observation
 import SlimlyCore
@@ -24,6 +25,19 @@ public final class DebugMenuViewModel {
         public let id: String
         public let title: String
         public let isSelected: Bool
+    }
+
+    /// Раздел меню — отдельный экран, а не переключатель в списке.
+    public enum Section: String, CaseIterable, Identifiable, Sendable {
+        case remoteConfig
+
+        public var id: String { rawValue }
+
+        public var title: String {
+            switch self {
+            case .remoteConfig: "Remote Config"
+            }
+        }
     }
 
     /// Разовое действие: сработало — и всё, состояния у него нет.
@@ -104,8 +118,23 @@ public final class DebugMenuViewModel {
         [failureKnob, onboardingKnob]
     }
 
+    public var sections: [Section] {
+        Section.allCases
+    }
+
     public var actions: [Action] {
         Action.allCases
+    }
+
+    /// Подпись раздела считается на месте, а не лежит в самом разделе: она
+    /// говорит о текущем состоянии, и вернувшись с экрана видно, осталось ли
+    /// что-то подменённым.
+    public func value(for section: Section) -> String {
+        switch section {
+        case .remoteConfig:
+            let count = settings.remoteConfigOverrides.names.count
+            return count == 0 ? "значения с сервера" : "подмен: \(count)"
+        }
     }
 
     private var failureKnob: Knob {
@@ -148,6 +177,12 @@ public final class DebugMenuViewModel {
             isTourSeen = mark == .seen
             onboardingState.setTourSeen(isTourSeen)
             say(mark == .seen ? "Тур отмечен показанным" : "Тур покажется при следующем запуске")
+        }
+    }
+
+    public func open(_ section: Section) {
+        switch section {
+        case .remoteConfig: router.push(DebugRoute.remoteConfig)
         }
     }
 

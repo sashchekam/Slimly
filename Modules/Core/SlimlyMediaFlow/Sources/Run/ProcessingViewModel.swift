@@ -10,6 +10,7 @@ public final class ProcessingViewModel {
     public private(set) var progress: ProcessingProgress
 
     private let service: any MediaProcessingService
+    private let analytics: FlowAnalytics
     private let router: Router
     private let outcome: (ProcessingOutcome) -> any Route
     private let thumbnailLoader: MediaThumbnailLoader
@@ -17,12 +18,14 @@ public final class ProcessingViewModel {
     public init(
         request: ProcessingRequest,
         service: any MediaProcessingService,
+        analytics: FlowAnalytics,
         router: Router,
         thumbnails: @escaping MediaThumbnailLoader,
         outcome: @escaping (ProcessingOutcome) -> any Route
     ) {
         self.request = request
         self.service = service
+        self.analytics = analytics
         self.router = router
         thumbnailLoader = thumbnails
         self.outcome = outcome
@@ -44,12 +47,20 @@ public final class ProcessingViewModel {
     public func run() async {
         let clock = ContinuousClock()
         let start = clock.now
+        // Старт пишем здесь, а не на кнопке предыдущего шага: у сжатия
+        // её нажимают в шторке, и точка запуска у инструментов разъехалась
+        // бы, хотя работа начинается в одном и том же месте.
+        analytics.didStartRun(request)
 
         for await event in service.process(request) {
             switch event {
             case let .progress(progress):
                 self.progress = paced(progress, elapsed: clock.now - start)
             case let .finished(result):
+                // Время меряем до докрутки кольца: докрутка — это показ,
+                // а не работа, и в отчёте она превратила бы любую обработку
+                // в двухсекундную.
+                analytics.didFinishRun(result, duration: clock.now - start)
                 await settle(start: start, clock: clock)
                 // Экран обработки из истории убираем: возврат с итога должен
                 // вести на главную, а не запускать всё заново.
@@ -91,6 +102,7 @@ public final class ProcessingViewModel {
     }
 
     public func cancel() {
+        analytics.didCancelRun(percent: Int((progress.overall * 100).rounded()))
         router.popToRoot()
     }
 

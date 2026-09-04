@@ -21,6 +21,7 @@ public final class OutcomeViewModel {
 
     private let library: any MediaLibrary
     private let service: any MediaProcessingService
+    private let analytics: FlowAnalytics
     private let router: Router
     /// Просмотр результата — не обязательная часть флоу: маршрут приходит
     /// опциональным, и без него нет ни перехода по строке, ни подсказки
@@ -34,12 +35,14 @@ public final class OutcomeViewModel {
         outcome: ProcessingOutcome,
         library: any MediaLibrary,
         service: any MediaProcessingService,
+        analytics: FlowAnalytics,
         router: Router,
         preview: ((ProcessingResult) -> FlowDestination)? = nil
     ) {
         self.outcome = outcome
         self.library = library
         self.service = service
+        self.analytics = analytics
         self.router = router
         self.preview = preview
     }
@@ -188,12 +191,19 @@ public final class OutcomeViewModel {
             isSaving = false
 
             guard !stored.results.isEmpty else {
+                analytics.didFailSaving(requested)
                 say("Сохранить не удалось")
                 return
             }
 
             isSaved = true
-            say(stored.results.count < requested ? "Сохранилось не всё" : savedTitle)
+            analytics.didSaveResults(stored)
+
+            let lost = requested - stored.results.count
+            if lost > 0 {
+                analytics.didFailSaving(lost)
+            }
+            say(lost > 0 ? "Сохранилось не всё" : savedTitle)
         }
     }
 
@@ -240,6 +250,7 @@ public final class OutcomeViewModel {
     public func openPreview(_ result: ProcessingResult) {
         guard let preview, canPreview(result) else { return }
 
+        analytics.didPreviewResult()
         router.go(to: preview(result))
     }
 
@@ -255,6 +266,7 @@ public final class OutcomeViewModel {
             do {
                 try await library.deleteOriginals(results.map(\.item))
                 isDeleting = false
+                analytics.didDeleteOriginals(results.count)
                 router.popToRoot()
             } catch {
                 isDeleting = false

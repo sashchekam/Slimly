@@ -54,18 +54,24 @@ public extension StorageKey where Value == SimulatedFailure {
 public final class DebugSettings {
     public private(set) var simulatedFailure: SimulatedFailure
 
+    /// Подменённые значения удалённого конфига. Читает их сам конфиг прямо
+    /// из хранилища, а здесь они лежат ради экрана: ему нужно и показать
+    /// подмену рядом с настоящим значением, и знать, что она вообще есть.
+    public private(set) var remoteConfigOverrides: RemoteConfigOverrides
+
     private let storage: any KeyValueStorage
 
     public init(storage: any KeyValueStorage = DefaultsStorage()) {
         self.storage = storage
         simulatedFailure = storage.value(for: .simulatedFailure, default: .off)
+        remoteConfigOverrides = storage.value(for: .remoteConfigOverrides, default: RemoteConfigOverrides())
     }
 
     /// Хоть одна подмена включена. Пока это так, поверх экранов горит метка
     /// DEBUG: странное поведение сборки должно объясняться раньше, чем его
     /// пойдут искать в коде.
     public var isOverridden: Bool {
-        simulatedFailure != .off
+        simulatedFailure != .off || !remoteConfigOverrides.isEmpty
     }
 
     public func setSimulatedFailure(_ failure: SimulatedFailure) {
@@ -73,7 +79,22 @@ public final class DebugSettings {
         storage.set(failure, for: .simulatedFailure)
     }
 
+    /// Пустой текст — это не значение, а «подмены нет»: разбор пустой строки
+    /// всё равно провалился бы, и ключ получил бы своё умолчание вместо того,
+    /// что пришло с сервера.
+    public func setRemoteConfigOverride(_ text: String?, for name: String) {
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        remoteConfigOverrides[name] = trimmed?.isEmpty == false ? trimmed : nil
+        storage.set(remoteConfigOverrides, for: .remoteConfigOverrides)
+    }
+
+    public func clearRemoteConfigOverrides() {
+        remoteConfigOverrides = RemoteConfigOverrides()
+        storage.set(remoteConfigOverrides, for: .remoteConfigOverrides)
+    }
+
     public func reset() {
         setSimulatedFailure(.off)
+        clearRemoteConfigOverrides()
     }
 }

@@ -10,10 +10,12 @@ public final class LevelSheetViewModel {
     public let items: [MediaItem]
     public var level: CompressionLevel = .default
 
+    private let analytics: CompressAnalytics
     private let router: Router
 
-    public init(items: [MediaItem], router: Router) {
+    public init(items: [MediaItem], analytics: CompressAnalytics, router: Router) {
         self.items = items
+        self.analytics = analytics
         self.router = router
     }
 
@@ -69,6 +71,8 @@ public final class LevelSheetViewModel {
     /// Обработка идёт в стеке под шторкой: шторка закрывается, а экран
     /// обработки встаёт поверх выбора файлов, а не внутри модалки.
     public func start() {
+        analytics.didPickLevel(level, request: request)
+
         let parent = router.parent ?? router
         router.dismiss()
         parent.push(CompressRoute.run(request))

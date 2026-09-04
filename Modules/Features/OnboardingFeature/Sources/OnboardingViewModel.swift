@@ -14,17 +14,20 @@ public final class OnboardingViewModel {
     /// Куда уходит тур на последнем шаге. Приходит готовым маршрутом:
     /// какая фича стоит за главным экраном, туру знать незачем.
     private let home: any Route
+    private let analytics: OnboardingAnalytics
     private let router: Router
 
     public init(
         pages: [OnboardingPage] = OnboardingPage.tour,
         state: any OnboardingState,
         home: any Route,
+        analytics: OnboardingAnalytics,
         router: Router
     ) {
         self.pages = pages
         self.state = state
         self.home = home
+        self.analytics = analytics
         self.router = router
     }
 
@@ -44,20 +47,22 @@ public final class OnboardingViewModel {
 
     public func next() {
         guard !isLastPage else {
-            finish()
+            finish(skipped: false)
             return
         }
         pageIndex += 1
+        analytics.didOpenPage(pageIndex)
     }
 
     /// «Пропустить» и крестик — одно и то же действие: тур засчитан
     /// показанным. Второй раз его никто не ждёт, а если понадобится —
     /// он открывается ссылкой.
     public func skip() {
-        finish()
+        finish(skipped: true)
     }
 
-    private func finish() {
+    private func finish(skipped: Bool) {
+        analytics.didFinish(page: pageIndex, skipped: skipped)
         state.markTourSeen()
         router.restart(with: home)
     }

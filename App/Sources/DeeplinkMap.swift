@@ -82,11 +82,16 @@ enum DeeplinkMap {
     }
 
     #if DEBUG
-    /// `slimly://debug` — отладочное меню пушем. Тряска в симуляторе есть
-    /// (⌃⌘Z), но одной командой из терминала до меню быстрее.
+    /// `slimly://debug` — отладочное меню пушем, `slimly://debug/remote-config` —
+    /// сразу значения конфига. Тряска в симуляторе есть (⌃⌘Z), но одной
+    /// командой из терминала до меню быстрее.
     private static let debug: DeeplinkRegistry.Mapper = { deeplink in
-        guard deeplink.host == "debug", deeplink.pathComponents.isEmpty else { return nil }
-        return [HomeRoute.home, DebugRoute.menu]
+        guard deeplink.host == "debug" else { return nil }
+        switch deeplink.pathComponents {
+        case []: return [HomeRoute.home, DebugRoute.menu]
+        case ["remote-config"]: return [HomeRoute.home, DebugRoute.menu, DebugRoute.remoteConfig]
+        default: return nil
+        }
     }
     #endif
 }

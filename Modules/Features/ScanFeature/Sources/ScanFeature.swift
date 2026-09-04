@@ -13,18 +13,25 @@ public enum ScanFeature {
     public static func resolver(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
-        mediaPlayer: @escaping MediaItemPlayerFactory
+        analytics: any AnalyticsService,
+        viewers: MediaViewers
     ) -> RouteResolver {
-        RouteResolver(for: ScanRoute.self) { route, router in
+        // Путь обработки у скана общий с остальными инструментами, а съёмка
+        // страниц и границы листа — только его: отсюда две аналитики.
+        let flow = FlowAnalytics(analytics: analytics, tool: .scan)
+        let scan = ScanAnalytics(analytics: analytics)
+
+        return RouteResolver(for: ScanRoute.self) { route, router in
             switch route {
             case .intro:
-                ScanIntroView(viewModel: ScanIntroViewModel(router: router))
+                ScanIntroView(viewModel: ScanIntroViewModel(analytics: scan, router: router))
 
             case .camera:
                 ScanCameraView(
                     viewModel: ScanCameraViewModel(
                         camera: DocumentCameraSession(pageLimit: pageLimit),
                         pageLimit: pageLimit,
+                        analytics: scan,
                         router: router
                     )
                 )
@@ -34,10 +41,11 @@ public enum ScanFeature {
                     viewModel: MediaPickerViewModel(
                         config: pickerConfig,
                         library: mediaLibrary,
+                        analytics: flow,
                         router: router,
                         destination: { .push(ScanRoute.pages(items: $0)) }
                     ),
-                    player: mediaPlayer
+                    player: viewers.player
                 )
 
             case let .pages(items):
@@ -46,6 +54,7 @@ public enum ScanFeature {
                         items: items,
                         detector: boundsDetector,
                         thumbnails: mediaLibrary.thumbnailLoader,
+                        analytics: scan,
                         router: router
                     )
                 )
@@ -72,7 +81,7 @@ public enum ScanFeature {
                         showsSize: false,
                         router: router
                     ),
-                    player: mediaPlayer
+                    player: viewers.player
                 )
 
             case let .run(request):
@@ -80,6 +89,7 @@ public enum ScanFeature {
                     viewModel: ProcessingViewModel(
                         request: request,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
                         outcome: { ScanRoute.outcome($0) }
@@ -92,6 +102,7 @@ public enum ScanFeature {
                         outcome: outcome,
                         library: mediaLibrary,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         // Документ уходит поверх всего: у системного
                         // просмотрщика своя полноэкранная жизнь с шапкой

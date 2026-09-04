@@ -11,9 +11,16 @@ struct AppAnalytics: FeatureAnalytics {
     let analytics: any AnalyticsService
 
     /// Ссылка привела на экран. Адрес целиком не отправляем: в нём бывают
-    /// параметры пользователя, а для отчёта хватает точки входа.
-    func didOpenDeeplink(_ deeplink: DeeplinkURL) {
-        track("deeplink_opened", ["target": .text(deeplink.host)])
+    /// параметры пользователя, а для отчёта хватает точки входа и того,
+    /// откуда по ней пришли.
+    func didOpenDeeplink(_ deeplink: DeeplinkURL, from source: DeeplinkSource) {
+        track(
+            "deeplink_opened",
+            [
+                "target": .text(deeplink.host),
+                "source": .text(source.rawValue),
+            ]
+        )
     }
 
     /// Ссылка есть, а маршрута под неё нет: обычно это ярлык, оставшийся
@@ -21,4 +28,15 @@ struct AppAnalytics: FeatureAnalytics {
     func didFailDeeplink(_ deeplink: DeeplinkURL) {
         track("deeplink_unknown", ["target": .text(deeplink.host)])
     }
+}
+
+/// Откуда пришла ссылка.
+///
+/// Виджет, ссылка из заметки и переход из браузера приходят одинаково —
+/// системным открытием адреса, и разделить их всё равно нечем. А вот меню
+/// иконки кладёт действие в свой ящик, и по этой границе видно, пользуются
+/// ли быстрыми действиями вообще.
+enum DeeplinkSource: String {
+    case url
+    case shortcut
 }

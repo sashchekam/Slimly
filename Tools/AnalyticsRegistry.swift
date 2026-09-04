@@ -32,11 +32,18 @@ struct Catalog {
 
 // MARK: - Разбор Swift
 
-/// Строка в кавычках и первый значащий символ после неё. По этому символу
-/// имя параметра (`"count":`) отличается от имени события (`"picked",`).
+/// Строка в кавычках и значащие символы вокруг неё. По ним имя параметра
+/// (`, "count":`) отличается и от имени события (`("picked",`), и от строки
+/// внутри значения (`? "auto" :`).
 struct Quoted {
     let value: String
+    let previous: Character?
     let next: Character?
+
+    /// Ключ словаря параметров: двоеточие справа, начало элемента слева.
+    var isParameter: Bool {
+        next == ":" && (previous == "[" || previous == ",")
+    }
 }
 
 func quoted(in text: String) -> [Quoted] {
@@ -50,6 +57,12 @@ func quoted(in text: String) -> [Quoted] {
             continue
         }
 
+        var start = index - 1
+        while start >= 0, characters[start].isWhitespace {
+            start -= 1
+        }
+        let previous = start >= 0 ? characters[start] : nil
+
         var value = ""
         index += 1
         while index < characters.count, characters[index] != "\"" {
@@ -62,7 +75,13 @@ func quoted(in text: String) -> [Quoted] {
         while next < characters.count, characters[next].isWhitespace {
             next += 1
         }
-        result.append(Quoted(value: value, next: next < characters.count ? characters[next] : nil))
+        result.append(
+            Quoted(
+                value: value,
+                previous: previous,
+                next: next < characters.count ? characters[next] : nil
+            )
+        )
     }
 
     return result
@@ -114,7 +133,13 @@ func summary(of documentation: [String]) -> String {
 func scope(in text: String) -> String? {
     for line in text.components(separatedBy: .newlines) {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard trimmed.hasPrefix("static let scope"), trimmed.contains("=") else { continue }
+        // Объявление ищем подстрокой: перед `static` стоит модификатор
+        // доступа — аналитику общих шагов флоу собирают соседние модули,
+        // и она публичная. Комментарии при этом пропускаем: в документации
+        // `FeatureAnalytics` лежит пример с таким же объявлением.
+        guard !trimmed.hasPrefix("//"), trimmed.contains("static let scope"), trimmed.contains("=") else {
+            continue
+        }
         return quoted(in: trimmed).first?.value
     }
     return nil
@@ -164,7 +189,7 @@ func catalog(inFile path: String, named relative: String) -> Catalog? {
             Event(
                 scope: scope,
                 name: name,
-                parameters: tokens.dropFirst().filter { $0.next == ":" }.map(\.value).sorted(),
+                parameters: tokens.dropFirst().filter(\.isParameter).map(\.value).sorted(),
                 summary: pending
             )
         )

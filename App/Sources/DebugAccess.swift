@@ -60,11 +60,33 @@ struct ShakeReporter: UIViewRepresentable {
     private final class ShakeView: UIView {
         var onShake: (() -> Void)?
 
+        private var isWatchingKeyboard = false
+
         override var canBecomeFirstResponder: Bool { true }
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
             guard window != nil else { return }
+            becomeFirstResponder()
+            watchKeyboard()
+        }
+
+        /// Поле ввода забирает фокус себе — например, подмена значения конфига
+        /// в отладочном меню. Вернуть его система обязана не всегда, а без
+        /// фокуса тряска перестаёт открывать меню до перезапуска.
+        private func watchKeyboard() {
+            guard !isWatchingKeyboard else { return }
+            isWatchingKeyboard = true
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(keyboardDidHide),
+                name: UIResponder.keyboardDidHideNotification,
+                object: nil
+            )
+        }
+
+        @objc
+        private func keyboardDidHide() {
             becomeFirstResponder()
         }
 

@@ -8,6 +8,10 @@ protocol ImageFrameExtracting: Sendable {
 }
 
 struct ImageFrameExtractor: ImageFrameExtracting {
+    /// Превью показывают мелко, но рядом с оригиналом: заметная разница
+    /// здесь читалась бы как испорченный результат.
+    private static let quality = 0.9
+
     private let jpeg: any JPEGEncoding
 
     init(jpeg: any JPEGEncoding = JPEGEncoder()) {
@@ -26,6 +30,6 @@ struct ImageFrameExtractor: ImageFrameExtracting {
         guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
             return nil
         }
-        return jpeg.data(from: image)
+        return jpeg.data(from: image, quality: Self.quality)
     }
 }

@@ -14,32 +14,45 @@ public enum CompressFeature {
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
         previewRenderer: any MediaPreviewRenderer,
-        fileViewer: @escaping MediaFileViewerFactory,
-        mediaPlayer: @escaping MediaItemPlayerFactory
+        analytics: any AnalyticsService,
+        viewers: MediaViewers
     ) -> RouteResolver {
-        RouteResolver(for: CompressRoute.self) { route, router in
+        // Общая аналитика приложения складывается в два объекта: путь
+        // обработки у инструментов один на всех, а степень сжатия — своя.
+        let flow = FlowAnalytics(analytics: analytics, tool: .compress)
+        let compress = CompressAnalytics(analytics: analytics)
+
+        return RouteResolver(for: CompressRoute.self) { route, router in
             switch route {
             case .picker:
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
                         config: pickerConfig,
                         library: mediaLibrary,
+                        analytics: flow,
                         router: router,
                         // Степень сжатия — шторка поверх выбора: настройка
                         // одна, и ради неё уходить с экрана не стоит.
                         destination: { .present(CompressRoute.level(items: $0)) }
                     ),
-                    player: mediaPlayer
+                    player: viewers.player
                 )
 
             case let .level(items):
-                LevelSheetView(viewModel: LevelSheetViewModel(items: items, router: router))
+                LevelSheetView(
+                    viewModel: LevelSheetViewModel(
+                        items: items,
+                        analytics: compress,
+                        router: router
+                    )
+                )
 
             case let .run(request):
                 ProcessingView(
                     viewModel: ProcessingViewModel(
                         request: request,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
                         outcome: { CompressRoute.outcome($0) }
@@ -52,6 +65,7 @@ public enum CompressFeature {
                         outcome: outcome,
                         library: mediaLibrary,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         preview: { .push(CompressRoute.preview($0)) }
                     )
@@ -66,7 +80,7 @@ public enum CompressFeature {
                         previews: previewRenderer,
                         router: router
                     ),
-                    viewer: fileViewer
+                    viewer: viewers.file
                 )
             }
         }

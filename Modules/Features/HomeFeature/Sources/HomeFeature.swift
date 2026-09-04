@@ -1,4 +1,5 @@
 import HomeFeatureInterface
+import SlimlyCore
 import SlimlyDesignSystem
 import SlimlyNavigation
 
@@ -36,12 +37,21 @@ public struct HomeTool: Identifiable, Sendable {
 
 public enum HomeFeature {
     @MainActor
-    public static func resolver(tools: [HomeTool], profile: any Route) -> RouteResolver {
+    public static func resolver(
+        tools: [HomeTool],
+        profile: any Route,
+        analytics: any AnalyticsService
+    ) -> RouteResolver {
         RouteResolver(for: HomeRoute.self) { route, router in
             switch route {
             case .home:
                 HomeView(
-                    viewModel: HomeViewModel(tools: tools, profile: profile, router: router)
+                    viewModel: HomeViewModel(
+                        tools: tools,
+                        profile: profile,
+                        analytics: HomeAnalytics(analytics: analytics),
+                        router: router
+                    )
                 )
             }
         }

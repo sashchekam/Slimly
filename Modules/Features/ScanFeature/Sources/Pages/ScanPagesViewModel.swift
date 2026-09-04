@@ -41,6 +41,7 @@ public final class ScanPagesViewModel {
 
     private let detector: any DocumentBoundsDetector
     private let thumbnailLoader: MediaThumbnailLoader
+    private let analytics: ScanAnalytics
     private let router: Router
 
     /// Сторона кадра, который просим у медиатеки. Границы ищем в нём же,
@@ -51,11 +52,13 @@ public final class ScanPagesViewModel {
         items: [MediaItem],
         detector: any DocumentBoundsDetector,
         thumbnails: @escaping MediaThumbnailLoader,
+        analytics: ScanAnalytics,
         router: Router
     ) {
         pages = items.map { Page(item: $0) }
         self.detector = detector
         thumbnailLoader = thumbnails
+        self.analytics = analytics
         self.router = router
     }
 
@@ -183,6 +186,15 @@ public final class ScanPagesViewModel {
         for page in pages where page.isReady && (page.isManual || page.detected != nil) {
             bounds[page.id] = page.quad
         }
+
+        // Правки и промахи автоматики считаем здесь, а не в обработке:
+        // это оценка человеком того, что она нашла, и другого места,
+        // где она видна, у нас нет.
+        analytics.didConfirmBounds(
+            count: pages.count,
+            edited: pages.count(where: \.isManual),
+            missed: pages.count { $0.isReady && $0.detected == nil }
+        )
         router.push(ScanRoute.format(items: pages.map(\.item), bounds: bounds))
     }
 }

@@ -9,6 +9,10 @@ protocol VideoFrameExtracting: Sendable {
 }
 
 struct VideoFrameExtractor: VideoFrameExtracting {
+    /// Превью показывают мелко, но рядом с оригиналом: заметная разница
+    /// здесь читалась бы как испорченный результат.
+    private static let quality = 0.9
+
     private let jpeg: any JPEGEncoding
 
     init(jpeg: any JPEGEncoding = JPEGEncoder()) {
@@ -26,6 +30,6 @@ struct VideoFrameExtractor: VideoFrameExtracting {
         let time = CMTime(seconds: duration > 2 ? 1 : 0, preferredTimescale: 600)
 
         guard let image = try? await generator.image(at: time).image else { return nil }
-        return jpeg.data(from: image)
+        return jpeg.data(from: image, quality: Self.quality)
     }
 }

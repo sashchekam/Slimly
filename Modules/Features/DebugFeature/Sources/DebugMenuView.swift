@@ -29,6 +29,12 @@ public struct DebugMenuView: View {
                         knobCard(knob)
                     }
 
+                    Text("разделы")
+                        .slimlyKicker()
+                        .padding(.top, 4)
+
+                    sections
+
                     Text("действия")
                         .slimlyKicker()
                         .padding(.top, 4)
@@ -98,6 +104,31 @@ public struct DebugMenuView: View {
                         .buttonStyle(.plain)
                     }
                 }
+            }
+        }
+    }
+
+    private var sections: some View {
+        SlimlyRowGroup {
+            ForEach(viewModel.sections) { section in
+                Button {
+                    viewModel.open(section)
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(section.title)
+                            .font(.slimlyRowTitle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(viewModel.value(for: section))
+                            .font(.slimlyCaption)
+                            .foregroundStyle(SlimlyColor.neutral600)
+                        SlimlyIcon(.chevronRight, width: 6)
+                            .foregroundStyle(SlimlyColor.neutral600)
+                    }
+                    .slimlyRow(horizontal: 15, vertical: 13)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
             }
         }
     }

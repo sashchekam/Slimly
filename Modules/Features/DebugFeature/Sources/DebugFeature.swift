@@ -7,11 +7,15 @@ public enum DebugFeature {
     /// сброс из меню должен обнулять те цифры, которые показывает профиль,
     /// а не свою копию. По той же причине отметка о туре — тот экземпляр,
     /// по которому старт выбирает корень.
+    ///
+    /// - Parameter remoteConfig: источник значений без подмен поверх — экран
+    ///   конфига показывает, что реально приехало с сервера, и подмену рядом.
     @MainActor
     public static func resolver(
         settings: DebugSettings,
         statsStore: ProcessingStatsStore,
         onboardingState: any OnboardingState,
+        remoteConfig: any RemoteConfigService,
         environment: AppEnvironment = .current
     ) -> RouteResolver {
         RouteResolver(for: DebugRoute.self) { route, router in
@@ -23,6 +27,14 @@ public enum DebugFeature {
                         statsStore: statsStore,
                         onboardingState: onboardingState,
                         environment: environment,
+                        router: router
+                    )
+                )
+            case .remoteConfig:
+                DebugRemoteConfigView(
+                    viewModel: DebugRemoteConfigViewModel(
+                        settings: settings,
+                        remoteConfig: remoteConfig,
                         router: router
                     )
                 )

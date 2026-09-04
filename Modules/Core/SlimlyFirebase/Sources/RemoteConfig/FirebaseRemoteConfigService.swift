@@ -26,6 +26,12 @@ public struct FirebaseRemoteConfigService: RemoteConfigService {
         #endif
     }
 
+    /// Только загруженные значения: умолчания в SDK не регистрируются,
+    /// и всё, что здесь перечислено, действительно пришло с сервера.
+    public var names: [String] {
+        config.allKeys(from: .remote).sorted()
+    }
+
     public func text(for name: String) -> String? {
         let value = config.configValue(forKey: name)
         // `.static` — ключа нет ни в загруженном конфиге, ни в умолчаниях SDK:

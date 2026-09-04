@@ -8,11 +8,18 @@ public final class HomeViewModel {
     public let tools: [HomeTool]
 
     private let profile: any Route
+    private let analytics: HomeAnalytics
     private let router: Router
 
-    public init(tools: [HomeTool], profile: any Route, router: Router) {
+    public init(
+        tools: [HomeTool],
+        profile: any Route,
+        analytics: HomeAnalytics,
+        router: Router
+    ) {
         self.tools = tools
         self.profile = profile
+        self.analytics = analytics
         self.router = router
     }
 
@@ -28,10 +35,12 @@ public final class HomeViewModel {
     }
 
     public func open(_ tool: HomeTool) {
+        analytics.didOpenTool(tool)
         router.show(tool.route, as: tool.presentation)
     }
 
     public func openProfile() {
+        analytics.didOpenProfile()
         router.push(profile)
     }
 }

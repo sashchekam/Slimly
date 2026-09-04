@@ -6,9 +6,11 @@ import SlimlyNavigation
 @MainActor
 @Observable
 public final class ScanIntroViewModel {
+    private let analytics: ScanAnalytics
     private let router: Router
 
-    public init(router: Router) {
+    public init(analytics: ScanAnalytics, router: Router) {
+        self.analytics = analytics
         self.router = router
     }
 
@@ -20,12 +22,16 @@ public final class ScanIntroViewModel {
     /// Камера показывается поверх флоу: у неё нет ни шапки, ни полей экрана,
     /// и в стеке она выглядела бы провалом в другое приложение.
     public func openCamera() {
+        analytics.didPickSource(.camera)
+
         let presenter = presenter
         router.dismiss()
         presenter.cover(ScanRoute.camera)
     }
 
     public func openGallery() {
+        analytics.didPickSource(.gallery)
+
         let presenter = presenter
         router.dismiss()
         presenter.push(ScanRoute.picker)

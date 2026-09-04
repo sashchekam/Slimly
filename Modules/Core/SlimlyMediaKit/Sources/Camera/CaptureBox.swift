@@ -92,6 +92,12 @@ final class CaptureBox: @unchecked Sendable {
             photoOutput.maxPhotoDimensions = largest
         }
 
+        // Кадр собирается дольше, зато со склейкой нескольких экспозиций
+        // и оптической стабилизацией. Документ снимают с рук и в комнате,
+        // а не на улице: «быстрый» кадр смазывается ровно на буквах, и
+        // никакая последующая обработка этого уже не вернёт.
+        photoOutput.maxPhotoQualityPrioritization = .quality
+
         let analyzer = FrameAnalyzer(onFrame: onFrame)
         self.analyzer = analyzer
         videoOutput.setSampleBufferDelegate(analyzer, queue: frameQueue)
@@ -144,9 +150,16 @@ final class CaptureBox: @unchecked Sendable {
                 // Формат задаём явно: по умолчанию камера пишет HEIC, а имя
                 // страницы и её расширение выбираются здесь же — расхождение
                 // всплыло бы только в «Файлах».
-                let settings = AVCapturePhotoSettings(
-                    format: [AVVideoCodecKey: AVVideoCodecType.jpeg]
-                )
+                //
+                // Качество на максимуме, потому что этот JPEG — не результат,
+                // а исходник: дальше страницу ждут выпрямление, чистка фона
+                // и порог, и артефакты сжатия каждый из них только подчеркнёт.
+                let format: [String: Any] = [
+                    AVVideoCodecKey: AVVideoCodecType.jpeg,
+                    AVVideoCompressionPropertiesKey: [AVVideoQualityKey: 1.0],
+                ]
+                let settings = AVCapturePhotoSettings(format: format)
+                settings.photoQualityPrioritization = .quality
                 settings.flashMode = photoOutput.supportedFlashModes.contains(flash) ? flash : .off
 
                 let uniqueID = settings.uniqueID

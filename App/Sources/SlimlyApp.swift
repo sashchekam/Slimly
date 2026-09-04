@@ -29,6 +29,6 @@ struct SlimlyApp: App {
 
     private func openQuickAction() {
         guard let deeplink = quickActions.take() else { return }
-        container.handle(deeplink)
+        container.handle(deeplink, from: .shortcut)
     }
 }

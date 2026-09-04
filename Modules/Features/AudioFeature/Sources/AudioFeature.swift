@@ -13,20 +13,23 @@ public enum AudioFeature {
     public static func resolver(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
-        fileViewer: @escaping MediaFileViewerFactory,
-        mediaPlayer: @escaping MediaItemPlayerFactory
+        analytics: any AnalyticsService,
+        viewers: MediaViewers
     ) -> RouteResolver {
-        RouteResolver(for: AudioRoute.self) { route, router in
+        let flow = FlowAnalytics(analytics: analytics, tool: .audio)
+
+        return RouteResolver(for: AudioRoute.self) { route, router in
             switch route {
             case .picker:
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
                         config: pickerConfig,
                         library: mediaLibrary,
+                        analytics: flow,
                         router: router,
                         destination: { .push(AudioRoute.format(items: $0)) }
                     ),
-                    player: mediaPlayer
+                    player: viewers.player
                 )
 
             case let .format(items):
@@ -48,8 +51,8 @@ public enum AudioFeature {
                         library: mediaLibrary,
                         router: router
                     ),
-                    viewer: fileViewer,
-                    player: mediaPlayer
+                    viewer: viewers.file,
+                    player: viewers.player
                 )
 
             case let .run(request):
@@ -57,6 +60,7 @@ public enum AudioFeature {
                     viewModel: ProcessingViewModel(
                         request: request,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
                         outcome: { AudioRoute.outcome($0) }
@@ -69,6 +73,7 @@ public enum AudioFeature {
                         outcome: outcome,
                         library: mediaLibrary,
                         service: processingService,
+                        analytics: flow,
                         router: router,
                         // Дорожку слушают шторкой поверх итога: уходить
                         // с экрана ради одной кнопки «играть» незачем.
@@ -79,7 +84,7 @@ public enum AudioFeature {
             case let .preview(result):
                 AudioPreviewSheetView(
                     viewModel: AudioPreviewSheetViewModel(result: result, router: router),
-                    viewer: fileViewer
+                    viewer: viewers.file
                 )
             }
         }

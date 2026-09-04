@@ -6,4 +6,6 @@ import SlimlyNavigation
 /// резолвер не регистрируется и вести сюда нечему.
 public enum DebugRoute: Route {
     case menu
+    /// Значения удалённого конфига и локальные подмены к ним.
+    case remoteConfig
 }

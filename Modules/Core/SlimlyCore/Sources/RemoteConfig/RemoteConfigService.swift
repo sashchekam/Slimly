@@ -5,6 +5,11 @@ import Foundation
 /// Реализация отвечает только за сырую строку по имени — разбор и умолчание
 /// одинаковы для всех источников и живут в расширении ниже.
 public protocol RemoteConfigService: Sendable {
+    /// Имена всех значений, которые есть у источника. Нужны отладочному меню:
+    /// список ключей знает только источник, а показать оно должно то, что
+    /// реально приехало, а не то, что приложение догадалось спросить.
+    var names: [String] { get }
+
     /// `nil` — значения нет, владелец ключа получит своё умолчание.
     func text(for name: String) -> String?
 
@@ -31,6 +36,10 @@ public struct LocalRemoteConfig: RemoteConfigService {
 
     public init(values: [String: String] = [:]) {
         self.values = values
+    }
+
+    public var names: [String] {
+        values.keys.sorted()
     }
 
     public func text(for name: String) -> String? {

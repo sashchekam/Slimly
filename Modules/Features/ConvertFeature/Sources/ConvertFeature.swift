@@ -10,8 +10,8 @@ public enum ConvertFeature {
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
         previewRenderer: any MediaPreviewRenderer,
-        fileViewer: @escaping MediaFileViewerFactory,
-        mediaPlayer: @escaping MediaItemPlayerFactory
+        analytics: any AnalyticsService,
+        viewers: MediaViewers
     ) -> RouteResolver {
         RouteResolver(for: ConvertRoute.self) { route, router in
             switch route {
@@ -20,10 +20,11 @@ public enum ConvertFeature {
                     viewModel: MediaPickerViewModel(
                         config: pickerConfig(kind),
                         library: mediaLibrary,
+                        analytics: FlowAnalytics(analytics: analytics, tool: tool(for: kind)),
                         router: router,
                         destination: { .push(ConvertRoute.format(kind: kind, items: $0)) }
                     ),
-                    player: mediaPlayer
+                    player: viewers.player
                 )
 
             case let .format(kind, items):
@@ -45,8 +46,8 @@ public enum ConvertFeature {
                         library: mediaLibrary,
                         router: router
                     ),
-                    viewer: fileViewer,
-                    player: mediaPlayer
+                    viewer: viewers.file,
+                    player: viewers.player
                 )
 
             case let .run(request):
@@ -54,6 +55,7 @@ public enum ConvertFeature {
                     viewModel: ProcessingViewModel(
                         request: request,
                         service: processingService,
+                        analytics: FlowAnalytics(analytics: analytics, tool: tool(for: request)),
                         router: router,
                         thumbnails: mediaLibrary.thumbnailLoader,
                         outcome: { ConvertRoute.outcome($0) }
@@ -66,6 +68,7 @@ public enum ConvertFeature {
                         outcome: outcome,
                         library: mediaLibrary,
                         service: processingService,
+                        analytics: FlowAnalytics(analytics: analytics, tool: tool(for: outcome.request)),
                         router: router,
                         preview: { .push(ConvertRoute.preview($0)) }
                     )
@@ -80,10 +83,24 @@ public enum ConvertFeature {
                         previews: previewRenderer,
                         router: router
                     ),
-                    viewer: fileViewer
+                    viewer: viewers.file
                 )
             }
         }
+    }
+
+    // MARK: Инструмент для аналитики
+
+    /// Фото и видео в отчёте разъезжаются на два инструмента: экраны у них
+    /// общие, а привычки разные.
+    private static func tool(for kind: ConvertKind) -> FlowTool {
+        kind == .photo ? .convertPhoto : .convertVideo
+    }
+
+    /// Последние шаги флоу вида уже не несут — маршрут там носит задание.
+    /// Что именно конвертировали, видно по файлам этого задания.
+    private static func tool(for request: ProcessingRequest) -> FlowTool {
+        request.items.first?.kind == .video ? .convertVideo : .convertPhoto
     }
 
     // MARK: Настройки шагов
