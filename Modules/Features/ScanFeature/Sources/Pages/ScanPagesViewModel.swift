@@ -75,7 +75,7 @@ public final class ScanPagesViewModel {
             guard !pages[position].isReady else { continue }
 
             let item = pages[position].item
-            let data = await thumbnailLoader(item, Self.previewSide)
+            let data = await thumbnailLoader(item, Self.previewSide).sharpest()
             var detected: DocumentQuad?
             if let data {
                 detected = await detector.bounds(in: data)
@@ -139,34 +139,36 @@ public final class ScanPagesViewModel {
 
     // MARK: Подписи
 
-    public var title: String { "Границы страниц" }
+    public var title: String { L10n.Pages.title }
 
     /// «Страница 2 из 3» — или просто состояние, когда страница одна.
     public var subtitle: String {
         guard hasMultiplePages else { return status }
-        return "Страница \(index + 1) из \(pages.count) · \(status)"
+        return L10n.Pages.subtitle(index + 1, pages.count, status)
     }
 
     private var status: String {
-        if !page.isReady { return "ищем лист" }
-        if page.isManual { return "рамка поправлена" }
-        return page.detected == nil ? "лист не нашёлся" : "лист найден"
+        if !page.isReady { return L10n.Status.searching }
+        if page.isManual { return L10n.Status.adjusted }
+        return page.detected == nil
+            ? L10n.Status.notFound
+            : L10n.Status.found
     }
 
     /// Подсказка под кадром. Говорит про рамку, а не про кнопки: человек
     /// смотрит на страницу, а не на интерфейс.
     public var hint: String {
         if !page.isReady {
-            return "Ищем границы листа…"
+            return L10n.Pages.searching
         }
         if page.detected == nil, !page.isManual {
-            return "Границы не нашлись — потяните углы по краю страницы"
+            return L10n.Pages.notFound
         }
-        return "Потяните за углы, если рамка легла мимо края"
+        return L10n.Pages.adjustHint
     }
 
     public var ctaTitle: String {
-        "Далее · \(CountFormatter.string(pages.count, .page))"
+        L10n.Pages.action(CountFormatter.string(pages.count, .page))
     }
 
     // MARK: Навигация

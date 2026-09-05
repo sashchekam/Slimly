@@ -14,7 +14,7 @@ public struct LevelSheetView: View {
 
     public var body: some View {
         SlimlySheetScaffold(
-            title: "Степень сжатия",
+            title: L10n.Level.title,
             onCancel: { viewModel.cancel() }
         ) {
             VStack(spacing: 18) {
@@ -87,7 +87,7 @@ public struct LevelSheetView: View {
                 SlimlyIcon(.arrowRight, width: 16)
                     .foregroundStyle(SlimlyColor.neutral600)
 
-                Text("≈ \(viewModel.afterText)")
+                Text(verbatim: "≈ \(viewModel.afterText)")
                     .font(.system(size: 29, weight: .medium))
                     .tracking(-0.8)
                     .foregroundStyle(SlimlyColor.accent300)
@@ -97,7 +97,7 @@ public struct LevelSheetView: View {
                 .padding(.top, 13)
                 .animation(.easeOut(duration: 0.16), value: viewModel.remainingFraction)
 
-            Text("Минус \(viewModel.savedText) · оценка по битрейту, точная цифра — после обработки")
+            Text(L10n.Level.estimate(viewModel.savedText))
                 .font(.slimlyCaptionSmall)
                 .foregroundStyle(SlimlyColor.neutral600)
                 .fixedSize(horizontal: false, vertical: true)

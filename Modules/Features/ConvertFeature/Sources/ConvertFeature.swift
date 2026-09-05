@@ -109,16 +109,16 @@ public enum ConvertFeature {
         switch kind {
         case .photo:
             MediaPickerConfig(
-                title: "Конвертация фото",
-                hint: "Формат зададим на следующем шаге",
+                title: L10n.Photo.title,
+                hint: L10n.Photo.hint,
                 kind: .photo,
                 limit: 5,
                 noun: .photo
             )
         case .video:
             MediaPickerConfig(
-                title: "Конвертация видео",
-                hint: "Контейнер и кодек на следующем шаге",
+                title: L10n.Video.title,
+                hint: L10n.Video.hint,
                 kind: .video,
                 limit: 3,
                 noun: .video
@@ -130,12 +130,9 @@ public enum ConvertFeature {
         switch kind {
         case .photo:
             FormatStepConfig(
-                title: "В какой формат",
-                note: """
-                HEIC весит меньше, JPEG совместим со всем. PNG — без потерь, \
-                но тяжелее оригинала. Исходный формат в списке не показываем.
-                """,
-                actionTitle: "Конвертировать",
+                title: L10n.PhotoFormat.title,
+                note: L10n.PhotoFormat.note,
+                actionTitle: L10n.Common.action,
                 // Формат исходников берём по факту выбора: один HEIC среди
                 // JPEG уже делает всю пачку «съёмкой iPhone».
                 sourceFormat: items.contains(where: \.isHEIC) ? "HEIC" : "JPEG",
@@ -151,12 +148,9 @@ public enum ConvertFeature {
 
         case .video:
             FormatStepConfig(
-                title: "Контейнер и кодек",
-                note: """
-                HEVC даёт меньший вес, H.264 открывается везде. \
-                Перекодирование, не смена расширения.
-                """,
-                actionTitle: "Конвертировать",
+                title: L10n.VideoFormat.title,
+                note: L10n.VideoFormat.note,
+                actionTitle: L10n.Common.action,
                 sourceFormat: sourceContainer(of: items),
                 formats: [
                     MediaFormat(target: .video(container: .mp4, codec: .h264), ratio: 1.05),
@@ -174,7 +168,7 @@ public enum ConvertFeature {
     private static func sourceContainer(of items: [MediaItem]) -> String {
         let extensions = Set(items.map(\.fileExtension))
         guard extensions.count == 1, let single = extensions.first, !single.isEmpty else {
-            return "Видео"
+            return L10n.VideoFormat.source
         }
         return single.uppercased()
     }

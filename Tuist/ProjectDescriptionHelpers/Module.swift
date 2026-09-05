@@ -114,6 +114,17 @@ public enum Module: CaseIterable {
         }
     }
 
+    /// Ресурсы модуля — прежде всего строковый каталог.
+    ///
+    /// У интерфейса их нет и быть не может: папку на диске он делит с фичей,
+    /// и без этой оговорки её каталог уехал бы копией в оба фреймворка.
+    public var resourcesPath: String? {
+        switch kind {
+        case .core, .feature: "\(path)/Resources"
+        case .featureInterface: nil
+        }
+    }
+
     public var dependencies: [Module] {
         switch self {
         case .core: []
@@ -228,7 +239,7 @@ public extension Target {
             bundleId: "\(Slimly.bundleIdPrefix).\(module.name.lowercased())",
             deploymentTargets: Slimly.deploymentTargets,
             sources: ["\(module.sourcesPath)/**"],
-            resources: resourcesIfExist(at: "\(module.path)/Resources"),
+            resources: module.resourcesPath.flatMap(resourcesIfExist),
             dependencies: module.dependencies.map(\.targetDependency)
                 + module.externalDependencies.map { .external(name: $0) },
             settings: .settings(base: module.settings)

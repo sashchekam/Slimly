@@ -12,8 +12,8 @@ struct ToolWidget: Widget {
         ) { entry in
             ToolWidgetView(shortcut: entry.shortcut)
         }
-        .configurationDisplayName("Инструмент")
-        .description("Открывает выбранный инструмент Slimly одним нажатием.")
+        .configurationDisplayName("Tool")
+        .description("Opens the chosen Slimly tool with a single tap.")
         .supportedFamilies([.systemSmall, .accessoryCircular])
     }
 }

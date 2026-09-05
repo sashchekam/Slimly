@@ -28,6 +28,9 @@ public extension Target {
             ],
         ]),
         sources: ["Widget/Sources/**"],
+        // Расширение — отдельный бандл со своим языком: строки виджетов
+        // и интента лежат здесь, а не в каталоге приложения.
+        resources: ["Widget/Resources/**"],
         dependencies: Slimly.widgetModules.map(\.targetDependency),
         settings: .settings(base: Slimly.baseSettings)
     )

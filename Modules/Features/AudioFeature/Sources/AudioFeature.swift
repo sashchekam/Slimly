@@ -90,27 +90,31 @@ public enum AudioFeature {
         }
     }
 
-    private static let pickerConfig = MediaPickerConfig(
-        title: "Извлечь звук",
-        hint: "Дорожка станет отдельным файлом",
-        kind: .video,
-        limit: 3,
-        noun: .video
-    )
+    private static var pickerConfig: MediaPickerConfig {
+        MediaPickerConfig(
+            title: L10n.Tool.extractAudio,
+            hint: L10n.Picker.hint,
+            kind: .video,
+            limit: 3,
+            noun: .video
+        )
+    }
 
     /// MP3 в списке нет: кодировщика MP3 в iOS не существует, и предлагать
     /// его значило бы обещать то, чего система не умеет.
-    private static let formatConfig = FormatStepConfig(
-        title: "Формат дорожки",
-        note: "M4A — родной для iOS, WAV без потерь, но тяжёлый. Видео не меняем.",
-        actionTitle: "Извлечь звук",
-        sourceFormat: "Дорожка видео",
-        formats: [
-            MediaFormat(target: .audio(.aac(kilobits: 128)), ratio: 0.03),
-            MediaFormat(target: .audio(.aac(kilobits: 256)), ratio: 0.06),
-            MediaFormat(target: .audio(.linearPCM), ratio: 0.35),
-        ],
-        noun: .video,
-        makeOperation: { .extractAudio($0) }
-    )
+    private static var formatConfig: FormatStepConfig {
+        FormatStepConfig(
+            title: L10n.Format.title,
+            note: L10n.Format.note,
+            actionTitle: L10n.Tool.extractAudio,
+            sourceFormat: L10n.Format.source,
+            formats: [
+                MediaFormat(target: .audio(.aac(kilobits: 128)), ratio: 0.03),
+                MediaFormat(target: .audio(.aac(kilobits: 256)), ratio: 0.06),
+                MediaFormat(target: .audio(.linearPCM), ratio: 0.35),
+            ],
+            noun: .video,
+            makeOperation: { .extractAudio($0) }
+        )
+    }
 }

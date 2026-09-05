@@ -134,16 +134,18 @@ public enum ScanFeature {
     /// его набрать, и расходиться этим числам было бы неоткуда объяснить.
     static let pageLimit = 5
 
-    private static let pickerConfig = MediaPickerConfig(
-        title: "Страницы скана",
-        hint: "Порядок страниц — как порядок выбора",
-        kind: .photo,
-        limit: pageLimit,
-        noun: .page,
-        // Страницу выбирают по тому, что на ней написано: вес снимка
-        // здесь ни на что не влияет и в итог документа не переходит.
-        showsSize: false
-    )
+    private static var pickerConfig: MediaPickerConfig {
+        MediaPickerConfig(
+            title: L10n.Picker.title,
+            hint: L10n.Picker.hint,
+            kind: .photo,
+            limit: pageLimit,
+            noun: .page,
+            // Страницу выбирают по тому, что на ней написано: вес снимка
+            // здесь ни на что не влияет и в итог документа не переходит.
+            showsSize: false
+        )
+    }
 
     /// Режим — это вид страницы: у трёх вариантов одна и та же обработка,
     /// но разное количество цвета на выходе.
@@ -152,14 +154,10 @@ public enum ScanFeature {
     /// не должна искать лист заново — рамку человек уже видел и принял.
     private static func formatConfig(bounds: ScanBounds) -> FormatStepConfig {
         FormatStepConfig(
-            title: "Как собрать скан",
-            note: """
-            Кадр выпрямляем по выбранным границам, фон добиваем до белого. \
-            Ч/б даёт самый чёткий текст, цвет нужен печатям и картинкам. \
-            Документ можно будет сохранить в «Файлы» — оригиналы останутся в медиатеке.
-            """,
-            actionTitle: "Собрать скан",
-            sourceFormat: "Фото",
+            title: L10n.Format.title,
+            note: L10n.Format.note,
+            actionTitle: L10n.Format.action,
+            sourceFormat: L10n.Format.source,
             formats: ScanMode.allCases.map { MediaFormat(target: .document($0)) },
             noun: .page,
             showsSize: false,

@@ -39,13 +39,17 @@ struct ConversionWorker: ConversionPerforming {
         switch format.target {
         case let .image(target):
             guard item.kind == .photo else {
-                throw ProcessingError.unsupportedOperation("Видео нельзя сохранить как \(target.displayName)")
+                throw ProcessingError.unsupportedOperation(
+                    L10n.Failure.videoTarget(target.displayName)
+                )
             }
             return try await convertImage(item, source: source, target: target, progress: progress)
 
         case let .video(container, codec):
             guard item.kind == .video else {
-                throw ProcessingError.unsupportedOperation("Фото нельзя сохранить как \(container.displayName)")
+                throw ProcessingError.unsupportedOperation(
+                    L10n.Failure.photoTarget(container.displayName)
+                )
             }
             return try await convertVideo(
                 item,
@@ -62,7 +66,9 @@ struct ConversionWorker: ConversionPerforming {
             )
 
         case .audio, .document:
-            throw ProcessingError.unsupportedOperation("Формат \(format.id) недоступен для конвертации")
+            throw ProcessingError.unsupportedOperation(
+                L10n.Failure.conversionFormat(format.id)
+            )
         }
     }
 

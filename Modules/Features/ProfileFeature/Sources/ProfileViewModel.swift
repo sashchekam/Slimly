@@ -9,6 +9,7 @@ import SlimlyNavigation
 public final class ProfileViewModel {
     public struct SettingsRow: Identifiable, Sendable {
         public enum ID: String, Sendable {
+            case language
             case access
             case version
         }
@@ -42,10 +43,14 @@ public final class ProfileViewModel {
     /// плитки на каждой перерисовке.
     public private(set) var usageDigest = ProcessingHistory.empty.digest(for: ProfileViewModel.usageRange)
     public private(set) var access: MediaAccess = .notDetermined
+    /// Язык интерфейса — прямо из сервиса: он наблюдаемый, и строка меняется
+    /// вместе с выбором на соседнем экране.
+    public var language: AppLanguage { localization.current }
     public private(set) var toast: String?
 
     private let mediaLibrary: any MediaLibrary
     private let processingService: any MediaProcessingService
+    private let localization: any LocalizationService
     private let analytics: ProfileAnalytics
     private let environment: AppEnvironment
     /// Маршрут отладочного меню. В релизной сборке его нет — и строка версии
@@ -61,6 +66,7 @@ public final class ProfileViewModel {
     public init(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        localization: any LocalizationService,
         analytics: ProfileAnalytics,
         environment: AppEnvironment = .current,
         debugMenu: (any Route)? = nil,
@@ -68,6 +74,7 @@ public final class ProfileViewModel {
     ) {
         self.mediaLibrary = mediaLibrary
         self.processingService = processingService
+        self.localization = localization
         self.analytics = analytics
         self.environment = environment
         self.debugMenu = debugMenu
@@ -110,17 +117,19 @@ public final class ProfileViewModel {
     public var remainingFraction: Double { stats.remainingFraction }
 
     public var compressedText: String {
-        "стало \(FileSizeFormatter.string(bytes: stats.compressedByteCount))"
+        let size = FileSizeFormatter.string(bytes: stats.compressedByteCount)
+        return L10n.Profile.now(size)
     }
 
     public var originalText: String {
-        "было \(FileSizeFormatter.string(bytes: stats.originalByteCount))"
+        let size = FileSizeFormatter.string(bytes: stats.originalByteCount)
+        return L10n.Profile.was(size)
     }
 
     public var breakdown: [(value: String, caption: String)] {
         [
-            (CountFormatter.string(stats.photoCount), "фото"),
-            (CountFormatter.string(stats.videoCount), "видео"),
+            (CountFormatter.string(stats.photoCount), L10n.Unit.photos),
+            (CountFormatter.string(stats.videoCount), L10n.Unit.videos),
             (
                 CountFormatter.string(stats.conversionCount),
                 CountFormatter.word(stats.conversionCount, .conversion)
@@ -135,7 +144,9 @@ public final class ProfileViewModel {
     /// куда карточка и ведёт.
     public static let usageRange: StatsRange = .quarter
 
-    public var usageCaption: String { "за \(Self.usageRange.title)" }
+    public var usageCaption: String {
+        L10n.Profile.over(Self.usageRange.title)
+    }
 
     public var usage: [UsageTile] {
         let peak = usageDigest.tools.map(\.count).max() ?? 0
@@ -156,10 +167,21 @@ public final class ProfileViewModel {
 
     public var settingsRows: [SettingsRow] {
         [
-            SettingsRow(id: .access, label: "Доступ к Фото", value: accessText, isTappable: false),
+            SettingsRow(
+                id: .language,
+                label: L10n.Language.title,
+                value: language.nativeName,
+                isTappable: true
+            ),
+            SettingsRow(
+                id: .access,
+                label: L10n.Profile.photosAccess,
+                value: accessText,
+                isTappable: false
+            ),
             SettingsRow(
                 id: .version,
-                label: "Версия",
+                label: L10n.Profile.version,
                 value: environment.versionText,
                 isTappable: debugMenu != nil
             ),
@@ -168,10 +190,10 @@ public final class ProfileViewModel {
 
     private var accessText: String {
         switch access {
-        case .authorized: "Все фото"
-        case .limited: "Выбранные фото"
-        case .denied: "Запрещён"
-        case .notDetermined: "Не запрошен"
+        case .authorized: L10n.Permission.authorized
+        case .limited: L10n.Permission.limited
+        case .denied: L10n.Permission.denied
+        case .notDetermined: L10n.Permission.notDetermined
         }
     }
 
@@ -194,6 +216,11 @@ public final class ProfileViewModel {
     /// руках — так себе инструкция: по телефону проще сказать «нажмите
     /// пять раз на версию».
     public func tap(_ row: SettingsRow) {
+        if row.id == .language {
+            router.push(ProfileRoute.language)
+            return
+        }
+
         guard row.id == .version, let debugMenu else { return }
 
         versionTaps += 1
@@ -202,7 +229,7 @@ public final class ProfileViewModel {
             versionTaps = 0
             router.cover(debugMenu)
         case 3, 4:
-            say("Ещё \(5 - versionTaps) — и откроется Debug-меню")
+            say(L10n.Profile.debugCountdown(5 - versionTaps))
         default:
             break
         }

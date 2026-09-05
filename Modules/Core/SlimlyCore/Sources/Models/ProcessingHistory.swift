@@ -24,15 +24,15 @@ public enum StatsRange: String, CaseIterable, Sendable, Hashable, Identifiable {
 
     public var title: String {
         switch self {
-        case .month: "30 дней"
-        case .quarter: "90 дней"
-        case .allTime: "Всё время"
+        case .month: L10n.Period.month
+        case .quarter: L10n.Period.quarter
+        case .allTime: L10n.Period.allTime
         }
     }
 
     /// Хвост подписи периода: «… · 30 дней», «… · всё время».
     public var caption: String {
-        self == .allTime ? "всё время" : title
+        self == .allTime ? L10n.Period.allTimeInline : title
     }
 }
 

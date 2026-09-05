@@ -48,7 +48,9 @@ struct MediaItemProcessor: ItemProcessing {
         case .scan:
             // Страница обрабатывается не сама по себе, а вместе с документом:
             // сюда очередь скана не заходит.
-            throw ProcessingError.unsupportedOperation("Страница собирается вместе с документом")
+            throw ProcessingError.unsupportedOperation(
+                L10n.Failure.pageAlone
+            )
         }
     }
 }

@@ -76,7 +76,8 @@ private final class TransferSession: @unchecked Sendable {
 
     func run() async throws {
         guard writer.startWriting() else {
-            throw writer.error ?? ProcessingError.encodingFailed("запись не началась")
+            let reason = L10n.Reason.writerNotStarted
+            throw writer.error ?? ProcessingError.encodingFailed(reason)
         }
         guard reader.startReading() else {
             writer.cancelWriting()
@@ -115,7 +116,8 @@ private final class TransferSession: @unchecked Sendable {
         }
 
         guard writer.status == .completed else {
-            throw writer.error ?? ProcessingError.encodingFailed("файл не дописан")
+            let reason = L10n.Reason.notFinalized
+            throw writer.error ?? ProcessingError.encodingFailed(reason)
         }
         progress(1)
     }

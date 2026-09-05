@@ -66,7 +66,7 @@ public extension AppEnvironment {
     /// об ошибке оказался бы «arm64».
     private static var hardwareIdentifier: String {
         if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] {
-            return "\(simulated) (симулятор)"
+            return "\(simulated) (simulator)"
         }
 
         var info = utsname()

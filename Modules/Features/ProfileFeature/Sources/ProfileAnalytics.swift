@@ -27,6 +27,14 @@ public struct ProfileAnalytics: FeatureAnalytics {
         track("statistics_range_changed", ["range": .text(Self.code(of: range))])
     }
 
+    /// Язык интерфейса выбран вручную или возвращён к телефонному.
+    ///
+    /// Интересна не сама смена, а то, каким языкам не хватает перевода:
+    /// уход с языка телефона значит, что наш перевод человека не устроил.
+    public func didChangeLanguage(to language: AppLanguage?) {
+        track("language_changed", ["language": .text(language?.code ?? "system")])
+    }
+
     private static func code(of range: StatsRange) -> String {
         switch range {
         case .month: "days_30"

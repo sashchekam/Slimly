@@ -113,7 +113,7 @@ public final class FormatStepViewModel {
         let estimate = FileSizeFormatter.string(bytes: request.estimatedByteCount(for: item))
 
         if request.kind == .audioExtraction {
-            return "дорожка ≈ \(estimate)"
+            return L10n.Format.trackEstimate(estimate)
         }
         return "\(FileSizeFormatter.string(bytes: item.byteCount)) → ≈ \(estimate)"
     }

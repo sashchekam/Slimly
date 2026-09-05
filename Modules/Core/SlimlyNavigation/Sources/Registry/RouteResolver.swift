@@ -46,9 +46,9 @@ struct UnresolvedRouteView: View {
 
     var body: some View {
         ContentUnavailableView(
-            "Экран не найден",
+            L10n.Unresolved.title,
             systemImage: "questionmark.square.dashed",
-            description: Text("Не зарегистрирован резолвер для \(route.description)")
+            description: Text(L10n.Unresolved.description(route.description))
         )
     }
 }

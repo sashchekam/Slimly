@@ -56,7 +56,9 @@ public final class OutcomeViewModel {
     // MARK: Заголовок
 
     public var kicker: String {
-        outcome.isEmpty ? "ничего не вышло" : FlowCopy.doneKicker(outcome.kind)
+        outcome.isEmpty
+            ? L10n.Outcome.nothing
+            : FlowCopy.doneKicker(outcome.kind)
     }
 
     /// У сжатия итог — это вес, у остальных — формат: показываем ту пару,
@@ -77,7 +79,7 @@ public final class OutcomeViewModel {
 
     public var summary: String {
         guard !outcome.isEmpty else {
-            return "Ни один файл обработать не удалось — подробности ниже."
+            return L10n.Outcome.allFailed
         }
         return FlowCopy.summary(outcome)
     }
@@ -86,7 +88,8 @@ public final class OutcomeViewModel {
     /// не сохранилось, — поэтому в заголовке нет ни того ни другого слова.
     public var failureSummary: String? {
         guard !failures.isEmpty else { return nil }
-        return "Не удалось: \(CountFormatter.string(failures.count, .file))"
+        let files = CountFormatter.string(failures.count, .file)
+        return L10n.Outcome.failed(files)
     }
 
     // MARK: Список файлов
@@ -101,7 +104,7 @@ public final class OutcomeViewModel {
                 to: result.outputByteCount
             )
         case .audioExtraction:
-            "дорожка \(FileSizeFormatter.string(bytes: result.outputByteCount))"
+            L10n.Outcome.trackSize(FileSizeFormatter.string(bytes: result.outputByteCount))
         case .conversion, .scan:
             "\(sourceFormat) → \(outcome.request.targetFormat?.shortName ?? "")"
         }
@@ -137,7 +140,9 @@ public final class OutcomeViewModel {
     /// результате она повторяла бы иконку в строке.
     public var showsShareAll: Bool { shareURLs.count > 1 }
 
-    public var shareAllTitle: String { "Поделиться всеми · \(shareURLs.count)" }
+    public var shareAllTitle: String {
+        L10n.Outcome.shareAll(shareURLs.count)
+    }
 
     // MARK: Сохранение
 
@@ -159,8 +164,8 @@ public final class OutcomeViewModel {
 
     public var saveTitle: String {
         switch destination {
-        case .photoLibrary: "Сохранить в галерею"
-        case .files: "Сохранить в «Файлы»"
+        case .photoLibrary: L10n.Save.photos
+        case .files: L10n.Save.files
         }
     }
 
@@ -168,12 +173,12 @@ public final class OutcomeViewModel {
     /// сказать, где искать файлы.
     public var saveNote: String {
         guard isSaved else {
-            return "Пока файлы живут только внутри приложения — без сохранения они пропадут"
+            return L10n.Save.hint
         }
 
         switch destination {
-        case .photoLibrary: return "Сохранено в галерею"
-        case .files: return "Сохранено в папку «Slimly» в «Файлах»"
+        case .photoLibrary: return L10n.Save.photosDone
+        case .files: return L10n.Save.filesFolder
         }
     }
 
@@ -192,7 +197,7 @@ public final class OutcomeViewModel {
 
             guard !stored.results.isEmpty else {
                 analytics.didFailSaving(requested)
-                say("Сохранить не удалось")
+                say(L10n.Save.failed)
                 return
             }
 
@@ -203,7 +208,7 @@ public final class OutcomeViewModel {
             if lost > 0 {
                 analytics.didFailSaving(lost)
             }
-            say(lost > 0 ? "Сохранилось не всё" : savedTitle)
+            say(lost > 0 ? L10n.Save.partial : savedTitle)
         }
     }
 
@@ -211,8 +216,8 @@ public final class OutcomeViewModel {
     /// ничем не отличалось бы от «готово».
     private var savedTitle: String {
         switch destination {
-        case .photoLibrary: "Сохранено в галерею"
-        case .files: "Сохранено в «Файлы»"
+        case .photoLibrary: L10n.Save.photosDone
+        case .files: L10n.Save.filesDone
         }
     }
 
@@ -238,7 +243,8 @@ public final class OutcomeViewModel {
 
     public var deleteSubtitle: String {
         let size = FileSizeFormatter.string(bytes: results.originalByteCount)
-        return "\(CountFormatter.string(results.count, .file)), \(size) · iOS покажет свой запрос"
+        let files = CountFormatter.string(results.count, .file)
+        return L10n.Outcome.deletePrompt(files, size)
     }
 
     // MARK: Действия
@@ -270,7 +276,7 @@ public final class OutcomeViewModel {
                 router.popToRoot()
             } catch {
                 isDeleting = false
-                deletionMessage = "Оригиналы остались на месте"
+                deletionMessage = L10n.Outcome.originalsKept
             }
         }
     }

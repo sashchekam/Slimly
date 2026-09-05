@@ -28,6 +28,7 @@ public struct SlimlyIcon: View {
         case eye
         case trash
         case person
+        case phone
         case share
         case play
         case pause
@@ -77,6 +78,7 @@ extension SlimlyIcon.Kind {
         case .chevronRight, .chevronDown: 1.6
         case .arrowRight: 1.4
         case .compress, .person, .share, .play: 1.6
+        case .phone: 1.5
         case .flash: 1.7
         // Пауза — две короткие черты: тонкой линией они читались бы
         // как случайный штрих, а не как знак.
@@ -296,6 +298,15 @@ private struct IconShape: Shape {
         case .pause:
             path.line(from: CGPoint(x: 9.4, y: 6.4), to: CGPoint(x: 9.4, y: 17.6))
             path.line(from: CGPoint(x: 14.6, y: 6.4), to: CGPoint(x: 14.6, y: 17.6))
+
+        case .phone:
+            path.addRoundedRect(
+                in: CGRect(x: 6.4, y: 2.6, width: 11.2, height: 18.8),
+                cornerSize: CGSize(width: 2.4, height: 2.4)
+            )
+            // Полоска динамика внизу, а не вверху: так силуэт читается
+            // телефоном в руке, а не пустой рамкой.
+            path.line(from: CGPoint(x: 10.6, y: 18.6), to: CGPoint(x: 13.4, y: 18.6))
 
         case .person:
             path.addEllipse(in: CGRect(x: 8.4, y: 4.9, width: 7.2, height: 7.2))

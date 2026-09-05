@@ -9,17 +9,13 @@ import UIKit
 ///
 /// Класс, а не актор: PhotoKit сам потокобезопасен и работает колбэками,
 /// и заворачивать его в актор значило бы гонять очередь ради очереди.
-/// Изменяемое состояние здесь только одно — кэш миниатюр, а `NSCache`
-/// синхронизирован сам.
+/// Изменяемого состояния здесь нет вовсе — оно всё у миниатюр, в их
+/// собственном загрузчике.
 public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
-    private let thumbnails = NSCache<NSString, NSData>()
-    /// Кадр из файла: страница с камеры — не ассет, и миниатюру для неё
-    /// система не отдаст.
-    private let previews: any MediaPreviewRenderer
+    private let thumbnails: ThumbnailLoader
 
     public init(previews: any MediaPreviewRenderer = SystemMediaPreviewRenderer()) {
-        self.previews = previews
-        thumbnails.countLimit = 400
+        thumbnails = ThumbnailLoader(previews: previews)
     }
 
     // MARK: Доступ
@@ -73,7 +69,7 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         var result: [MediaAlbum] = [
             MediaAlbum(
                 id: MediaAlbum.recentID,
-                title: "Недавние",
+                title: L10n.Library.recents,
                 itemCount: PHAsset.fetchAssets(with: Self.fetchOptions(kind: kind)).count
             ),
         ]
@@ -243,50 +239,11 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
     // MARK: Миниатюры
 
     public func thumbnail(for item: MediaItem, size: Int) async -> Data? {
-        let key = "\(item.id)#\(size)" as NSString
-        if let cached = thumbnails.object(forKey: key) { return cached as Data }
+        await thumbnails.thumbnail(for: item, size: size)
+    }
 
-        // Страница с камеры — обычный файл, а не ассет: PhotoKit о ней
-        // не знает, и кадр достаём прямо из него.
-        if let source = item.sourceURL {
-            guard let data = await previews.preview(at: source, maxPixel: size * 3) else { return nil }
-            thumbnails.setObject(data as NSData, forKey: key)
-            return data
-        }
-
-        guard let asset = Self.asset(for: item.id) else { return nil }
-
-        let options = PHImageRequestOptions()
-        options.deliveryMode = .highQualityFormat
-        options.resizeMode = .fast
-        options.isNetworkAccessAllowed = true
-        options.isSynchronous = false
-
-        // Размер приходит в пунктах, а PhotoKit ждёт пиксели. Множитель
-        // берём максимальный, а не у экрана: спрашивать про экран отсюда
-        // значит идти на главный поток ради числа, которое всё равно 2 или 3.
-        let side = CGFloat(size) * 3
-        let target = CGSize(width: side, height: side)
-
-        let image: UIImage? = await withCheckedContinuation { continuation in
-            let box = ResumeBox(continuation)
-            PHImageManager.default().requestImage(
-                for: asset,
-                targetSize: target,
-                contentMode: .aspectFill,
-                options: options
-            ) { image, info in
-                // Система вправе позвать обработчик дважды — сначала
-                // с временной картинкой. Продолжение возобновляем один раз.
-                let isDegraded = (info?[PHImageResultIsDegradedKey] as? NSNumber)?.boolValue ?? false
-                guard !isDegraded || image == nil else { return }
-                box.resume(with: image)
-            }
-        }
-
-        guard let data = image?.jpegData(compressionQuality: 0.85) else { return nil }
-        thumbnails.setObject(data as NSData, forKey: key)
-        return data
+    public func thumbnails(for item: MediaItem, size: Int) -> AsyncStream<Data> {
+        thumbnails.thumbnails(for: item, size: size)
     }
 
     // MARK: Файлы
@@ -389,7 +346,9 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
         }
 
         guard let value = identifier.value else {
-            throw MediaLibraryError.exportFailed("Не удалось сохранить файл в медиатеку")
+            throw MediaLibraryError.exportFailed(
+                L10n.Failure.saveFailed
+            )
         }
         return value
     }
@@ -428,26 +387,6 @@ public final class PhotosMediaLibrary: MediaLibrary, @unchecked Sendable {
     private static var sourceDirectory: URL {
         FileManager.default.temporaryDirectory
             .appendingPathComponent("SlimlySource", isDirectory: true)
-    }
-}
-
-/// Однократное возобновление продолжения: PhotoKit зовёт обработчик
-/// миниатюры столько раз, сколько сочтёт нужным.
-private final class ResumeBox: @unchecked Sendable {
-    private let continuation: CheckedContinuation<UIImage?, Never>
-    private let lock = NSLock()
-    private var isResumed = false
-
-    init(_ continuation: CheckedContinuation<UIImage?, Never>) {
-        self.continuation = continuation
-    }
-
-    func resume(with image: UIImage?) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !isResumed else { return }
-        isResumed = true
-        continuation.resume(returning: image)
     }
 }
 

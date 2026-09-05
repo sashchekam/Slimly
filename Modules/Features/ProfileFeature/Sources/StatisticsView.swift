@@ -40,7 +40,7 @@ public struct StatisticsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("Статистика")
+            Text(L10n.Statistics.title)
                 .font(.slimlyLargeTitle)
                 .tracking(SlimlyTracking.largeTitle)
             Text(viewModel.periodText)
@@ -67,13 +67,13 @@ public struct StatisticsView: View {
     private var operationsCard: some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 13) {
-                Text("операции по инструментам").slimlyKicker()
+                Text(L10n.Statistics.byTool).slimlyKicker()
 
                 HStack(alignment: .lastTextBaseline, spacing: 9) {
                     Text(viewModel.totalText)
                         .font(.slimlyStatM)
                         .tracking(SlimlyTracking.statM)
-                    Text("операций всего")
+                    Text(L10n.Statistics.total)
                         .font(.slimlyBodySmall)
                         .foregroundStyle(SlimlyColor.neutral400)
                 }
@@ -86,7 +86,7 @@ public struct StatisticsView: View {
                             RoundedRectangle(cornerRadius: 2, style: .continuous)
                                 .fill(Self.color(for: share.id))
                                 .frame(width: 7, height: 7)
-                            Text("\(share.label) · \(share.percentText)")
+                            Text(verbatim: "\(share.label) · \(share.percentText)")
                                 .font(.slimlyCaptionSmall)
                                 .foregroundStyle(SlimlyColor.neutral400)
                         }
@@ -197,7 +197,7 @@ public struct StatisticsView: View {
     }
 
     private var footnote: some View {
-        Text("Статистика считается на устройстве и никуда не отправляется.")
+        Text(L10n.Statistics.privacy)
             .font(.slimlyCaptionSmall)
             .foregroundStyle(SlimlyColor.neutral600)
             .fixedSize(horizontal: false, vertical: true)

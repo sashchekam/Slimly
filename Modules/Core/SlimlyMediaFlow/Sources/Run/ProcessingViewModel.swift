@@ -119,9 +119,10 @@ public final class ProcessingViewModel {
     public var summaryLine: String {
         let count = CountFormatter.string(items.count, .file)
         guard let remaining = progress.estimatedRemaining else {
-            return "Оцениваем время · \(count)"
+            return L10n.Progress.estimating(count)
         }
-        return "Осталось \(DurationFormatter.remaining(remaining)) · \(count)"
+        let left = DurationFormatter.remaining(remaining)
+        return L10n.Progress.remaining(left, count)
     }
 
     public func fraction(for item: MediaItem) -> Double {
@@ -130,8 +131,8 @@ public final class ProcessingViewModel {
 
     public func state(for item: MediaItem) -> String {
         let fraction = progress.fraction(for: item)
-        if fraction >= 1 { return "готово" }
-        if fraction <= 0 { return "ждёт" }
+        if fraction >= 1 { return L10n.Progress.done }
+        if fraction <= 0 { return L10n.Progress.waiting }
         return "\(Int((fraction * 100).rounded()))%"
     }
 }

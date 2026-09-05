@@ -29,8 +29,8 @@ enum DocumentCameraError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unavailable: "Камера недоступна на этом устройстве"
-        case let .captureFailed(reason): "Снимок не получился: \(reason)"
+        case .unavailable: L10n.Failure.cameraUnavailable
+        case let .captureFailed(reason): L10n.Failure.captureFailed(reason)
         }
     }
 }
@@ -256,7 +256,8 @@ private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegat
             return
         }
         guard let data = photo.fileDataRepresentation() else {
-            completion(.failure(DocumentCameraError.captureFailed("кадр пустой")))
+            let reason = L10n.Reason.emptyFrame
+            completion(.failure(DocumentCameraError.captureFailed(reason)))
             return
         }
 

@@ -150,7 +150,7 @@ public final class DocumentCameraSession {
         return MediaItem(
             id: file.path,
             kind: .photo,
-            fileName: "Страница \(pages.count + 1).jpg",
+            fileName: "Page \(pages.count + 1).jpg",
             byteCount: Int64(photo.data.count),
             pixelWidth: photo.pixelWidth,
             pixelHeight: photo.pixelHeight,

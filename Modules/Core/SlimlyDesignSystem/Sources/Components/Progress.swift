@@ -126,6 +126,6 @@ public struct SlimlySpinner: View {
                     isSpinning = true
                 }
             }
-            .accessibilityLabel("Загрузка")
+            .accessibilityLabel(Text(L10n.Accessibility.loading))
     }
 }

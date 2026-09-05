@@ -15,7 +15,7 @@ import SlimlyShortcuts
 /// инструменту добавляется маршрут: за пределами приложения его нет, поэтому
 /// в каталоге он и не живёт.
 enum HomeTools {
-    static let all: [HomeTool] = ToolShortcut.all.map(card)
+    static var all: [HomeTool] { ToolShortcut.all.map(card) }
 
     private static func card(for shortcut: ToolShortcut) -> HomeTool {
         switch shortcut.id {

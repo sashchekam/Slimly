@@ -6,46 +6,33 @@ import Foundation
 /// «2–5 мая 2025» вместо «2 мая 2025 — 5 мая 2025». Год текущего года
 /// опускаем: он ничего не уточняет, а места над сеткой мало.
 public enum MediaDateFormatter {
-    /// Календарь фиксирован григорианским: месяцы подписаны русскими
-    /// названиями, а в календаре пользователя их может быть и тринадцать.
-    /// Часовой пояс — самообновляющийся: даты снимков считаются по месту.
-    private static let calendar: Calendar = {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .autoupdatingCurrent
-        return calendar
-    }()
-
-    /// Месяцы в родительном падеже: дата всегда идёт с числом — «5 мая».
-    private static let months = [
-        "января", "февраля", "марта", "апреля", "мая", "июня",
-        "июля", "августа", "сентября", "октября", "ноября", "декабря",
-    ]
+    /// Календарь и часовой пояс берём пользовательские: месяцы теперь
+    /// подписывает система, и подменять календарь григорианским больше
+    /// незачем — где в году тринадцать месяцев, там их и покажут.
+    private static let calendar = Calendar.autoupdatingCurrent
 
     /// Промежуток между двумя датами: «Сегодня», «5 мая», «2–5 мая 2025»,
     /// «28 апреля — 3 мая 2025», «28 декабря 2024 — 3 января 2025».
+    ///
+    /// Сокращает промежуток система: где именно опустить общий месяц и как
+    /// развернуть тире, в каждом языке решено по-своему.
     public static func string(from earliest: Date, to latest: Date, now: Date = .now) -> String {
-        let start = parts(of: earliest)
-        let end = parts(of: latest)
-        let currentYear = calendar.component(.year, from: now)
+        let start = min(earliest, latest)
+        let end = max(earliest, latest)
 
-        guard start != end else {
+        guard !calendar.isDate(start, inSameDayAs: end) else {
             // День назван словом, только когда он вообще подписан словом:
             // «Сегодня» рядом с числом соседнего дня выглядело бы разнобоем.
-            if calendar.isDateInToday(latest) { return "Сегодня" }
-            if calendar.isDateInYesterday(latest) { return "Вчера" }
-            return string(end, showsYear: end.year != currentYear)
+            if calendar.isDateInToday(end) { return L10n.Date.today }
+            if calendar.isDateInYesterday(end) { return L10n.Date.yesterday }
+            return day(end, now: now)
         }
 
-        let showsYear = start.year != currentYear || end.year != currentYear
-
-        // Внутри одного месяца хватает двух чисел: «2–5 мая 2025».
-        if start.year == end.year, start.month == end.month {
-            return "\(start.day)–\(string(end, showsYear: showsYear))"
-        }
-
-        // Год у левой даты нужен, только если он другой.
-        let head = string(start, showsYear: showsYear && start.year != end.year)
-        return "\(head) — \(string(end, showsYear: showsYear))"
+        // Локаль ставим сами: месяц называет система, а язык приложения ей
+        // после ручного выбора не виден.
+        let style = Date.IntervalFormatStyle(locale: L10nBundle.locale).day().month(.wide)
+        let showsYear = !isCurrentYear(start, now: now) || !isCurrentYear(end, now: now)
+        return (start ..< end).formatted(showsYear ? style.year() : style)
     }
 
     /// Одна дата числом и месяцем: «12 января», «12 января 2024».
@@ -53,26 +40,11 @@ public enum MediaDateFormatter {
     /// Без «сегодня» и «вчера»: строка идёт внутри фразы («с 12 января»),
     /// где относительное слово теряет падеж.
     public static func day(_ date: Date, now: Date = .now) -> String {
-        let parts = parts(of: date)
-        return string(parts, showsYear: parts.year != calendar.component(.year, from: now))
+        let style = Date.FormatStyle(locale: L10nBundle.locale).day().month(.wide)
+        return date.formatted(isCurrentYear(date, now: now) ? style : style.year())
     }
 
-    private struct Parts: Equatable {
-        let day: Int
-        let month: Int
-        let year: Int
-    }
-
-    private static func parts(of date: Date) -> Parts {
-        Parts(
-            day: calendar.component(.day, from: date),
-            month: calendar.component(.month, from: date),
-            year: calendar.component(.year, from: date)
-        )
-    }
-
-    private static func string(_ parts: Parts, showsYear: Bool) -> String {
-        let month = months[parts.month - 1]
-        return showsYear ? "\(parts.day) \(month) \(parts.year)" : "\(parts.day) \(month)"
+    private static func isCurrentYear(_ date: Date, now: Date) -> Bool {
+        calendar.component(.year, from: date) == calendar.component(.year, from: now)
     }
 }

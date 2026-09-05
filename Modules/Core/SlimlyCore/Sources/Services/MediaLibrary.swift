@@ -23,9 +23,9 @@ public enum MediaLibraryError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .accessDenied: "Нет доступа к медиатеке"
-        case .itemNotFound: "Файл не найден в медиатеке"
-        case .originalUnavailable: "Оригинал не выгружен из iCloud"
+        case .accessDenied: L10n.LibraryError.accessDenied
+        case .itemNotFound: L10n.LibraryError.itemNotFound
+        case .originalUnavailable: L10n.LibraryError.originalUnavailable
         case let .exportFailed(reason): reason
         }
     }
@@ -55,6 +55,14 @@ public protocol MediaLibrary: Sendable {
     /// Миниатюра в JPEG. Данные, а не картинка, — чтобы модель не зависела
     /// от UIKit и спокойно ездила между акторами.
     func thumbnail(for item: MediaItem, size: Int) async -> Data?
+
+    /// Миниатюры одного файла по мере готовности: сначала грубый кадр,
+    /// который у системы уже лежит готовым, следом — чёткий.
+    ///
+    /// Одним значением это не выразить: чёткий кадр система готовит не
+    /// мгновенно, и при быстрой прокрутке лента ждала бы его пустыми
+    /// плитками. Поток заканчивается на первом же чётком кадре.
+    func thumbnails(for item: MediaItem, size: Int) -> AsyncStream<Data>
 
     /// Копия оригинала во временной папке — источник для обработки.
     /// Удалять её должен тот, кто заказал: система за нами не убирает.

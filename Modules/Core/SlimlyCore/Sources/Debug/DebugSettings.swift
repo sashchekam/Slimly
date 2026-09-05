@@ -17,11 +17,11 @@ public enum SimulatedFailure: String, CaseIterable, Identifiable, Sendable {
 
     public var title: String {
         switch self {
-        case .off: "Нет"
-        case .noSpace: "Нет места"
-        case .unreadable: "Битый файл"
-        case .interrupted: "Свернули"
-        case .saveDenied: "Запись запрещена"
+        case .off: L10n.Failure.none
+        case .noSpace: L10n.Failure.noSpace
+        case .unreadable: L10n.Failure.unreadable
+        case .interrupted: L10n.Failure.interrupted
+        case .saveDenied: L10n.Failure.saveDenied
         }
     }
 
@@ -30,10 +30,10 @@ public enum SimulatedFailure: String, CaseIterable, Identifiable, Sendable {
     public var reason: String? {
         switch self {
         case .off: nil
-        case .noSpace: "На устройстве не хватило места для копии"
-        case .unreadable: "Файл повреждён или ещё выгружается из iCloud"
-        case .interrupted: "Обработка прервана системой"
-        case .saveDenied: "iOS не дала сохранить результат в медиатеку"
+        case .noSpace: L10n.FailureDetail.noSpace
+        case .unreadable: L10n.FailureDetail.unreadable
+        case .interrupted: L10n.FailureDetail.interrupted
+        case .saveDenied: L10n.FailureDetail.saveDenied
         }
     }
 }

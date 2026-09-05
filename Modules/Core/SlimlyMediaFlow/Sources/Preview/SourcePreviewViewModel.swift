@@ -77,11 +77,13 @@ public final class SourcePreviewViewModel {
     /// Пока кадр не приехал, подписываем, что именно грузится: пустая
     /// штриховка без подписи читалась бы как ошибка.
     public var placeholderLabel: String {
-        item.kind == .video ? "ВИДЕО" : "ОРИГИНАЛ"
+        item.kind == .video
+            ? L10n.Badge.video
+            : L10n.Badge.original
     }
 
     public var note: String {
-        "Оригинал из медиатеки — так он выглядит сейчас. Обработка его не меняет: результат станет отдельным файлом."
+        L10n.Preview.sourceNote
     }
 
     public func goBack() {

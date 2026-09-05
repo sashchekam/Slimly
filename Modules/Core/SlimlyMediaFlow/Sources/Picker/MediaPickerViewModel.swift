@@ -209,9 +209,9 @@ public final class MediaPickerViewModel {
 
     public var emptyTitle: String {
         switch config.kind {
-        case .video: "Видео не найдено"
-        case .photo: "Фото не найдено"
-        case nil: "Медиатека пуста"
+        case .video: L10n.Picker.emptyVideos
+        case .photo: L10n.Picker.emptyPhotos
+        case nil: L10n.Picker.emptyLibrary
         }
     }
 
@@ -219,8 +219,8 @@ public final class MediaPickerViewModel {
     /// сам, поэтому «пусто» здесь значит другое, и подсказка тоже.
     public var emptyHint: String {
         access == .limited
-            ? "Приложению открыта только часть медиатеки. Добавьте файлы в системном списке."
-            : "В выбранном альбоме нечего обрабатывать."
+            ? L10n.Picker.emptyLimited
+            : L10n.Picker.emptyAlbum
     }
 
     public var showsLimitedNotice: Bool {
@@ -253,7 +253,9 @@ public final class MediaPickerViewModel {
 
     // MARK: Показатели
 
-    public var limitTitle: String { "\(selection.count) из \(config.limit)" }
+    public var limitTitle: String {
+        L10n.Picker.counter(selection.count, config.limit)
+    }
 
     public var limitFraction: Double {
         min(Double(selection.count) / Double(config.limit), 1)
@@ -261,8 +263,9 @@ public final class MediaPickerViewModel {
 
     public var ctaTitle: String {
         let count = CountFormatter.string(selection.count, config.noun)
-        guard config.showsSize else { return "Далее · \(count)" }
-        return "Далее · \(count) · \(FileSizeFormatter.string(bytes: selection.totalByteCount))"
+        guard config.showsSize else { return L10n.Picker.action(count) }
+        let size = FileSizeFormatter.string(bytes: selection.totalByteCount)
+        return L10n.Picker.actionWithSize(count, size)
     }
 
     // MARK: Навигация

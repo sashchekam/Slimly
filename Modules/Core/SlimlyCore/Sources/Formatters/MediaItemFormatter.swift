@@ -4,8 +4,9 @@ public enum MediaItemFormatter {
     /// Подпись на плитке галереи.
     public static func kindLabel(_ item: MediaItem) -> String {
         switch item.kind {
-        case .video: "ВИДЕО"
-        case .photo: item.isHEIC ? "HEIC" : "ФОТО"
+        case .video: L10n.Badge.video
+        case .photo:
+            item.isHEIC ? "HEIC" : L10n.Badge.photo
         }
     }
 
@@ -40,6 +41,9 @@ public enum MediaItemFormatter {
 public enum DurationFormatter {
     /// «0:42», «2:15». Часов у роликов из медиатеки практически не бывает,
     /// но если попадутся — покажем «1:02:15».
+    ///
+    /// Двоеточие между минутами и секундами одинаково во всех языках,
+    /// которые мы поддерживаем, поэтому строка собирается вручную.
     public static func string(_ duration: Duration) -> String {
         let totalSeconds = Int(duration.components.seconds)
         let seconds = totalSeconds % 60
@@ -52,24 +56,25 @@ public enum DurationFormatter {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    /// Суммарная длительность: «46 мин», «2 ч 14 мин», «5 ч 02 мин».
+    /// Суммарная длительность: «46 мин», «2 ч 14 мин».
     ///
     /// Секунд здесь нет: это итог за месяцы, и точность до секунды в нём
-    /// была бы шумом. Минуты у часов дополнены нулём, чтобы столбик чисел
-    /// не прыгал при смене среза.
+    /// была бы шумом. Единицы подписывает система — их сокращения в каждом
+    /// языке свои, а вместе с ними и порядок слов.
     public static func total(seconds: Double) -> String {
         let minutes = max(0, Int((seconds / 60).rounded()))
-        let hours = minutes / 60
-
-        guard hours > 0 else { return "\(minutes) мин" }
-        return String(format: "%d ч %02d мин", hours, minutes % 60)
+        let allowed: Set<Duration.UnitsFormatStyle.Unit> = minutes >= 60 ? [.hours, .minutes] : [.minutes]
+        return Duration.seconds(minutes * 60).formatted(.units(allowed: allowed, width: .abbreviated))
     }
 
     /// «12 с», «3 мин» — грубая оценка, поэтому без долей и без секунд
     /// после минуты: точность, которой у прогноза всё равно нет.
     public static func remaining(_ duration: Duration) -> String {
         let seconds = max(1, Int(duration.components.seconds))
-        guard seconds >= 60 else { return "\(seconds) с" }
-        return "\(Int((Double(seconds) / 60).rounded(.up))) мин"
+        guard seconds >= 60 else {
+            return Duration.seconds(seconds).formatted(.units(allowed: [.seconds], width: .abbreviated))
+        }
+        let minutes = Int((Double(seconds) / 60).rounded(.up))
+        return Duration.seconds(minutes * 60).formatted(.units(allowed: [.minutes], width: .abbreviated))
     }
 }

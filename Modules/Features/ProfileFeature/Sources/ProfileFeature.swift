@@ -9,6 +9,7 @@ public enum ProfileFeature {
     public static func resolver(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        localization: any LocalizationService,
         analytics: any AnalyticsService,
         debugMenu: (any Route)? = nil
     ) -> RouteResolver {
@@ -21,6 +22,7 @@ public enum ProfileFeature {
                     viewModel: ProfileViewModel(
                         mediaLibrary: mediaLibrary,
                         processingService: processingService,
+                        localization: localization,
                         analytics: profileAnalytics,
                         debugMenu: debugMenu,
                         router: router
@@ -30,6 +32,14 @@ public enum ProfileFeature {
                 StatisticsView(
                     viewModel: StatisticsViewModel(
                         processingService: processingService,
+                        analytics: profileAnalytics,
+                        router: router
+                    )
+                )
+            case .language:
+                LanguageView(
+                    viewModel: LanguageViewModel(
+                        localization: localization,
                         analytics: profileAnalytics,
                         router: router
                     )

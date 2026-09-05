@@ -13,9 +13,13 @@ protocol DocumentNaming: Sendable {
 struct ScanDocumentNamer: DocumentNaming {
     func name(at date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
+        // Формат фиксированный, поэтому и локаль фиксированная: с календарём
+        // пользователя «2026» превратилось бы в год другой эры, а имена
+        // файлов должны сортироваться одинаково у всех.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         // Двоеточие «Файлы» показывают косой чертой — время разделяем дефисом.
         formatter.dateFormat = "yyyy-MM-dd HH-mm"
-        return "Скан \(formatter.string(from: date)).pdf"
+        let stamp = formatter.string(from: date)
+        return L10n.Scan.fileName(stamp)
     }
 }

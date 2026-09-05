@@ -60,7 +60,9 @@ public final class LevelSheetViewModel {
         return "\(CountFormatter.string(items.count, .file)), \(size)"
     }
 
-    public var ctaTitle: String { "Сжать · \(selectionText)" }
+    public var ctaTitle: String {
+        L10n.Level.action(selectionText)
+    }
 
     // MARK: Навигация
 

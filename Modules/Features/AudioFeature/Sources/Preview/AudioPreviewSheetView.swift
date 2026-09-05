@@ -24,7 +24,7 @@ public struct AudioPreviewSheetView: View {
     public var body: some View {
         SlimlySheetScaffold(
             title: viewModel.title,
-            closeTitle: "Готово",
+            closeTitle: L10n.Preview.close,
             onCancel: { viewModel.close() }
         ) {
             player
@@ -42,7 +42,7 @@ public struct AudioPreviewSheetView: View {
                     in: RoundedRectangle(cornerRadius: SlimlyRadius.lg, style: .continuous)
                 )
         } else {
-            Text("Дорожка недоступна")
+            Text(L10n.Preview.unavailable)
                 .font(.slimlyCaption)
                 .foregroundStyle(SlimlyColor.neutral600)
                 .frame(maxWidth: .infinity, minHeight: Self.playerHeight)

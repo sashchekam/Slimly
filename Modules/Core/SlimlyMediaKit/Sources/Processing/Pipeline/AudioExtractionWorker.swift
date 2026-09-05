@@ -31,7 +31,9 @@ struct AudioExtractionWorker: AudioExtractionPerforming {
         progress: @escaping @Sendable (Double) -> Void
     ) async throws -> ProcessingResult {
         guard case let .audio(target) = format.target, item.kind == .video else {
-            throw ProcessingError.unsupportedOperation("Звук извлекается только из видео")
+            throw ProcessingError.unsupportedOperation(
+                L10n.Failure.audioFromPhoto
+            )
         }
 
         return try await results.write(

@@ -20,13 +20,19 @@ public struct SlimlyRowGroup<Content: View>: View {
 
 public extension View {
     /// Заливка строки внутри ``SlimlyRowGroup``.
+    ///
+    /// - Parameter fill: цвет самой строки. Меняют его там, где строка ещё и
+    ///   выбрана, — тогда она уходит на ступень глубже поверхности, а не
+    ///   красится акцентом: в списке из десяти строк акцентная заливка
+    ///   перевесила бы сам список.
     func slimlyRow(
         horizontal: CGFloat = 13,
-        vertical: CGFloat = 12
+        vertical: CGFloat = 12,
+        fill: Color = SlimlyColor.surface
     ) -> some View {
         padding(.horizontal, horizontal)
             .padding(.vertical, vertical)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(SlimlyColor.surface)
+            .background(fill)
     }
 }

@@ -130,10 +130,10 @@ struct PageBoundsEditor: View {
 
     private func label(for corner: DocumentQuad.Corner) -> String {
         switch corner {
-        case .topLeft: "Левый верхний угол"
-        case .topRight: "Правый верхний угол"
-        case .bottomRight: "Правый нижний угол"
-        case .bottomLeft: "Левый нижний угол"
+        case .topLeft: L10n.Corner.topLeft
+        case .topRight: L10n.Corner.topRight
+        case .bottomRight: L10n.Corner.bottomRight
+        case .bottomLeft: L10n.Corner.bottomLeft
         }
     }
 

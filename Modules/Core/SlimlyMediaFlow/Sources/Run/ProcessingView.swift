@@ -22,12 +22,12 @@ public struct ProcessingView: View {
                     ring
                     queue
 
-                    Button("Отменить") { viewModel.cancel() }
+                    Button(L10n.Progress.cancel) { viewModel.cancel() }
                         .buttonStyle(.slimlyQuietLink)
                         .padding(6)
                         .frame(maxWidth: .infinity)
 
-                    Text("Идёт, пока приложение открыто — как экспорт в Фото")
+                    Text(L10n.Progress.note)
                         .font(.slimlyCaptionSmall)
                         .foregroundStyle(SlimlyColor.neutral600)
                         .multilineTextAlignment(.center)

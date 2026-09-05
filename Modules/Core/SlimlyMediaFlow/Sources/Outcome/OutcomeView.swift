@@ -83,7 +83,7 @@ public struct OutcomeView: View {
 
                     // После сохранения главным действием остаётся выход,
                     // и акцент переезжает на него.
-                    Button("Готово") { viewModel.finish() }
+                    Button(L10n.Common.done) { viewModel.finish() }
                         .buttonStyle(SlimlyOutlineButtonStyle(emphasis: viewModel.isSaved ? .tinted : .plain))
                 }
             }
@@ -204,7 +204,7 @@ public struct OutcomeView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Поделиться файлом \(viewModel.name(for: result))")
+                .accessibilityLabel(Text(L10n.Outcome.shareFile(viewModel.name(for: result))))
                 // Иконка тянет вокруг себя область нажатия, а выглядеть
                 // должна прижатой к краю строки, как остальные значки.
                 .padding(.vertical, -4)
@@ -289,7 +289,7 @@ public struct OutcomeView: View {
                     .foregroundStyle(SlimlyColor.neutral400)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Удалить оригиналы")
+                    Text(L10n.Outcome.deleteOriginals)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(SlimlyColor.neutral200)
                     Text(viewModel.deleteSubtitle)

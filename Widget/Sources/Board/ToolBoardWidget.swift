@@ -10,8 +10,8 @@ struct ToolBoardWidget: Widget {
         StaticConfiguration(kind: "SlimlyToolBoard", provider: ToolBoardProvider()) { _ in
             ToolBoardView()
         }
-        .configurationDisplayName("Инструменты")
-        .description("Все инструменты Slimly под рукой.")
+        .configurationDisplayName("Tools")
+        .description("Every Slimly tool within reach.")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

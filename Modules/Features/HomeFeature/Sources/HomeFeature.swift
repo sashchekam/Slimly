@@ -38,7 +38,7 @@ public struct HomeTool: Identifiable, Sendable {
 public enum HomeFeature {
     @MainActor
     public static func resolver(
-        tools: [HomeTool],
+        tools: @escaping @MainActor () -> [HomeTool],
         profile: any Route,
         analytics: any AnalyticsService
     ) -> RouteResolver {

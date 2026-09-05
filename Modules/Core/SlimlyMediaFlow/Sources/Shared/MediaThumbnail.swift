@@ -2,15 +2,27 @@ import SlimlyCore
 import SlimlyDesignSystem
 import SwiftUI
 
-/// Загрузчик миниатюр.
+/// Загрузчик миниатюр: кадры одного файла по мере готовности — сначала
+/// грубый, следом чёткий.
 ///
 /// Замыкание, а не сама медиатека: строке списка нужен ровно один метод,
 /// и тащить ради него весь протокол в каждую ViewModel незачем.
-public typealias MediaThumbnailLoader = @Sendable (MediaItem, Int) async -> Data?
+public typealias MediaThumbnailLoader = @Sendable (MediaItem, Int) -> AsyncStream<Data>
 
 public extension MediaLibrary {
     var thumbnailLoader: MediaThumbnailLoader {
-        { [self] item, size in await thumbnail(for: item, size: size) }
+        { [self] item, size in thumbnails(for: item, size: size) }
+    }
+}
+
+public extension AsyncStream where Element == Data {
+    /// Чёткий кадр из потока миниатюр. Он приходит последним: всё, что
+    /// до него, — черновики ради скорости, и тому, кто ждёт картинку
+    /// целиком, они не нужны.
+    func sharpest() async -> Data? {
+        var last: Data?
+        for await data in self { last = data }
+        return last
     }
 }
 
@@ -43,8 +55,21 @@ struct MediaThumbnail: View {
             .contentShape(Rectangle())
             .task(id: item.id) {
                 guard image == nil else { return }
-                guard let data = await load(item, pointSize), let decoded = UIImage(data: data) else { return }
-                image = Image(uiImage: decoded)
+                // Кадры приходят по возрастанию качества: показываем каждый,
+                // чтобы вместо заглушки сразу стояла хоть мутная картинка.
+                for await data in load(item, pointSize) {
+                    guard let decoded = await Self.decode(data) else { continue }
+                    image = Image(uiImage: decoded)
+                }
             }
+    }
+
+    /// Распаковка кадра — вне главного потока: при быстрой прокрутке
+    /// плиток декодируется десяток картинок в секунду, и на главном
+    /// потоке это видно как рывки.
+    private nonisolated static func decode(_ data: Data) async -> UIImage? {
+        await Task.detached(priority: .userInitiated) {
+            await UIImage(data: data)?.byPreparingForDisplay()
+        }.value
     }
 }

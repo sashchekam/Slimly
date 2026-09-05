@@ -16,12 +16,14 @@ public struct SlimlySheetScaffold<Content: View>: View {
 
     public init(
         title: String,
-        closeTitle: String = "Отмена",
+        closeTitle: String? = nil,
         onCancel: @escaping () -> Void,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
-        self.closeTitle = closeTitle
+        // Умолчанием строку каталога не сделать: `L10n` — internal,
+        // и в публичной сигнатуре на него не сослаться.
+        self.closeTitle = closeTitle ?? L10n.Common.cancel
         self.onCancel = onCancel
         self.content = content()
     }

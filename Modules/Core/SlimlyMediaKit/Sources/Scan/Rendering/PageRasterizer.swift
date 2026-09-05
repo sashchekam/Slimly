@@ -42,7 +42,7 @@ struct PageRasterizer: PageRasterizing {
                     : CGColorSpace(name: CGColorSpace.sRGB)
             )
         else {
-            throw ProcessingError.encodingFailed("страница не отрисовалась")
+            throw ProcessingError.encodingFailed(L10n.Reason.pageNotRendered)
         }
         return image
     }
@@ -52,7 +52,7 @@ struct PageRasterizer: PageRasterizing {
         let width = Int(bounds.width)
         let height = Int(bounds.height)
         guard width > 0, height > 0 else {
-            throw ProcessingError.encodingFailed("страница не отрисовалась")
+            throw ProcessingError.encodingFailed(L10n.Reason.pageNotRendered)
         }
 
         var samples = [UInt8](repeating: 0, count: width * height)

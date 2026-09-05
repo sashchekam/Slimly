@@ -16,7 +16,7 @@ public struct ProfileView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Профиль")
+                    Text(L10n.Profile.title)
                         .font(.slimlyLargeTitle)
                         .tracking(SlimlyTracking.largeTitle)
 
@@ -39,19 +39,25 @@ public struct ProfileView: View {
     private var libraryCard: some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 0) {
-                Text("в медиатеке").slimlyKicker()
+                Text(L10n.Profile.library).slimlyKicker()
 
                 HStack(spacing: 20) {
-                    statColumn(value: Text(viewModel.photoCountText), caption: "фото")
+                    statColumn(
+                        value: Text(viewModel.photoCountText),
+                        caption: L10n.Unit.photos
+                    )
                     SlimlyColumnDivider()
-                    statColumn(value: Text(viewModel.videoCountText), caption: "видео")
+                    statColumn(
+                        value: Text(viewModel.videoCountText),
+                        caption: L10n.Unit.videos
+                    )
                     SlimlyColumnDivider()
                     statColumn(
                         value: Text(viewModel.freeSpace.value)
-                            + Text(" \(viewModel.freeSpace.unit)")
+                            + Text(verbatim: " \(viewModel.freeSpace.unit)")
                             .font(.system(size: 13))
                             .foregroundColor(SlimlyColor.neutral400),
-                        caption: "свободно"
+                        caption: L10n.Profile.free
                     )
                 }
                 .fixedSize(horizontal: false, vertical: true)
@@ -78,14 +84,14 @@ public struct ProfileView: View {
     private var savedCard: some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 0) {
-                Text("сжато нами").slimlyKicker()
+                Text(L10n.Profile.compressed).slimlyKicker()
 
                 HStack(alignment: .lastTextBaseline, spacing: 10) {
                     Text(viewModel.savedText)
                         .font(.slimlyStatM)
                         .tracking(SlimlyTracking.statM)
                         .foregroundStyle(SlimlyColor.accent300)
-                    Text("освобождено")
+                    Text(L10n.Fact.freed)
                         .font(.system(size: 12))
                         .foregroundStyle(SlimlyColor.neutral400)
                 }
@@ -130,7 +136,7 @@ public struct ProfileView: View {
         SlimlyCard(padding: EdgeInsets(top: 15, leading: 16, bottom: 13, trailing: 16)) {
             VStack(alignment: .leading, spacing: 13) {
                 HStack(spacing: 10) {
-                    Text("чем вы пользовались")
+                    Text(L10n.Profile.usage)
                         .slimlyKicker()
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text(viewModel.usageCaption)
@@ -154,7 +160,7 @@ public struct ProfileView: View {
                     viewModel.openStatistics(from: .link)
                 } label: {
                     HStack(spacing: 7) {
-                        Text("Вся статистика")
+                        Text(L10n.Profile.allStatistics)
                         SlimlyIcon(.chevronRight, width: 6)
                     }
                     .padding(.vertical, 2)

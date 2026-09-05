@@ -77,25 +77,38 @@ public final class ScanCameraViewModel {
     /// на съёмке человек смотрит в видоискатель, а не на интерфейс.
     public var hintText: String {
         if camera.isAtLimit {
-            return "Достигнут лимит — \(CountFormatter.string(pageLimit, .page))"
+            let limit = CountFormatter.string(pageLimit, .page)
+            return L10n.Camera.limitReached(limit)
         }
         if !camera.isAutomatic {
-            return "Ручной режим · нажмите затвор"
+            return L10n.Camera.manualHint
         }
         guard camera.quad != nil else {
-            return "Наведите камеру на страницу"
+            return L10n.Camera.aimHint
         }
         if camera.isFocusing {
-            return "Наводим резкость · держите ровно"
+            return L10n.Camera.focusing
         }
-        return "Границы найдены · держите ровно"
+        return L10n.Camera.boundsFound
     }
 
-    public var flashLabel: String { isFlashOn ? "Вкл" : "Авто" }
+    public var flashLabel: String {
+        isFlashOn
+            ? L10n.Camera.flashOn
+            : L10n.Camera.flashAuto
+    }
 
-    public var automaticLabel: String { isAutomatic ? "Автосъёмка" : "Вручную" }
+    public var automaticLabel: String {
+        isAutomatic
+            ? L10n.Camera.autoCapture
+            : L10n.Camera.manual
+    }
 
-    public var doneTitle: String { hasPages ? "Готово · \(pageCount)" : "Готово" }
+    public var doneTitle: String {
+        hasPages
+            ? L10n.Camera.doneCount(pageCount)
+            : L10n.Camera.done
+    }
 
     // MARK: Управление
 
@@ -109,7 +122,8 @@ public final class ScanCameraViewModel {
 
     public func shoot() async {
         guard !camera.isAtLimit else {
-            say("Максимум \(CountFormatter.string(pageLimit, .page)) за раз")
+            let limit = CountFormatter.string(pageLimit, .page)
+            say(L10n.Camera.limitSpoken(limit))
             return
         }
 
@@ -151,7 +165,7 @@ public final class ScanCameraViewModel {
     // MARK: Сообщения
 
     private func reportShot() {
-        say("Страница \(pageCount) снята")
+        say(L10n.Camera.pageCaptured(pageCount))
     }
 
     private func reportFailure() {

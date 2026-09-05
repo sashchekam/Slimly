@@ -24,34 +24,32 @@ public struct OnboardingPage: Identifiable, Sendable {
 public extension OnboardingPage {
     /// Порядок шагов повторяет порядок инструментов на главной: первым идёт
     /// то, ради чего приложение ставят, последним — самый узкий сценарий.
-    static let tour: [OnboardingPage] = [
-        OnboardingPage(
-            illustration: .compress,
-            kicker: "Сжатие",
-            title: "Освободите место, не удаляя ничего",
-            text: "Выберите фото и видео, задайте уровень — покажем размер до и после "
-                + "и сравнение кадров. Оригиналы остаются, пока вы сами не удалите их."
-        ),
-        OnboardingPage(
-            illustration: .convert,
-            kicker: "Конвертация",
-            title: "Любой формат — под любую задачу",
-            text: "HEIC, JPEG, PNG, H.264, HEVC — сразу для всей пачки, "
-                + "с сохранением даты съёмки и геометки."
-        ),
-        OnboardingPage(
-            illustration: .audio,
-            kicker: "Звук",
-            title: "Достаньте звук из видео",
-            text: "Лекция, интервью, голосовое из видео — сохраняем в M4A или WAV "
-                + "без перекодирования лишнего."
-        ),
-        OnboardingPage(
-            illustration: .scan,
-            kicker: "Скан",
-            title: "Документ в PDF за одну съёмку",
-            text: "Снимите страницы подряд: границы найдутся сами, кадр выпрямится, "
-                + "всё соберётся в один PDF."
-        ),
-    ]
+    static var tour: [OnboardingPage] {
+        [
+            OnboardingPage(
+                illustration: .compress,
+                kicker: L10n.Compress.kicker,
+                title: L10n.Compress.title,
+                text: L10n.Compress.text
+            ),
+            OnboardingPage(
+                illustration: .convert,
+                kicker: L10n.Convert.kicker,
+                title: L10n.Convert.title,
+                text: L10n.Convert.text
+            ),
+            OnboardingPage(
+                illustration: .audio,
+                kicker: L10n.Audio.kicker,
+                title: L10n.Audio.title,
+                text: L10n.Audio.text
+            ),
+            OnboardingPage(
+                illustration: .scan,
+                kicker: L10n.Scan.kicker,
+                title: L10n.Scan.title,
+                text: L10n.Scan.text
+            ),
+        ]
+    }
 }

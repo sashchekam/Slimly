@@ -45,7 +45,7 @@ public struct OnboardingView: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Закрыть")
+            .accessibilityLabel(Text(L10n.Tour.close))
         }
         .frame(minHeight: 44)
         .padding(.horizontal, 16)
@@ -64,7 +64,9 @@ public struct OnboardingView: View {
         .padding(.leading, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement()
-        .accessibilityLabel("Шаг \(viewModel.pageIndex + 1) из \(viewModel.pages.count)")
+        .accessibilityLabel(
+            Text(L10n.Tour.step(viewModel.pageIndex + 1, viewModel.pages.count))
+        )
     }
 
     private var content: some View {
@@ -119,7 +121,7 @@ public struct OnboardingView: View {
             }
             .buttonStyle(.slimlyPrimary)
 
-            Button("Пропустить") {
+            Button(L10n.Tour.skip) {
                 viewModel.skip()
             }
             .buttonStyle(.slimlyQuietLink)

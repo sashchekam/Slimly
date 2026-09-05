@@ -244,8 +244,8 @@ public struct SlimlyLevelSlider: View {
         }
         .frame(height: thumbSize)
         .accessibilityElement()
-        .accessibilityLabel("Степень сжатия")
-        .accessibilityValue("\(Int((value * 100).rounded()))%")
+        .accessibilityLabel(Text(L10n.Accessibility.compressionLevel))
+        .accessibilityValue(Text(verbatim: "\(Int((value * 100).rounded()))%"))
         .accessibilityAdjustableAction { direction in
             let step = 1.0 / Double(max(stops - 1, 1))
             switch direction {

@@ -11,7 +11,7 @@ struct ToolBoardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SlimlySpacing.x3) {
-            Text("Инструменты")
+            Text("Tools")
                 .slimlyKicker()
 
             content

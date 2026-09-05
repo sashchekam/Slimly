@@ -42,7 +42,9 @@ public final class OnboardingViewModel {
     /// На последнем шаге кнопка перестаёт вести дальше и становится входом
     /// в приложение — иначе «Далее» упиралось бы в пустоту.
     public var nextTitle: String {
-        isLastPage ? "Начать" : "Далее"
+        isLastPage
+            ? L10n.Tour.start
+            : L10n.Tour.next
     }
 
     public func next() {

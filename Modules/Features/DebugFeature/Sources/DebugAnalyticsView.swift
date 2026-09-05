@@ -18,8 +18,8 @@ public struct DebugAnalyticsView: View {
         VStack(spacing: 0) {
             SlimlyNavigationBar(onBack: { viewModel.goBack() }) {
                 HStack(spacing: 16) {
-                    Button("Копировать") { viewModel.copyAll() }
-                    Button("Очистить") { viewModel.clear() }
+                    Button(L10n.Analytics.copy) { viewModel.copyAll() }
+                    Button(L10n.Analytics.clear) { viewModel.clear() }
                 }
                 .buttonStyle(SlimlyLinkButtonStyle(font: .system(size: 15, weight: .medium)))
                 .disabled(viewModel.isEmpty)
@@ -29,15 +29,11 @@ public struct DebugAnalyticsView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     let entries = viewModel.entries
 
-                    Text("Аналитика")
+                    Text(L10n.Menu.analytics)
                         .font(.slimlyTitle)
                         .tracking(SlimlyTracking.title)
 
-                    Text(
-                        "События и свойства, ушедшие в аналитику с этого запуска. Журнал живёт "
-                            + "в памяти: перезапуск его обнуляет, а до этого хранятся последние "
-                            + "\(viewModel.capacity) записей."
-                    )
+                    Text(L10n.Analytics.note(viewModel.capacity))
                         .font(.slimlyCaption)
                         .foregroundStyle(SlimlyColor.neutral500)
                         .fixedSize(horizontal: false, vertical: true)
@@ -64,7 +60,7 @@ public struct DebugAnalyticsView: View {
     /// десятков, и своё среди чужих глазами уже не выхватить.
     private var scopes: some View {
         SlimlyWrap(spacing: 6, lineSpacing: 6) {
-            chip("Все", scope: nil)
+            chip(L10n.Analytics.all, scope: nil)
 
             ForEach(viewModel.scopes, id: \.self) { scope in
                 chip(scope, scope: scope)
@@ -153,13 +149,10 @@ public struct DebugAnalyticsView: View {
     private var emptyCard: some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Событий нет")
+                Text(L10n.Analytics.empty)
                     .font(.system(size: 13, weight: .medium))
 
-                Text(
-                    "Приложение ещё ничего не отправило. Пройдите любой инструмент и вернитесь "
-                        + "сюда — запись появляется сразу, ждать выгрузки в веб-консоль не нужно."
-                )
+                Text(L10n.Analytics.emptyNote)
                     .font(.slimlyCaptionSmall)
                     .foregroundStyle(SlimlyColor.neutral500)
                     .fixedSize(horizontal: false, vertical: true)

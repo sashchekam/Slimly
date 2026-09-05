@@ -97,7 +97,9 @@ public final class ResultPreviewViewModel {
         // отношения не имеет: подписываем, откуда она и сколько длится.
         guard kind != .audioExtraction else {
             let time = item.duration.map(DurationFormatter.string) ?? ""
-            return time.isEmpty ? "Дорожка видео" : "Дорожка видео · \(time)"
+            return time.isEmpty
+                ? L10n.Preview.track
+                : L10n.Preview.trackTime(time)
         }
 
         let size = item.pixelSizeText
@@ -127,46 +129,61 @@ public final class ResultPreviewViewModel {
 
     // MARK: Подписи
 
-    public var beforeTitle: String { "Оригинал · \(beforeText)" }
+    public var beforeTitle: String {
+        L10n.Preview.beforeTitle(beforeText)
+    }
 
-    public var afterTitle: String { "Сжатое · \(afterText)" }
+    public var afterTitle: String {
+        L10n.Preview.afterTitle(afterText)
+    }
 
     /// Пока кадр не приехал, подписываем, что именно грузится: пустая
     /// штриховка без подписи читалась бы как ошибка.
     public var placeholderLabel: String {
-        guard isShowingAfter else { return "ОРИГИНАЛ" }
+        guard isShowingAfter else { return L10n.Badge.original }
         return switch kind {
-        case .compression: "СЖАТАЯ КОПИЯ"
-        case .conversion: outputFormat.isEmpty ? "РЕЗУЛЬТАТ" : outputFormat
-        case .scan: "ДОКУМЕНТ"
-        case .audioExtraction: "ДОРОЖКА"
+        case .compression: L10n.Badge.compressed
+        case .conversion:
+            outputFormat.isEmpty ? L10n.Badge.result : outputFormat
+        case .scan: L10n.Badge.document
+        case .audioExtraction: L10n.Badge.track
         }
     }
 
     public var chipText: String {
-        guard isShowingAfter else { return "оригинал · \(beforeText)" }
+        guard isShowingAfter else {
+            return L10n.Preview.beforeCaption(beforeText)
+        }
         return kind == .compression
-            ? "после · \(afterText)"
+            ? L10n.Preview.afterCaption(afterText)
             : "\(outputFormat.lowercased()) · \(afterText)"
     }
 
     public var note: String {
-        guard isShowingAfter else { return "Оригинал из медиатеки — для сравнения." }
+        guard isShowingAfter else {
+            return L10n.Preview.sourceCompare
+        }
+
+        // Доля собирается отдельной строкой: литеральный «%» рядом с числом
+        // превратил бы ключ каталога в неверный формат-шаблон.
+        let share = "\(Int((result.reduction * 100).rounded()))%"
 
         return switch kind {
         case .compression:
-            "Копия из медиатеки, \(Int((result.reduction * 100).rounded()))% веса ушло. Оригинал не тронут."
+            L10n.Preview.compression(share)
         case .conversion:
-            "Готовый \(outputFormat) из медиатеки. Оригинал остался как был."
+            L10n.Preview.conversion(outputFormat)
         case .scan:
-            "Готовый \(outputFormat) — он же лежит в «Файлах», в папке Slimly."
+            L10n.Preview.scan(outputFormat)
         case .audioExtraction:
-            "Готовая дорожка — она лежит в «Файлах», в папке Slimly. Видео не изменялось."
+            L10n.Preview.audio
         }
     }
 
     private var sourceKindWord: String {
-        item.kind == .video ? "Видео" : "Фото"
+        item.kind == .video
+            ? L10n.Preview.video
+            : L10n.Preview.photo
     }
 
     public func goBack() {

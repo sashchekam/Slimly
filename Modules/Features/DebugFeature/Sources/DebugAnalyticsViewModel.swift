@@ -47,12 +47,11 @@ public final class DebugAnalyticsViewModel {
     /// Свойства собраны в свою группу: их имена не начинаются с префикса
     /// модуля, и делить их по первому слову бессмысленно —
     /// «has_saved_result» дал бы группу «has».
-    private static let propertiesScope = "свойства"
+    private static var propertiesScope: String { L10n.Analytics.properties }
 
     /// Время с секундами и без даты: журнал не переживает перезапуск,
     /// так что всё в нём случилось только что.
     private static let clock = Date.FormatStyle(date: .omitted, time: .standard)
-        .locale(Locale(identifier: "ru_RU"))
 
     public init(log: AnalyticsLog, router: Router) {
         self.log = log
@@ -112,7 +111,7 @@ public final class DebugAnalyticsViewModel {
         }
         // Буфер обмена SwiftUI не отдаёт — за ним приходится идти в UIKit.
         UIPasteboard.general.string = lines.joined(separator: "\n")
-        say("Журнал скопирован")
+        say(L10n.Analytics.copied)
     }
 
     /// Очистка — это не уборка, а способ смотреть: журнал чистят перед
@@ -121,7 +120,7 @@ public final class DebugAnalyticsViewModel {
         log.clear()
         expanded.removeAll()
         scope = nil
-        say("Журнал очищен")
+        say(L10n.Analytics.logCleared)
     }
 
     public func goBack() {
@@ -162,7 +161,7 @@ public final class DebugAnalyticsViewModel {
                 .map { "\($0.name)=\($0.value)" }
                 .joined(separator: " · ")
         case let .property(value):
-            "свойство · \(value ?? "снято")"
+            L10n.Analytics.property(value ?? L10n.Analytics.valueCleared)
         }
     }
 

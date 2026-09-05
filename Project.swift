@@ -4,6 +4,9 @@ import ProjectDescriptionHelpers
 let project = Project(
     name: Slimly.name,
     organizationName: Slimly.organization,
+    // Язык разработки — английский: на нём написаны ключи строковых каталогов,
+    // и он же достаётся тому, чьего языка среди переводов не нашлось.
+    options: .options(developmentRegion: "en"),
     settings: .settings(base: Slimly.baseSettings),
     targets: [
         .target(
@@ -21,13 +24,18 @@ let project = Project(
                 "UIApplicationSceneManifest": [
                     "UIApplicationSupportsMultipleScenes": false,
                 ],
-                "CFBundleDisplayName": "Slimly",
+                // Имя длиннее иконочной подписи: домашний экран покажет
+                // «Slimly: Compr…», зато в поиске и настройках видно, что
+                // приложение и сжимает, и сканирует.
+                "CFBundleDisplayName": "Slimly: Compress & Scan",
+                // Значения здесь — ключи и одновременно английский текст:
+                // переводы лежат в `App/Resources/InfoPlist.xcstrings`.
                 "NSPhotoLibraryUsageDescription":
-                    "Slimly показывает медиатеку, чтобы вы выбрали файлы для сжатия и конвертации.",
+                    "Slimly shows your photo library so you can pick files to compress and convert.",
                 "NSCameraUsageDescription":
-                    "Slimly включает камеру, чтобы снять страницы документа и собрать их в PDF.",
+                    "Slimly uses the camera to shoot document pages and assemble them into a PDF.",
                 "NSPhotoLibraryAddUsageDescription":
-                    "Slimly сохраняет обработанные файлы в медиатеку — оригиналы остаются на месте.",
+                    "Slimly saves processed files to your photo library — the originals stay where they are.",
                 // Извлечённые дорожки лежат в папке приложения: без этих двух
                 // ключей она не видна в «Файлах», и забрать звук было бы нечем.
                 "UIFileSharingEnabled": true,
@@ -58,7 +66,7 @@ let project = Project(
             ]),
             sources: ["App/Sources/**"],
             resources: ["App/Resources/**"],
-            scripts: [Slimly.swiftLintScript, Slimly.analyticsRegistryScript],
+            scripts: [Slimly.swiftLintScript, Slimly.analyticsRegistryScript, Slimly.l10nGeneratorScript],
             // Расширение с виджетами едет внутрь бандла приложения —
             // Tuist сам кладёт его в фазу «Embed App Extensions».
             dependencies: Module.validated.map(\.targetDependency)

@@ -23,10 +23,12 @@ public final class DebugRemoteConfigViewModel {
 
         public var source: String {
             switch (isOverridden, remoteText) {
-            case (true, .some): "подменено · с сервера \(remoteText ?? "")"
-            case (true, .none): "подменено · на сервере значения нет"
-            case (false, .some): "с сервера"
-            case (false, .none): "умолчание ключа"
+            case (true, .some):
+                L10n.Config.stateOverridden(remoteText ?? "")
+            case (true, .none):
+                L10n.Config.stateOverriddenOnly
+            case (false, .some): L10n.Config.stateRemote
+            case (false, .none): L10n.Config.stateDefault
             }
         }
     }
@@ -97,7 +99,11 @@ public final class DebugRemoteConfigViewModel {
         settings.setRemoteConfigOverride(draft, for: editedName)
         self.editedName = nil
         reload()
-        say(settings.remoteConfigOverrides[editedName] == nil ? "Подмена снята" : "Значение подменено")
+        say(
+            settings.remoteConfigOverrides[editedName] == nil
+                ? L10n.Config.overrideCleared
+                : L10n.Config.overrideSet
+        )
     }
 
     public func resetEdit() {
@@ -105,13 +111,13 @@ public final class DebugRemoteConfigViewModel {
         settings.setRemoteConfigOverride(nil, for: editedName)
         self.editedName = nil
         reload()
-        say("Подмена снята")
+        say(L10n.Config.overrideCleared)
     }
 
     public func resetAll() {
         settings.clearRemoteConfigOverrides()
         reload()
-        say("Все подмены сняты")
+        say(L10n.Config.allCleared)
     }
 
     /// Значения тянутся заново прямо с сервера: в отладочной сборке кэш
@@ -121,7 +127,11 @@ public final class DebugRemoteConfigViewModel {
         await remoteConfig.refresh()
         isRefreshing = false
         reload()
-        say(entries.isEmpty ? "С сервера ничего не пришло" : "Значения обновлены")
+        say(
+            entries.isEmpty
+                ? L10n.Config.nothingFetched
+                : L10n.Config.updated
+        )
     }
 
     public func goBack() {

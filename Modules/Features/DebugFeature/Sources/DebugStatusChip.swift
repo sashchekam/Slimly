@@ -20,7 +20,7 @@ public struct DebugStatusChip: View {
                     .fill(SlimlyColor.accent)
                     .frame(width: 6, height: 6)
 
-                Text("DEBUG")
+                Text(verbatim: "DEBUG")
                     .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                     .tracking(0.95)
                     .foregroundStyle(SlimlyColor.accent200)
@@ -31,6 +31,6 @@ public struct DebugStatusChip: View {
             .overlay(Capsule().strokeBorder(SlimlyColor.accent600, lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Открыть отладочное меню")
+        .accessibilityLabel(Text(L10n.Menu.open))
     }
 }

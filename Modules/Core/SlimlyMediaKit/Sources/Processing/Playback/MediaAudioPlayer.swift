@@ -74,7 +74,11 @@ public struct MediaAudioPlayer: View {
                     .overlay(Circle().strokeBorder(SlimlyColor.accent, lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(playback.isPlaying ? "Пауза" : "Слушать")
+            .accessibilityLabel(
+                playback.isPlaying
+                    ? Text(L10n.Playback.pause)
+                    : Text(L10n.Playback.play)
+            )
 
             Text(playback.elapsedText)
                 .font(.system(size: 13, design: .monospaced))

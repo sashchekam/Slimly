@@ -86,11 +86,13 @@ public enum CompressFeature {
         }
     }
 
-    private static let pickerConfig = MediaPickerConfig(
-        title: "Выбрать файлы",
-        hint: "Фото и видео из галереи",
-        kind: nil,
-        limit: 5,
-        noun: .file
-    )
+    private static var pickerConfig: MediaPickerConfig {
+        MediaPickerConfig(
+            title: L10n.Picker.title,
+            hint: L10n.Picker.hint,
+            kind: nil,
+            limit: 5,
+            noun: .file
+        )
+    }
 }

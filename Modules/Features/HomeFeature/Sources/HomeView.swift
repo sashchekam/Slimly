@@ -16,7 +16,10 @@ public struct HomeView: View {
     public var body: some View {
         VStack(spacing: 0) {
             SlimlyNavigationBar {
-                SlimlyCircleButton(icon: .person, accessibilityLabel: "Профиль") {
+                SlimlyCircleButton(
+                    icon: .person,
+                    accessibilityLabel: L10n.Home.profile
+                ) {
                     viewModel.openProfile()
                 }
             }
@@ -39,7 +42,7 @@ public struct HomeView: View {
             Text(viewModel.greeting)
                 .font(.slimlyTitle)
                 .tracking(SlimlyTracking.largeTitle)
-            Text("С чего начнём?")
+            Text(L10n.Home.prompt)
                 .font(.slimlyBody)
                 .foregroundStyle(SlimlyColor.neutral500)
         }

@@ -16,21 +16,21 @@ enum ProcessingError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unreadableSource:
-            "Файл не читается"
+            L10n.Failure.unreadable
         case let .unsupportedFormat(name):
-            "Формат \(name) недоступен на этом устройстве"
+            L10n.Failure.unsupportedFormat(name)
         case let .encodingFailed(reason):
-            "Не удалось записать результат: \(reason)"
+            L10n.Failure.writeFailed(reason)
         case .noVideoTrack:
-            "В файле нет видеодорожки"
+            L10n.Failure.noVideoTrack
         case .noAudioTrack:
-            "В видео нет звука"
+            L10n.Failure.noAudioTrack
         case let .unsupportedOperation(name):
             name
         case .pdfAssemblyFailed:
-            "Не удалось собрать PDF из страниц"
+            L10n.Failure.pdfAssembly
         case .outputMissing:
-            "Готовый файл не найден"
+            L10n.Failure.resultMissing
         }
     }
 }

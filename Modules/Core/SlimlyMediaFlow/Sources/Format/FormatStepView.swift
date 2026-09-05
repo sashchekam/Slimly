@@ -20,7 +20,7 @@ public struct FormatStepView: View {
                     header
                     transitionCard
 
-                    Text("Формат результата").font(.slimlySectionTitle)
+                    Text(L10n.Format.title).font(.slimlySectionTitle)
                     formats
 
                     Text(viewModel.config.note)
@@ -58,7 +58,7 @@ public struct FormatStepView: View {
         SlimlyCard {
             HStack(spacing: 12) {
                 formatColumn(
-                    kicker: "из",
+                    kicker: L10n.Format.from,
                     value: viewModel.config.sourceFormat,
                     color: SlimlyColor.neutral300
                 )
@@ -67,7 +67,7 @@ public struct FormatStepView: View {
                     .foregroundStyle(SlimlyColor.neutral600)
 
                 formatColumn(
-                    kicker: "в",
+                    kicker: L10n.Format.to,
                     value: viewModel.targetTitle,
                     color: SlimlyColor.accent300
                 )

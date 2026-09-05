@@ -140,10 +140,11 @@ public struct ProcessingDigest: Sendable, Hashable {
 
     /// Подпись периода: «1 июня — 4 сентября · 90 дней», «с 12 января · всё время».
     public func periodText(now: Date = .now) -> String {
-        guard let interval else { return "Пока ничего не обработано" }
+        guard let interval else { return L10n.Digest.empty }
 
         if range == .allTime {
-            return "с \(MediaDateFormatter.day(interval.start, now: now)) · \(range.caption)"
+            let start = MediaDateFormatter.day(interval.start, now: now)
+            return L10n.Digest.since(start, range.caption)
         }
         let span = MediaDateFormatter.string(from: interval.start, to: interval.end, now: now)
         return "\(span) · \(range.caption)"

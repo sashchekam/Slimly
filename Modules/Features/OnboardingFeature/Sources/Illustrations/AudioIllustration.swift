@@ -56,14 +56,14 @@ private struct ResultPill: View {
     var body: some View {
         KeyframeAnimator(initialValue: 0.0, repeating: true) { opacity in
             HStack(spacing: 9) {
-                Text("MOV")
+                Text(verbatim: "MOV")
                     .foregroundStyle(SlimlyColor.neutral500)
 
                 Rectangle()
                     .fill(SlimlyColor.neutral600)
                     .frame(width: 14, height: 1)
 
-                Text("M4A · 4,2 МБ")
+                Text(L10n.Audio.sample)
                     .foregroundStyle(SlimlyColor.accent200)
             }
             .font(.system(size: 11, weight: .medium, design: .monospaced))

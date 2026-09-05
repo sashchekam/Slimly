@@ -82,8 +82,8 @@ public final class StatisticsViewModel {
     /// кто просто выбрал прошлый месяц, не за что.
     public var emptyText: String {
         history.isEmpty
-            ? "Здесь появится разбор по инструментам — как только вы что-нибудь сожмёте или сконвертируете."
-            : "За этот срок ничего не обработано. Попробуйте выбрать период подлиннее."
+            ? L10n.Statistics.empty
+            : L10n.Statistics.emptyPeriod
     }
 
     // MARK: Операции
@@ -127,31 +127,33 @@ public final class StatisticsViewModel {
         switch tool.kind {
         case .compression:
             let saved = FileSizeFormatter.string(bytes: tool.savedByteCount)
-            return "Освобождено \(saved) — средний выигрыш \(MediaItemFormatter.percent(tool.reduction))."
+            let gain = MediaItemFormatter.percent(tool.reduction)
+            return L10n.Summary.compression(saved, gain)
         case .conversion:
             guard let top = tool.formatPairs.first else {
-                return "Пары «из → в» система не назвала."
+                return L10n.Summary.conversionUnknown
             }
             guard let second = tool.formatPairs.dropFirst().first else {
-                return "Всегда одна и та же пара: \(top)."
+                return L10n.Summary.conversionSingle(top)
             }
-            return "Чаще всего \(top), реже \(second)."
+            return L10n.Summary.conversionPair(top, second)
         case .audioExtraction:
             let format = tool.formats.first ?? "M4A"
-            return "Дорожки сохранены в \(format), суммарно \(DurationFormatter.total(seconds: tool.seconds))."
+            let total = DurationFormatter.total(seconds: tool.seconds)
+            return L10n.Summary.audio(format, total)
         case .scan:
             let pages = CountFormatter.string(tool.pageCount, .page)
             let perDocument = CountFormatter.string(tool.pagesPerDocument, .page)
-            return "\(pages), в среднем \(perDocument) на документ."
+            return L10n.Summary.scan(pages, perDocument)
         }
     }
 
     private func emptyNote(for kind: ProcessingKind) -> String {
         switch kind {
-        case .compression: "За этот срок ничего не сжимали."
-        case .conversion: "За этот срок ничего не конвертировали."
-        case .audioExtraction: "За этот срок звук не извлекали."
-        case .scan: "За этот срок ничего не сканировали."
+        case .compression: L10n.Empty.compression
+        case .conversion: L10n.Empty.conversion
+        case .audioExtraction: L10n.Empty.audio
+        case .scan: L10n.Empty.scan
         }
     }
 
@@ -159,23 +161,39 @@ public final class StatisticsViewModel {
         switch tool.kind {
         case .compression:
             [
-                fact("saved", FileSizeFormatter.string(bytes: tool.savedByteCount), "освобождено"),
-                fact("reduction", MediaItemFormatter.percent(tool.reduction), "средний выигрыш"),
+                fact(
+                    "saved",
+                    FileSizeFormatter.string(bytes: tool.savedByteCount),
+                    L10n.Fact.freed
+                ),
+                fact(
+                    "reduction",
+                    MediaItemFormatter.percent(tool.reduction),
+                    L10n.Fact.averageGain
+                ),
             ]
         case .conversion:
             [
-                fact("pair", tool.formatPairs.first, "частая пара"),
-                fact("mix", mixText(for: tool), "состав"),
+                fact("pair", tool.formatPairs.first, L10n.Fact.commonPair),
+                fact("mix", mixText(for: tool), L10n.Fact.mix),
             ]
         case .audioExtraction:
             [
-                fact("duration", DurationFormatter.total(seconds: tool.seconds), "длительность"),
-                fact("format", tool.formats.first, "основной формат"),
+                fact(
+                    "duration",
+                    DurationFormatter.total(seconds: tool.seconds),
+                    L10n.Fact.duration
+                ),
+                fact("format", tool.formats.first, L10n.Fact.mainFormat),
             ]
         case .scan:
             [
-                fact("pages", CountFormatter.string(tool.pageCount, .page), "снято"),
-                fact("format", tool.formats.first ?? "PDF", "формат"),
+                fact(
+                    "pages",
+                    CountFormatter.string(tool.pageCount, .page),
+                    L10n.Fact.captured
+                ),
+                fact("format", tool.formats.first ?? "PDF", L10n.Fact.format),
             ]
         }
     }

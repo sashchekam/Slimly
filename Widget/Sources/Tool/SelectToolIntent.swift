@@ -7,10 +7,10 @@ import SlimlyShortcuts
 /// положить сразу несколько ярлыков и каждый настроить по-своему, а список
 /// в галерее остаётся коротким.
 struct SelectToolIntent: WidgetConfigurationIntent {
-    static let title: LocalizedStringResource = "Инструмент"
-    static let description = IntentDescription("Инструмент Slimly, который открывает виджет.")
+    static let title: LocalizedStringResource = "Tool"
+    static let description = IntentDescription("The Slimly tool the widget opens.")
 
-    @Parameter(title: "Инструмент")
+    @Parameter(title: "Tool")
     var tool: ToolEntity?
 
     init() { }
@@ -24,7 +24,7 @@ struct SelectToolIntent: WidgetConfigurationIntent {
 /// Пункт списка в настройке виджета. Значения приходят из общего каталога,
 /// поэтому новый инструмент появляется в списке сам.
 struct ToolEntity: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Инструмент")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Tool")
     static let defaultQuery = ToolQuery()
 
     let shortcut: ToolShortcut
@@ -33,7 +33,12 @@ struct ToolEntity: AppEntity {
     var id: String { shortcut.id.rawValue }
 
     var displayRepresentation: DisplayRepresentation {
-        DisplayRepresentation(title: "\(shortcut.title)", subtitle: "\(shortcut.subtitle)")
+        // Подписи уже переведены каталогом инструментов — здесь они данные,
+        // и второй раз через каталог их пропускать не нужно.
+        DisplayRepresentation(
+            title: LocalizedStringResource(stringLiteral: shortcut.title),
+            subtitle: LocalizedStringResource(stringLiteral: shortcut.subtitle)
+        )
     }
 }
 

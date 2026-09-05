@@ -17,11 +17,11 @@ public struct ScanIntroView: View {
 
     public var body: some View {
         SlimlySheetScaffold(
-            title: "Скан документа",
+            title: L10n.Intro.title,
             onCancel: { viewModel.cancel() }
         ) {
             VStack(alignment: .leading, spacing: 15) {
-                Text("Найдём границы листа, выпрямим страницу и соберём в PDF — рамку можно поправить вручную")
+                Text(L10n.Intro.note)
                     .font(.slimlyBodySmall)
                     .foregroundStyle(SlimlyColor.neutral400)
                     .fixedSize(horizontal: false, vertical: true)
@@ -31,8 +31,8 @@ public struct ScanIntroView: View {
                 } label: {
                     SourceRow(
                         icon: .camera,
-                        title: "Снять на камеру",
-                        subtitle: "Границы ловим на лету, поправить можно после",
+                        title: L10n.Intro.camera,
+                        subtitle: L10n.Intro.cameraHint,
                         isAccented: true
                     )
                 }
@@ -43,8 +43,8 @@ public struct ScanIntroView: View {
                 } label: {
                     SourceRow(
                         icon: .gallery,
-                        title: "Выбрать фото",
-                        subtitle: "До \(ScanFeature.pageLimit) страниц из галереи",
+                        title: L10n.Intro.library,
+                        subtitle: L10n.Intro.libraryHint(ScanFeature.pageLimit),
                         isAccented: false
                     )
                 }

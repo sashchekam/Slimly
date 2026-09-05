@@ -97,12 +97,12 @@ private struct SavingLabel: View {
     var body: some View {
         KeyframeAnimator(initialValue: Phase(), repeating: true) { phase in
             HStack(alignment: .firstTextBaseline, spacing: 9) {
-                Text("−58%")
+                Text(verbatim: "−58%")
                     .font(.system(size: 26, weight: .medium))
                     .tracking(SlimlyTracking.title)
                     .foregroundStyle(SlimlyColor.accent200)
 
-                Text("1,4 ГБ → 590 МБ")
+                Text(L10n.Compress.sample)
                     .font(.slimlyBodySmall)
                     .foregroundStyle(SlimlyColor.neutral400)
             }

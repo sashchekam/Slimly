@@ -11,39 +11,43 @@ public extension Slimly {
     ///
     /// Система показывает не больше четырёх пунктов, поэтому порядок здесь
     /// не косметика: пятый в меню не попадёт.
+    ///
+    /// Подписи — английский текст, и он же ключ: iOS ищет его в
+    /// `InfoPlist.strings`, куда каталог `App/Resources/InfoPlist.xcstrings`
+    /// кладёт переводы.
     static let quickActions: Plist.Value = [
         quickAction(
             id: "compress",
-            title: "Сжатие",
-            subtitle: "Фото и видео",
+            title: "Compression",
+            subtitle: "Photos and videos",
             symbol: "arrow.down.right.and.arrow.up.left",
             url: "slimly://compress"
         ),
         quickAction(
             id: "convert-photo",
-            title: "Конвертация фото",
+            title: "Photo conversion",
             subtitle: "HEIC · JPEG · PNG",
             symbol: "photo.on.rectangle.angled",
             url: "slimly://convert/photo"
         ),
         quickAction(
             id: "convert-video",
-            title: "Конвертация видео",
+            title: "Video conversion",
             subtitle: "MOV · MP4 · H.264 / HEVC",
             symbol: "film",
             url: "slimly://convert/video"
         ),
         quickAction(
             id: "scan",
-            title: "Скан документа",
-            subtitle: "Фото или камера → PDF",
+            title: "Document scan",
+            subtitle: "Photos or camera → PDF",
             symbol: "doc.viewfinder",
             url: "slimly://scan"
         ),
         quickAction(
             id: "audio",
-            title: "Извлечь звук",
-            subtitle: "M4A или WAV из видео",
+            title: "Extract audio",
+            subtitle: "M4A or WAV from video",
             symbol: "waveform",
             url: "slimly://audio"
         ),

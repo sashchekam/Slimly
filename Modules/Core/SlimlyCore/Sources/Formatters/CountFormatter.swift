@@ -2,10 +2,13 @@ import Foundation
 
 /// Количества словами.
 ///
-/// Русское число согласуется с существительным по трём формам, а инструменты
-/// считают разные вещи — файлы, фото, страницы, дорожки. Поэтому форма
-/// выбирается таблицей, а не «файл(ов)» в скобках.
+/// Форма существительного согласуется с числом по правилам языка, а правила
+/// эти везде свои: у английского две формы, у русского три, у японского
+/// одна. Выбор отдан строковому каталогу — там у каждого языка свой набор
+/// вариантов, и подбирать его таблицей в коде больше не нужно.
 public enum CountFormatter {
+    /// Что именно считаем. От этого зависит не только слово, но и набор форм:
+    /// «фото» не склоняется, а «файл» склоняется, и знает об этом каталог.
     public enum Noun: Sendable {
         case file
         case photo
@@ -14,44 +17,40 @@ public enum CountFormatter {
         case track
         case conversion
         case scan
-
-        /// Формы для 1, 2–4 и 5+ — в этом порядке.
-        var forms: (one: String, few: String, many: String) {
-            switch self {
-            case .file: ("файл", "файла", "файлов")
-            // «Фото» и «видео» не склоняются: одна форма на все числа.
-            case .photo: ("фото", "фото", "фото")
-            case .video: ("видео", "видео", "видео")
-            case .page: ("страница", "страницы", "страниц")
-            case .track: ("дорожка", "дорожки", "дорожек")
-            case .conversion: ("конвертация", "конвертации", "конвертаций")
-            case .scan: ("скан", "скана", "сканов")
-            }
-        }
     }
 
-    private static let locale = Locale(identifier: "ru_RU")
-
-    /// Крупные количества с разрядами: «12 480».
+    /// Крупные количества с разрядами: «12 480», «12,480».
+    ///
+    /// Разряды разделяет выбранный язык, а не система: после ручного выбора
+    /// системная локаль осталась на прежнем языке.
     public static func string(_ count: Int) -> String {
-        count.formatted(.number.locale(locale))
+        count.formatted(.number.locale(L10nBundle.locale))
     }
 
     /// «1 файл», «3 файла», «128 файлов».
     public static func string(_ count: Int, _ noun: Noun) -> String {
-        "\(count) \(word(count, noun))"
+        switch noun {
+        case .file: L10n.Count.file(count)
+        case .photo: L10n.Count.photo(count)
+        case .video: L10n.Count.video(count)
+        case .page: L10n.Count.page(count)
+        case .track: L10n.Count.track(count)
+        case .conversion: L10n.Count.conversion(count)
+        case .scan: L10n.Count.scan(count)
+        }
     }
 
+    /// Одно слово, без числа: в профиле цифра набирается крупно, а подпись
+    /// под ней — мелко, и склеить их в одну строку нельзя.
     public static func word(_ count: Int, _ noun: Noun) -> String {
-        let forms = noun.forms
-        let tens = abs(count) % 100
-        let ones = abs(count) % 10
-
-        if (11 ... 14).contains(tens) { return forms.many }
-        switch ones {
-        case 1: return forms.one
-        case 2 ... 4: return forms.few
-        default: return forms.many
+        switch noun {
+        case .file: L10n.Unit.file(count)
+        case .photo: L10n.Unit.photo(count)
+        case .video: L10n.Unit.video(count)
+        case .page: L10n.Unit.page(count)
+        case .track: L10n.Unit.track(count)
+        case .conversion: L10n.Unit.conversion(count)
+        case .scan: L10n.Unit.scan(count)
         }
     }
 }

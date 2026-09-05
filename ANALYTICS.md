@@ -51,6 +51,7 @@
 
 | Событие | Параметры | Что значит |
 | --- | --- | --- |
+| `profile_language_changed` | `language` | Язык интерфейса выбран вручную или возвращён к телефонному. |
 | `profile_statistics_opened` | `source` | Открыт разбор по инструментам. |
 | `profile_statistics_range_changed` | `range` | Сменили срез времени. |
 

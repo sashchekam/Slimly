@@ -20,9 +20,9 @@ public enum ScanMode: String, Sendable, Hashable, CaseIterable, Identifiable {
     /// вариантах, и длинные хвосты превратили бы выбор в стену текста.
     public var displayName: String {
         switch self {
-        case .color: "цвет"
-        case .grayscale: "серый"
-        case .blackAndWhite: "ч/б"
+        case .color: L10n.Palette.color
+        case .grayscale: L10n.Palette.gray
+        case .blackAndWhite: L10n.Palette.blackAndWhite
         }
     }
 }

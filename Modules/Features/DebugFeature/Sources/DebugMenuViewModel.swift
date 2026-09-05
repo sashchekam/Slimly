@@ -37,7 +37,7 @@ public final class DebugMenuViewModel {
         public var title: String {
             switch self {
             case .remoteConfig: "Remote Config"
-            case .analytics: "Аналитика"
+            case .analytics: L10n.Menu.analytics
             }
         }
     }
@@ -52,17 +52,17 @@ public final class DebugMenuViewModel {
 
         public var title: String {
             switch self {
-            case .copyDiagnostics: "Скопировать диагностику"
-            case .resetStats: "Сбросить статистику"
-            case .resetKnobs: "Выключить все подмены"
+            case .copyDiagnostics: L10n.Action.copyDiagnostics
+            case .resetStats: L10n.Action.resetStats
+            case .resetKnobs: L10n.Action.resetKnobs
             }
         }
 
         public var value: String {
             switch self {
-            case .copyDiagnostics: "версия, устройство, ID"
-            case .resetStats: "профиль обнулится"
-            case .resetKnobs: "вернуть как из App Store"
+            case .copyDiagnostics: L10n.Action.copyDiagnosticsHint
+            case .resetStats: L10n.Action.resetStatsHint
+            case .resetKnobs: L10n.Action.resetKnobsHint
             }
         }
     }
@@ -75,8 +75,8 @@ public final class DebugMenuViewModel {
 
         var title: String {
             switch self {
-            case .seen: "Показан"
-            case .unseen: "Не показан"
+            case .seen: L10n.Knob.seen
+            case .unseen: L10n.Knob.unseen
             }
         }
     }
@@ -138,18 +138,22 @@ public final class DebugMenuViewModel {
         switch section {
         case .remoteConfig:
             let count = settings.remoteConfigOverrides.names.count
-            return count == 0 ? "значения с сервера" : "подмен: \(count)"
+            return count == 0
+                ? L10n.Config.summary
+                : L10n.Config.summaryOverrides(count)
         case .analytics:
             let count = analyticsLog.records.count
-            return count == 0 ? "пусто" : "записей: \(count)"
+            return count == 0
+                ? L10n.Analytics.summaryEmpty
+                : L10n.Analytics.summaryRecords(count)
         }
     }
 
     private var failureKnob: Knob {
         Knob(
             id: .failure,
-            title: "Сбой в обработке",
-            hint: "Каждый файл отваливается с выбранной причиной — так видно список отказов на экране итога",
+            title: L10n.Knob.failureTitle,
+            hint: L10n.Knob.failureNote,
             options: SimulatedFailure.allCases.map { failure in
                 Option(
                     id: failure.rawValue,
@@ -166,8 +170,8 @@ public final class DebugMenuViewModel {
     private var onboardingKnob: Knob {
         Knob(
             id: .onboarding,
-            title: "Вводный тур",
-            hint: "Отметка о показе тура — снимите её и перезапустите приложение, чтобы начать с тура",
+            title: L10n.Knob.tourTitle,
+            hint: L10n.Knob.tourNote,
             options: [
                 Option(id: TourMark.seen.rawValue, title: TourMark.seen.title, isSelected: isTourSeen),
                 Option(id: TourMark.unseen.rawValue, title: TourMark.unseen.title, isSelected: !isTourSeen),
@@ -184,7 +188,11 @@ public final class DebugMenuViewModel {
             guard let mark = TourMark(rawValue: option.id) else { return }
             isTourSeen = mark == .seen
             onboardingState.setTourSeen(isTourSeen)
-            say(mark == .seen ? "Тур отмечен показанным" : "Тур покажется при следующем запуске")
+            say(
+                mark == .seen
+                    ? L10n.Knob.tourMarked
+                    : L10n.Knob.tourCleared
+            )
         }
     }
 
@@ -200,15 +208,15 @@ public final class DebugMenuViewModel {
         case .copyDiagnostics:
             // Буфер обмена SwiftUI не отдаёт — за ним приходится идти в UIKit.
             UIPasteboard.general.string = environment.summary
-            say("Диагностика скопирована в буфер")
+            say(L10n.Action.copyDiagnosticsDone)
         case .resetStats:
             Task {
                 await statsStore.reset()
-                say("Статистика профиля обнулена")
+                say(L10n.Action.resetStatsDone)
             }
         case .resetKnobs:
             settings.reset()
-            say("Подмены выключены")
+            say(L10n.Action.resetKnobsDone)
         }
     }
 

@@ -18,7 +18,7 @@ public struct DebugRemoteConfigView: View {
     public var body: some View {
         VStack(spacing: 0) {
             SlimlyNavigationBar(onBack: { viewModel.goBack() }) {
-                Button("Обновить") {
+                Button(L10n.Config.refresh) {
                     Task { await viewModel.refresh() }
                 }
                 .buttonStyle(SlimlyLinkButtonStyle(font: .system(size: 15, weight: .medium)))
@@ -27,15 +27,11 @@ public struct DebugRemoteConfigView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Remote Config")
+                    Text(verbatim: "Remote Config")
                         .font(.slimlyTitle)
                         .tracking(SlimlyTracking.title)
 
-                    Text(
-                        "Значения с сервера и локальные подмены к ним. Подмена живёт только "
-                            + "на этом устройстве и переживает перезапуск, а экраны читают "
-                            + "значение в момент открытия."
-                    )
+                    Text(L10n.Config.note)
                         .font(.slimlyCaption)
                         .foregroundStyle(SlimlyColor.neutral500)
                         .fixedSize(horizontal: false, vertical: true)
@@ -47,7 +43,7 @@ public struct DebugRemoteConfigView: View {
                     }
 
                     if viewModel.hasOverrides {
-                        Button("Снять все подмены") { viewModel.resetAll() }
+                        Button(L10n.Config.clearAll) { viewModel.resetAll() }
                             .buttonStyle(.slimlyOutline)
                             .padding(.top, 4)
                     }
@@ -59,19 +55,19 @@ public struct DebugRemoteConfigView: View {
         .slimlyScreen()
         .slimlyToast(viewModel.toast)
         .alert(Text(viewModel.editedTitle), isPresented: $viewModel.isEditing) {
-            TextField("Значение", text: $viewModel.draft)
+            TextField(L10n.Config.valueField, text: $viewModel.draft)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
 
-            Button("Подменить") { viewModel.applyEdit() }
+            Button(L10n.Config.override) { viewModel.applyEdit() }
 
             if viewModel.canResetEdit {
-                Button("Вернуть серверное") { viewModel.resetEdit() }
+                Button(L10n.Config.restore) { viewModel.resetEdit() }
             }
 
-            Button("Отмена", role: .cancel) { }
+            Button(L10n.Config.cancel, role: .cancel) { }
         } message: {
-            Text("Значение подменится только на этом устройстве. Пустое поле снимает подмену.")
+            Text(L10n.Config.editNote)
         }
     }
 
@@ -124,13 +120,10 @@ public struct DebugRemoteConfigView: View {
     private var emptyCard: some View {
         SlimlyCard {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Значений нет")
+                Text(L10n.Config.empty)
                     .font(.system(size: 13, weight: .medium))
 
-                Text(
-                    "Конфиг ещё не загрузился, в проекте нет GoogleService-Info.plist "
-                        + "или в веб-консоли не опубликовано ни одного параметра."
-                )
+                Text(L10n.Config.emptyNote)
                     .font(.slimlyCaptionSmall)
                     .foregroundStyle(SlimlyColor.neutral500)
                     .fixedSize(horizontal: false, vertical: true)

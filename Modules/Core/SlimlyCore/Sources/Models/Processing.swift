@@ -17,10 +17,10 @@ public enum ProcessingKind: String, Sendable, Hashable, Codable, CaseIterable {
     /// фото и видео — одна и та же работа, и в статистике они складываются.
     public var title: String {
         switch self {
-        case .compression: "Сжатие"
-        case .conversion: "Конвертация"
-        case .audioExtraction: "Извлечение звука"
-        case .scan: "Скан документов"
+        case .compression: L10n.Kind.compression
+        case .conversion: L10n.Kind.conversion
+        case .audioExtraction: L10n.Kind.audioExtraction
+        case .scan: L10n.Kind.scan
         }
     }
 
@@ -28,10 +28,10 @@ public enum ProcessingKind: String, Sendable, Hashable, Codable, CaseIterable {
     /// не помещается.
     public var shortTitle: String {
         switch self {
-        case .compression: "Сжатие"
-        case .conversion: "Конвертация"
-        case .audioExtraction: "Звук"
-        case .scan: "Сканы"
+        case .compression: L10n.KindShort.compression
+        case .conversion: L10n.KindShort.conversion
+        case .audioExtraction: L10n.KindShort.audioExtraction
+        case .scan: L10n.KindShort.scan
         }
     }
 
@@ -107,8 +107,8 @@ public enum AudioFormat: Sendable, Hashable {
 
     public var displayName: String {
         switch self {
-        case let .aac(kilobits): "M4A · \(kilobits) кбит"
-        case .linearPCM: "WAV · без потерь"
+        case let .aac(kilobits): L10n.AudioFormat.aac(kilobits)
+        case .linearPCM: L10n.AudioFormat.wav
         }
     }
 
@@ -191,17 +191,17 @@ public enum CompressionPreset: String, CaseIterable, Sendable, Hashable, Identif
 
     public var title: String {
         switch self {
-        case .light: "Лёгкое"
-        case .medium: "Среднее"
-        case .maximum: "Максимальное"
+        case .light: L10n.Quality.light
+        case .medium: L10n.Quality.medium
+        case .maximum: L10n.Quality.maximum
         }
     }
 
     public var summary: String {
         switch self {
-        case .light: "1080p, почти не отличить от оригинала"
-        case .medium: "1080p, битрейт ниже — для мессенджеров и облака"
-        case .maximum: "720p, заметнее на крупных деталях"
+        case .light: L10n.QualitySummary.light
+        case .medium: L10n.QualitySummary.medium
+        case .maximum: L10n.QualitySummary.maximum
         }
     }
 }

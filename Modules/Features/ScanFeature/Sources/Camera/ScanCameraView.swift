@@ -71,16 +71,16 @@ public struct ScanCameraView: View {
             SlimlyIcon(.camera, width: 34)
                 .foregroundStyle(SlimlyColor.neutral500)
 
-            Text("Нет доступа к камере")
+            Text(L10n.Camera.deniedTitle)
                 .font(.slimlySectionTitle)
 
-            Text("Разрешите съёмку в настройках — страницы можно снять или выбрать из галереи")
+            Text(L10n.Camera.deniedNote)
                 .font(.slimlyBodySmall)
                 .foregroundStyle(SlimlyColor.neutral400)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Button("Открыть настройки") {
+            Button(L10n.Camera.openSettings) {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 openURL(url)
             }
@@ -117,7 +117,7 @@ public struct ScanCameraView: View {
 
     private var topBar: some View {
         HStack(spacing: 10) {
-            Button("Отмена") { viewModel.cancel() }
+            Button(L10n.Camera.cancel) { viewModel.cancel() }
                 .buttonStyle(SlimlyLinkButtonStyle(color: SlimlyColor.text, font: .system(size: 16)))
 
             Spacer(minLength: 0)
@@ -131,7 +131,7 @@ public struct ScanCameraView: View {
                 }
             }
             .buttonStyle(ModeChipStyle(isOn: viewModel.isFlashOn))
-            .accessibilityLabel("Вспышка: \(viewModel.flashLabel)")
+            .accessibilityLabel(Text(L10n.Camera.flash(viewModel.flashLabel)))
 
             Button(viewModel.automaticLabel) {
                 viewModel.toggleAutomatic()
@@ -200,7 +200,7 @@ public struct ScanCameraView: View {
                     .foregroundStyle(SlimlyColor.neutral400)
             }
         } else {
-            Text("Снимите первую страницу")
+            Text(L10n.Camera.firstPage)
                 .font(.slimlyCaption)
                 .foregroundStyle(SlimlyColor.neutral500)
                 .fixedSize(horizontal: false, vertical: true)
@@ -223,7 +223,7 @@ public struct ScanCameraView: View {
         .buttonStyle(ShutterButtonStyle())
         .disabled(viewModel.camera.isAtLimit || viewModel.camera.isBusy)
         .opacity(viewModel.camera.isAtLimit ? 0.4 : 1)
-        .accessibilityLabel("Снять страницу")
+        .accessibilityLabel(Text(L10n.Camera.shutter))
     }
 }
 
@@ -339,7 +339,7 @@ private struct PageStack: View {
                         .strokeBorder(SlimlyColor.text.opacity(0.5), lineWidth: 1)
                 }
                 .overlay {
-                    Text("\(count)")
+                    Text(verbatim: "\(count)")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(SlimlyColor.onAccent)
                 }

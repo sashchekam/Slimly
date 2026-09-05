@@ -29,22 +29,19 @@ public struct DebugMenuView: View {
                         knobCard(knob)
                     }
 
-                    Text("разделы")
+                    Text(L10n.Menu.sections)
                         .slimlyKicker()
                         .padding(.top, 4)
 
                     sections
 
-                    Text("действия")
+                    Text(L10n.Menu.actions)
                         .slimlyKicker()
                         .padding(.top, 4)
 
                     actions
 
-                    Text(
-                        "Меню открывается тряской устройства и живёт только во внутренних "
-                            + "сборках — в App Store его нет."
-                    )
+                    Text(L10n.Menu.note)
                         .font(.slimlyCaptionSmall)
                         .foregroundStyle(SlimlyColor.neutral600)
                         .fixedSize(horizontal: false, vertical: true)
@@ -61,7 +58,7 @@ public struct DebugMenuView: View {
 
     private var header: some View {
         HStack(spacing: 9) {
-            Text("Debug-меню")
+            Text(L10n.Menu.title)
                 .font(.system(size: 17, weight: .medium))
                 .tracking(-0.2)
 
@@ -69,7 +66,7 @@ public struct DebugMenuView: View {
 
             Spacer(minLength: 12)
 
-            Button("Готово") { viewModel.close() }
+            Button(L10n.Menu.close) { viewModel.close() }
                 .buttonStyle(SlimlyLinkButtonStyle(font: .system(size: 15, weight: .medium)))
         }
         .frame(minHeight: 44)

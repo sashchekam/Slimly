@@ -10,20 +10,20 @@ public enum FlowCopy {
     /// Подпись под процентом на экране обработки.
     public static func runWord(_ kind: ProcessingKind) -> String {
         switch kind {
-        case .compression: "сжимаем"
-        case .conversion: "конвертируем"
-        case .audioExtraction: "извлекаем"
-        case .scan: "сканируем"
+        case .compression: L10n.Stage.compressing
+        case .conversion: L10n.Stage.converting
+        case .audioExtraction: L10n.Stage.extracting
+        case .scan: L10n.Stage.scanning
         }
     }
 
     /// Кикер над итогом.
     public static func doneKicker(_ kind: ProcessingKind) -> String {
         switch kind {
-        case .compression: "сжатие завершено"
-        case .conversion: "формат изменён"
-        case .audioExtraction: "звук извлечён"
-        case .scan: "скан собран"
+        case .compression: L10n.Stage.compressionDone
+        case .conversion: L10n.Stage.conversionDone
+        case .audioExtraction: L10n.Stage.audioDone
+        case .scan: L10n.Stage.scanDone
         }
     }
 
@@ -38,28 +38,32 @@ public enum FlowCopy {
             // Уже плотно упакованный файл после пережатия может даже
             // потяжелеть. Писать «освободили −0,2 МБ» нельзя: это не итог,
             // а издевательство.
+            let files = CountFormatter.string(count, .file)
             guard results.savedByteCount > 0 else {
-                return "Файлы и так были плотными — вес почти не изменился · \(CountFormatter.string(count, .file))"
+                return L10n.Summary.dense(files)
             }
+            let saved = FileSizeFormatter.string(bytes: results.savedByteCount)
             return [
-                "Освободили \(FileSizeFormatter.string(bytes: results.savedByteCount))",
-                CountFormatter.string(count, .file),
-                "оригиналы на месте",
+                L10n.Summary.freed(saved),
+                files,
+                L10n.Summary.originalsUntouched,
             ].joined(separator: " · ")
 
         case .conversion:
-            return "\(CountFormatter.string(count, .file)) пересобрано в \(target) · оригиналы на месте"
+            let files = CountFormatter.string(count, .file)
+            return L10n.Summary.conversion(files, target)
 
         case .audioExtraction:
             let total = FileSizeFormatter.string(bytes: results.outputByteCount)
-            return "\(CountFormatter.string(count, .track)) по \(target) · всего \(total) · видео не изменялось"
+            let tracks = CountFormatter.string(count, .track)
+            return L10n.Summary.audio(tracks, target, total)
 
         case .scan:
             // Страниц столько, сколько снимков взяли, а результат один —
             // считать страницы по числу файлов итога значило бы написать
             // «1 страница» на пятистраничном документе.
             let pages = CountFormatter.string(outcome.request.items.count, .page)
-            return "\(pages) в одном \(target) · оригиналы на месте"
+            return L10n.Summary.scan(pages, target)
         }
     }
 
@@ -79,9 +83,9 @@ public enum FlowCopy {
     /// звать «сравнить» везде было бы враньём.
     public static func previewHint(_ kind: ProcessingKind) -> String {
         switch kind {
-        case .compression: "Нажмите файл, чтобы сравнить до и после"
-        case .audioExtraction: "Нажмите дорожку, чтобы прослушать"
-        case .conversion, .scan: "Нажмите файл, чтобы открыть просмотр"
+        case .compression: L10n.Hint.compression
+        case .audioExtraction: L10n.Hint.audio
+        case .conversion, .scan: L10n.Hint.preview
         }
     }
 

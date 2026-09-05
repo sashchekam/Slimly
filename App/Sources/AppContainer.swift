@@ -46,6 +46,9 @@ final class AppContainer {
     let analytics: any AnalyticsService
     /// Значения, которыми можно управлять без выпуска сборки.
     let remoteConfig: any RemoteConfigService
+    /// Язык интерфейса. Живёт в контейнере, а не внутри профиля: язык меняют
+    /// на экране настроек, а пересобирает по нему экраны корень приложения.
+    let localization: any LocalizationService
 
     #if DEBUG
     /// Копия отправленного на устройстве — её показывает отладочное меню.
@@ -89,6 +92,7 @@ final class AppContainer {
         // а читает их конфиг сам, без посредника между ними.
         let storage = DefaultsStorage()
         debugSettings = DebugSettings(storage: storage)
+        localization = StoredLocalization(storage: storage)
         self.mediaLibrary = mediaLibrary
         self.processingService = processing
         self.previewRenderer = previewRenderer
@@ -143,7 +147,9 @@ final class AppContainer {
                 analytics: analytics
             ),
             HomeFeature.resolver(
-                tools: HomeTools.all,
+                // Список собирается на каждом построении экрана: подписи
+                // плиток переведены, а язык меняют на ходу.
+                tools: { HomeTools.all },
                 profile: ProfileRoute.profile,
                 analytics: analytics
             ),
@@ -176,6 +182,7 @@ final class AppContainer {
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
                 processingService: processing,
+                localization: localization,
                 analytics: analytics,
                 debugMenu: Self.debugMenuRoute
             ),

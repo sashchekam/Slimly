@@ -30,7 +30,7 @@ public struct SlimlyNavigationBar<Trailing: View>: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Назад")
+                .accessibilityLabel(Text(L10n.Accessibility.back))
             }
 
             Spacer(minLength: 0)

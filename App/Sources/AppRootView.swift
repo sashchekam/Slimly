@@ -1,3 +1,4 @@
+import SlimlyCore
 import SlimlyDesignSystem
 import SlimlyNavigation
 import SwiftUI
@@ -23,6 +24,14 @@ struct AppRootView: View {
 
             RouterHost(router: container.router, registry: container.registry)
                 .opacity(isAppVisible ? 1 : 0)
+                // Смена языка пересобирает дерево целиком: строки приходят
+                // из бандла обычным `String`, и сама по себе замена языка
+                // ни один экран не перерисует. Стек при этом остаётся —
+                // путь живёт в роутере, а не в снесённых вью.
+                .id(container.localization.current)
+                // Системным форматам (дата в `Text`, `.formatted`) язык
+                // приложения не виден: они идут за локалью окружения.
+                .environment(\.locale, L10nBundle.locale)
 
             #if DEBUG
             DebugAccessOverlay(container: container)

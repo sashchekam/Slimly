@@ -99,13 +99,13 @@ public struct ScanPagesView: View {
     private var actions: some View {
         HStack(spacing: 10) {
             if viewModel.canResetToDetected {
-                Button("Сбросить") { viewModel.resetToDetected() }
+                Button(L10n.Pages.reset) { viewModel.resetToDetected() }
                     .buttonStyle(.slimlyCompact)
                     .transition(.opacity)
             }
 
             if viewModel.canUseWholeFrame {
-                Button("Без обрезки") { viewModel.useWholeFrame() }
+                Button(L10n.Pages.noCrop) { viewModel.useWholeFrame() }
                     .buttonStyle(.slimlyCompact)
                     .transition(.opacity)
             }
@@ -140,7 +140,7 @@ public struct ScanPagesView: View {
                         )
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Страница \(position + 1)")
+                    .accessibilityLabel(Text(L10n.Pages.page(position + 1)))
                 }
             }
             .padding(.vertical, 2)
@@ -207,7 +207,7 @@ private struct PageThumbnail: View {
                 )
         }
         .overlay(alignment: .bottomLeading) {
-            Text("\(number)")
+            Text(verbatim: "\(number)")
                 .font(.slimlyNano)
                 .foregroundStyle(SlimlyColor.neutral200)
                 .padding(.horizontal, 4)
