@@ -18,6 +18,13 @@ public final class OutcomeViewModel {
     /// Подтверждение сохранения. Живёт пару секунд: где искать файлы,
     /// написано и в подписи под списком — тост только отмечает момент.
     public private(set) var toast: String?
+    /// Файл, которому прямо сейчас меняют имя. Ввод идёт в системном алерте:
+    /// заводить своё поле ради одной правки на экране незачем.
+    public private(set) var renamedID: String?
+
+    /// Новое имя, пока его набирают. Без расширения: формат правкой имени
+    /// не меняют, и «.png», стёртое случайно, сломало бы файл.
+    public var nameDraft = ""
 
     private let library: any MediaLibrary
     private let service: any MediaProcessingService
@@ -127,6 +134,81 @@ public final class OutcomeViewModel {
         return FlowCopy.previewHint(outcome.kind)
     }
 
+    // MARK: Имя файла
+
+    /// Пока файл не сохранён, имя — это просто строчка в кэше, и менять её
+    /// свободно. После сохранения копия уже разложена по месту: там имя
+    /// правят «Файлы», а в медиатеке его и не видно.
+    public var canRename: Bool { !isSaved && !isSaving }
+
+    /// Алерт правки. Закрыть его может и система — нажатием мимо кнопок,
+    /// поэтому закрытие снимает правку, а не только кнопка «Отмена».
+    public var isRenaming: Bool {
+        get { renamedID != nil }
+        set {
+            guard !newValue else { return }
+            renamedID = nil
+        }
+    }
+
+    /// Чем кончится имя, что бы ни набрали в поле. `nil` — расширения нет,
+    /// и обещать в подсказке нечего.
+    public var renameNote: String? {
+        let ext = renamedResult.map { ($0.outputName as NSString).pathExtension } ?? ""
+        guard !ext.isEmpty else { return nil }
+
+        return L10n.Rename.note(".\(ext)")
+    }
+
+    public func rename(_ result: ProcessingResult) {
+        guard canRename else { return }
+
+        renamedID = result.id
+        nameDraft = (result.outputName as NSString).deletingPathExtension
+    }
+
+    public func applyRename() {
+        guard let target = renamedResult, canRename else { return }
+        renamedID = nil
+
+        let ext = (target.outputName as NSString).pathExtension
+        guard
+            let name = Self.fileName(from: nameDraft, extension: ext),
+            name != target.outputName
+        else {
+            return
+        }
+
+        Task {
+            do {
+                let renamed = try await service.rename(target, to: name)
+                outcome = outcome.replacing(renamed)
+                analytics.didRenameResult()
+            } catch {
+                say(L10n.Rename.failed)
+            }
+        }
+    }
+
+    private var renamedResult: ProcessingResult? {
+        results.first { $0.id == renamedID }
+    }
+
+    /// Набранное превращаем в имя файла: разделители пути и точки по краям
+    /// увели бы файл из своей папки или спрятали бы его от системы, а длину
+    /// ограничиваем, потому что дальше имя всё равно обрежется в интерфейсе.
+    /// `nil` — набрано пустое: тогда имя остаётся прежним.
+    private static func fileName(from draft: String, extension ext: String) -> String? {
+        let base = draft
+            .components(separatedBy: CharacterSet(charactersIn: "/\\:").union(.controlCharacters))
+            .joined(separator: " ")
+            .trimmingCharacters(in: CharacterSet(charactersIn: ".").union(.whitespacesAndNewlines))
+        guard !base.isEmpty else { return nil }
+
+        let clipped = String(base.prefix(60))
+        return ext.isEmpty ? clipped : "\(clipped).\(ext)"
+    }
+
     // MARK: Шаринг
 
     /// Отдаём в системную шторку копию из кэша, а не ассет медиатеки:
@@ -164,7 +246,7 @@ public final class OutcomeViewModel {
 
     public var saveTitle: String {
         switch destination {
-        case .photoLibrary: L10n.Save.photos
+        case .photoLibrary: L10n.Save.gallery
         case .files: L10n.Save.files
         }
     }
@@ -177,7 +259,7 @@ public final class OutcomeViewModel {
         }
 
         switch destination {
-        case .photoLibrary: return L10n.Save.photosDone
+        case .photoLibrary: return L10n.Save.galleryDone
         case .files: return L10n.Save.filesFolder
         }
     }
@@ -216,7 +298,7 @@ public final class OutcomeViewModel {
     /// ничем не отличалось бы от «готово».
     private var savedTitle: String {
         switch destination {
-        case .photoLibrary: L10n.Save.photosDone
+        case .photoLibrary: L10n.Save.galleryDone
         case .files: L10n.Save.filesDone
         }
     }

@@ -105,7 +105,7 @@ public enum AudioFeature {
     private static var formatConfig: FormatStepConfig {
         FormatStepConfig(
             title: L10n.Format.title,
-            note: L10n.Format.note,
+            note: { _ in L10n.Format.note },
             actionTitle: L10n.Tool.extractAudio,
             sourceFormat: L10n.Format.source,
             formats: [

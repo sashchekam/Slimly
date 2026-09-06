@@ -20,13 +20,11 @@ public struct MediaPickerView: View {
     /// кадром — так экран работает и там, где играть нечего.
     private let player: MediaItemPlayerFactory?
 
-    /// Сколько плиток в ряду. Держится во вью: перестроение сетки — дело
-    /// вёрстки, и модель о нём не знает.
-    @State
-    private var density = MediaGridDensity.large
-
-    @State
-    private var isConfiguringGrid = false
+    /// Сколько плиток в ряду. Считается по ширине списка: раскладка — дело
+    /// вёрстки, и модель о ней не знает.
+    private var layout: MediaGridLayout {
+        MediaGridLayout(width: scroll.window.width)
+    }
 
     public init(viewModel: MediaPickerViewModel, player: MediaItemPlayerFactory? = nil) {
         _viewModel = State(wrappedValue: viewModel)
@@ -37,40 +35,28 @@ public struct MediaPickerView: View {
         VStack(spacing: 0) {
             topBar
 
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 9, pinnedViews: [.sectionHeaders]) {
-                        header
-                            .padding(.horizontal, SlimlySpacing.screenHorizontal)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 9, pinnedViews: [.sectionHeaders]) {
+                    header
+                        .padding(.horizontal, SlimlySpacing.screenHorizontal)
 
-                        Section {
-                            VStack(alignment: .leading, spacing: 15) {
-                                content
-                            }
-                            .padding(.horizontal, SlimlySpacing.screenHorizontal)
-                            .padding(.bottom, 6)
-                        } header: {
-                            if viewModel.access.allowsBrowsing {
-                                stickyAlbumMenu
-                            }
+                    Section {
+                        VStack(alignment: .leading, spacing: 15) {
+                            content
+                        }
+                        .padding(.horizontal, SlimlySpacing.screenHorizontal)
+                        .padding(.bottom, 6)
+                    } header: {
+                        if viewModel.access.allowsBrowsing {
+                            stickyAlbumMenu
                         }
                     }
                 }
-                .sheet(isPresented: $isConfiguringGrid) {
-                    MediaGridSettingsSheet(
-                        density: Binding { density } set: { apply($0, with: proxy) },
-                        onClose: { isConfiguringGrid = false }
-                    )
-                    .presentationDetents([.height(MediaGridSettingsSheet.height)])
-                    .presentationBackground(SlimlyColor.sheet)
-                }
             }
-            .sensoryFeedback(.selection, trigger: density)
             .coordinateSpace(.named(MediaScrollWindow.space))
-            .reportsWindowBottom()
+            .reportsWindowSize()
             .onPreferenceChange(MediaScrollWindowKey.self) { scroll.window = $0 }
             .onPreferenceChange(MediaVisibleDatesKey.self) { scroll.visibleDates = $0 }
-            .onPreferenceChange(MediaAnchorKey.self) { scroll.anchorID = $0?.id }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 // Панель появляется вместе с первым выбранным файлом, поэтому
                 // выезжает снизу: резкое появление читалось бы как скачок вёрстки.
@@ -159,8 +145,6 @@ public struct MediaPickerView: View {
 
             MediaVisibleDatesLabel(scroll: scroll)
                 .frame(maxWidth: .infinity, alignment: .trailing)
-
-            densityButton
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, SlimlySpacing.screenHorizontal)
@@ -214,24 +198,6 @@ public struct MediaPickerView: View {
         .accessibilityLabel(Text(L10n.Picker.album))
     }
 
-    /// Кнопка плотности показывает саму сетку: значок повторяет ряд плиток,
-    /// поэтому и до нажатия видно, что именно настраивается.
-    private var densityButton: some View {
-        Button {
-            isConfiguringGrid = true
-        } label: {
-            MediaGridPreview(columns: density.columns, width: 16)
-                .foregroundStyle(SlimlyColor.neutral400)
-                .padding(.horizontal, 11)
-                .padding(.vertical, 11)
-                .background(SlimlyColor.surface, in: Capsule())
-                .overlay(Capsule().strokeBorder(SlimlyColor.text.opacity(0.1), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(L10n.Picker.grid))
-        .accessibilityValue(density.title)
-    }
-
     private var limitedAccessHint: some View {
         Text(L10n.Picker.limitedNote)
             .font(.slimlyCaptionSmall)
@@ -241,7 +207,7 @@ public struct MediaPickerView: View {
 
     @ViewBuilder
     private var grid: some View {
-        LazyVGrid(columns: density.gridItems, spacing: density.spacing) {
+        LazyVGrid(columns: layout.gridItems, spacing: layout.spacing) {
             ForEach(viewModel.items) { item in
                 // Не `Button`: у плитки есть и контекстное меню, а его длинное
                 // нажатие живёт в UIKit-интеракции и постоянно отбирает у кнопки
@@ -278,7 +244,7 @@ public struct MediaPickerView: View {
                         player: player
                     )
                 }
-                .reportsGridPosition(id: item.id, date: item.creationDate, in: scroll.window)
+                .reportsVisibleDate(item.creationDate, in: scroll.window)
                 .onAppear { viewModel.willShow(item) }
             }
         }
@@ -296,27 +262,6 @@ public struct MediaPickerView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 44)
             .onAppear { viewModel.loadMoreIfNeeded() }
-    }
-
-    /// Сменить плотность, оставив на месте ту плитку, на которую пользователь
-    /// смотрел. От плотности зависит высота всей ленты, и без возврата кадр
-    /// уезжает тем дальше, чем ниже пролистан список.
-    ///
-    /// Обе правки — и раскладка, и прокрутка — идут без анимации: сетка
-    /// перестраивается вся разом, и любое движение здесь читалось бы как
-    /// рябь, а не как переход.
-    private func apply(_ newDensity: MediaGridDensity, with proxy: ScrollViewProxy) {
-        guard newDensity != density else { return }
-
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-
-        withTransaction(transaction) {
-            density = newDensity
-            if let anchorID = scroll.anchorID {
-                proxy.scrollTo(anchorID, anchor: .center)
-            }
-        }
     }
 
     private func notice(

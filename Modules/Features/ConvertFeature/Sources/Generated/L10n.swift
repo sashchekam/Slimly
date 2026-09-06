@@ -35,6 +35,11 @@ enum L10n {
             tr("photoFormat.note")
         }
 
+        /// Photo
+        static var source: String {
+            tr("photoFormat.source")
+        }
+
         /// Which format
         static var title: String {
             tr("photoFormat.title")
@@ -54,8 +59,7 @@ enum L10n {
     }
 
     enum VideoFormat {
-        /// HEVC gives a smaller size, H.264 opens everywhere. This is re-encoding, not a renamed
-        /// extension.
+        /// This is re-encoding, not a renamed extension.
         static var note: String {
             tr("videoFormat.note")
         }
@@ -68,6 +72,26 @@ enum L10n {
         /// Container and codec
         static var title: String {
             tr("videoFormat.title")
+        }
+    }
+
+    enum VideoNote {
+        /// Apple’s container: handy for iMovie and Final Cut. Weighs like HEVC in MP4, but opens worse
+        /// on Windows and Android.
+        static var movHevc: String {
+            tr("videoNote.movHevc")
+        }
+
+        /// Opens everywhere: phones, TVs, editors, old players. At the same quality it weighs more than
+        /// HEVC.
+        static var mp4H264: String {
+            tr("videoNote.mp4H264")
+        }
+
+        /// The same MP4, about half the weight at the same quality. Devices older than 2015 may not
+        /// play it.
+        static var mp4Hevc: String {
+            tr("videoNote.mp4Hevc")
         }
     }
 }

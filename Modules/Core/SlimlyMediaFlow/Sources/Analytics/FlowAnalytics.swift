@@ -115,6 +115,12 @@ public struct FlowAnalytics: FeatureAnalytics {
         track("result_previewed", ["tool": toolValue])
     }
 
+    /// Готовому файлу поменяли имя. Событие редкое по замыслу: если имя
+    /// правят часто, значит, автоматическое имя людям не подходит.
+    public func didRenameResult() {
+        track("result_renamed", ["tool": toolValue])
+    }
+
     /// Оригиналы удалены после сохранения: место освобождено по-настоящему,
     /// а не «сжато и оставлено рядом».
     public func didDeleteOriginals(_ count: Int) {

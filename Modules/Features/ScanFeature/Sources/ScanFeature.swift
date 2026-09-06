@@ -155,7 +155,7 @@ public enum ScanFeature {
     private static func formatConfig(bounds: ScanBounds) -> FormatStepConfig {
         FormatStepConfig(
             title: L10n.Format.title,
-            note: L10n.Format.note,
+            note: { _ in L10n.Format.note },
             actionTitle: L10n.Format.action,
             sourceFormat: L10n.Format.source,
             formats: ScanMode.allCases.map { MediaFormat(target: .document($0)) },

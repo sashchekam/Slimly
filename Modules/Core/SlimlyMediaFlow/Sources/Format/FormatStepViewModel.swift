@@ -6,7 +6,10 @@ import SlimlyNavigation
 /// Правила шага «в какой формат» для конкретного инструмента.
 public struct FormatStepConfig: Sendable {
     public let title: String
-    public let note: String
+    /// Подпись под списком форматов. Замыкание, а не строка: формат выбирают
+    /// по тому, что он даёт, — значит, подпись должна рассказывать про
+    /// выбранный, а не одна на все сразу.
+    public let note: @Sendable (MediaFormat) -> String
     /// Глагол на кнопке: «Конвертировать», «Извлечь звук», «Собрать скан».
     public let actionTitle: String
     /// Формат исходников — левая половина пары «из → в».
@@ -22,7 +25,7 @@ public struct FormatStepConfig: Sendable {
 
     public init(
         title: String,
-        note: String,
+        note: @escaping @Sendable (MediaFormat) -> String,
         actionTitle: String,
         sourceFormat: String,
         formats: [MediaFormat],
@@ -98,6 +101,9 @@ public final class FormatStepViewModel {
     }
 
     public var targetTitle: String { selectedFormat.id }
+
+    /// Что за формат выбран и для чего он нужен.
+    public var note: String { config.note(selectedFormat) }
 
     /// Строка под именем файла: у звука это отдельная дорожка, у остальных —
     /// «было → станет». Там, где вес не показываем, остаётся размер кадра:

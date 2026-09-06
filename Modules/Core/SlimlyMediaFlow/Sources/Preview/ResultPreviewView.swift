@@ -3,9 +3,14 @@ import SlimlyDesignSystem
 import SwiftUI
 import UIKit
 
-/// Просмотр готового файла: у сжатия — с переключателем «до / после»,
-/// у остальных инструментов — один кадр результата.
+/// Просмотр готового файла: у сжатого снимка — шторка «до / после»,
+/// у сжатого ролика — переключатель сторон, у остальных инструментов —
+/// один кадр результата.
 public struct ResultPreviewView: View {
+    /// Доля окна, при которой подпись стороны уже не помещается над своей
+    /// половиной и гаснет.
+    private static let chipFade: Double = 0.18
+
     @State
     private var viewModel: ResultPreviewViewModel
     /// Чем показывать ролик и документ. Без фабрики экран остаётся
@@ -25,7 +30,7 @@ public struct ResultPreviewView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     header
 
-                    if viewModel.showsSides {
+                    if viewModel.showsSidePicker {
                         sidePicker
                     }
 
@@ -77,7 +82,7 @@ public struct ResultPreviewView: View {
             .aspectRatio(viewModel.previewAspectRatio, contentMode: .fit)
             .overlay { content }
             .clipped()
-            .overlay(alignment: .topLeading) { chip }
+            .overlay { chips }
             .clipShape(RoundedRectangle(cornerRadius: SlimlyRadius.lg, style: .continuous))
     }
 
@@ -88,7 +93,27 @@ public struct ResultPreviewView: View {
         // а у скана страниц больше одной.
         if let viewer, let url = viewModel.viewerURL, let view = viewer(url) {
             view
-        } else if let data = viewModel.currentData, let image = UIImage(data: data) {
+        } else if viewModel.showsComparison {
+            comparison
+        } else {
+            still(viewModel.currentData, placeholder: viewModel.placeholderLabel)
+        }
+    }
+
+    /// Оба кадра в одном окне, а не по очереди: разница между оригиналом
+    /// и сжатой копией держится в мелочах, и, подменяя картинку целиком,
+    /// её приходится держать в памяти.
+    private var comparison: some View {
+        SlimlyCompareSlider(position: $viewModel.comparePosition) {
+            still(viewModel.beforeData, placeholder: viewModel.beforePlaceholderLabel)
+        } after: {
+            still(viewModel.afterData, placeholder: viewModel.placeholderLabel)
+        }
+    }
+
+    @ViewBuilder
+    private func still(_ data: Data?, placeholder: String) -> some View {
+        if let data, let image = UIImage(data: data) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
@@ -98,19 +123,38 @@ public struct ResultPreviewView: View {
                 // «до / после» над окном и глушит его нажатия.
                 .allowsHitTesting(false)
         } else {
-            Text(viewModel.placeholderLabel)
+            Text(placeholder)
                 .font(.slimlyCaptionSmall)
                 .tracking(0.66)
                 .foregroundStyle(SlimlyColor.neutral600)
         }
     }
 
-    private var chip: some View {
-        Text(viewModel.chipText)
+    /// Подписи сторон. У шторки их две — каждая над своей половиной — и
+    /// гаснут, когда половина сжимается в полоску: подпись без картинки
+    /// под ней читалась бы как подпись к соседней.
+    @ViewBuilder
+    private var chips: some View {
+        if viewModel.showsComparison {
+            chip(viewModel.beforeChipText, isAfter: false)
+                .opacity(viewModel.comparePosition > Self.chipFade ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: viewModel.comparePosition > Self.chipFade)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            chip(viewModel.afterChipText, isAfter: true)
+                .opacity(viewModel.comparePosition < 1 - Self.chipFade ? 1 : 0)
+                .animation(.easeOut(duration: 0.15), value: viewModel.comparePosition < 1 - Self.chipFade)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        } else {
+            chip(viewModel.chipText, isAfter: viewModel.isShowingAfter)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private func chip(_ text: String, isAfter: Bool) -> some View {
+        Text(text)
             .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(
-                viewModel.isShowingAfter ? SlimlyColor.accent200 : SlimlyColor.neutral300
-            )
+            .foregroundStyle(isAfter ? SlimlyColor.accent200 : SlimlyColor.neutral300)
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
             .background(SlimlyColor.tileCaption, in: Capsule())

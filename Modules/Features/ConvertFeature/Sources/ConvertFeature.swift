@@ -131,11 +131,12 @@ public enum ConvertFeature {
         case .photo:
             FormatStepConfig(
                 title: L10n.PhotoFormat.title,
-                note: L10n.PhotoFormat.note,
+                note: { _ in L10n.PhotoFormat.note },
                 actionTitle: L10n.Common.action,
-                // Формат исходников берём по факту выбора: один HEIC среди
-                // JPEG уже делает всю пачку «съёмкой iPhone».
-                sourceFormat: items.contains(where: \.isHEIC) ? "HEIC" : "JPEG",
+                sourceFormat: sourceFormat(
+                    of: items.map { photoFormat(of: $0) },
+                    fallback: L10n.PhotoFormat.source
+                ),
                 // WebP в списке нет: ImageIO на iOS его читает, но не пишет.
                 formats: [
                     MediaFormat(target: .image(.jpeg), ratio: 0.95),
@@ -149,9 +150,15 @@ public enum ConvertFeature {
         case .video:
             FormatStepConfig(
                 title: L10n.VideoFormat.title,
-                note: L10n.VideoFormat.note,
+                note: { videoNote(for: $0) },
                 actionTitle: L10n.Common.action,
-                sourceFormat: sourceContainer(of: items),
+                // Кодек исходника до чтения файла неизвестен, поэтому в паре
+                // «из → в» показываем только контейнер — то, что видно
+                // по имени файла.
+                sourceFormat: sourceFormat(
+                    of: items.map { $0.fileExtension.uppercased() },
+                    fallback: L10n.VideoFormat.source
+                ),
                 formats: [
                     MediaFormat(target: .video(container: .mp4, codec: .h264), ratio: 1.05),
                     MediaFormat(target: .video(container: .mp4, codec: .hevc), ratio: 0.6),
@@ -163,13 +170,50 @@ public enum ConvertFeature {
         }
     }
 
-    /// Кодек исходника до чтения файла неизвестен, поэтому в паре «из → в»
-    /// показываем только контейнер — то, что видно по имени файла.
-    private static func sourceContainer(of items: [MediaItem]) -> String {
-        let extensions = Set(items.map(\.fileExtension))
-        guard extensions.count == 1, let single = extensions.first, !single.isEmpty else {
-            return L10n.VideoFormat.source
+    /// Подпись под списком форматов видео.
+    ///
+    /// Выбирают здесь не расширение, а размен «откроется везде» на «весит
+    /// меньше», — поэтому про выбранный формат написано, что он даёт и где
+    /// подведёт. Хвост общий: контейнер здесь не переклеивают, файл
+    /// пересобирают заново, и знать это стоит при любом выборе.
+    private static func videoNote(for format: MediaFormat) -> String {
+        let about = switch format.target {
+        case .video(container: .mp4, codec: .h264): L10n.VideoNote.mp4H264
+        case .video(container: .mp4, codec: .hevc): L10n.VideoNote.mp4Hevc
+        case .video(container: .mov, codec: .hevc): L10n.VideoNote.movHevc
+        // Прочих пар в списке нет — для них хватит общего хвоста.
+        default: ""
         }
-        return single.uppercased()
+
+        guard !about.isEmpty else { return L10n.VideoFormat.note }
+        return "\(about) \(L10n.VideoFormat.note)"
+    }
+
+    /// Формат исходников — левая половина пары «из → в».
+    ///
+    /// Берём по факту выбора: пока формат у всех файлов один, показываем его.
+    /// Разошлись — общего формата у пачки нет, и вместо выдуманного ставим
+    /// слово, которое верно всегда.
+    private static func sourceFormat(of names: [String], fallback: String) -> String {
+        let unique = Set(names.filter { !$0.isEmpty })
+        guard unique.count == 1, let single = unique.first else { return fallback }
+        return single
+    }
+
+    /// Формат снимка по его файлу.
+    ///
+    /// Имя здесь то же, каким формат подписан в списке целей: по нему шаг
+    /// исходный формат из списка и убирает. Расширение как есть не годится —
+    /// у файла оно `jpg`, а формат зовётся JPEG, и «JPG → JPEG» выглядело бы
+    /// как настоящий выбор. HEIC узнаём ещё и по флагу медиатеки: у снимка
+    /// с камеры расширение бывает `heif`, а формат тот же.
+    private static func photoFormat(of item: MediaItem) -> String {
+        guard !item.isHEIC else { return ImageFormat.heic.displayName }
+
+        return switch item.fileExtension {
+        case "jpg", "jpeg": ImageFormat.jpeg.displayName
+        case "png": ImageFormat.png.displayName
+        default: item.fileExtension.uppercased()
+        }
     }
 }

@@ -29,9 +29,9 @@ struct MediaScrollWindow: Equatable {
 
     var top: CGFloat = 0
     var bottom: CGFloat = 0
-
-    /// Середина окна — та высота, на которую пользователь и смотрит.
-    var center: CGFloat { (top + bottom) / 2 }
+    /// Ширина списка: по ней сетка выбирает число колонок. Приходит тем же
+    /// замером, что и низ окна, — геометрия у них одна.
+    var width: CGFloat = 0
 
     /// Плитку считаем видимой и по краю: иначе на границе строки дата
     /// менялась бы раньше, чем сама картинка уедет за шапку.
@@ -40,31 +40,6 @@ struct MediaScrollWindow: Equatable {
     /// прокрутка сообщила бы даты всей отрисованной сетки.
     func shows(_ frame: CGRect) -> Bool {
         bottom > top && frame.maxY > top && frame.minY < bottom
-    }
-}
-
-/// Плитка, оказавшаяся ближе всех к середине окна.
-///
-/// К ней сетка возвращается, сменив плотность. Держаться за верхнюю плитку
-/// нельзя: её закрывает прилипшая шапка, и «вернуть на место» означало бы
-/// увести кадр под неё, а середина видна всегда.
-struct MediaAnchor: Equatable {
-    let id: String
-    /// Насколько плитка отстоит от середины — по нему и выбирается ближайшая.
-    let distance: CGFloat
-}
-
-struct MediaAnchorKey: PreferenceKey {
-    static let defaultValue: MediaAnchor? = nil
-
-    static func reduce(value: inout MediaAnchor?, nextValue: () -> MediaAnchor?) {
-        guard let next = nextValue() else { return }
-        guard let current = value else {
-            value = next
-            return
-        }
-
-        if next.distance < current.distance { value = next }
     }
 }
 
@@ -79,9 +54,6 @@ struct MediaAnchorKey: PreferenceKey {
 final class MediaScrollState {
     var window = MediaScrollWindow()
     var visibleDates: MediaDateSpan?
-    /// Читается только из обработчика жеста, поэтому на перерисовку сетки
-    /// не влияет, хотя и меняется на каждом кадре прокрутки.
-    var anchorID: String?
 }
 
 struct MediaVisibleDatesKey: PreferenceKey {
@@ -108,31 +80,21 @@ struct MediaScrollWindowKey: PreferenceKey {
         let next = nextValue()
         value.top = max(value.top, next.top)
         value.bottom = max(value.bottom, next.bottom)
+        value.width = max(value.width, next.width)
     }
 }
 
 extension View {
-    /// Отдать наверх дату плитки и её место в кадре.
-    ///
-    /// Один `GeometryReader` на плитку, а не два: геометрия у обоих замеров
-    /// одна и та же, и второй проход стоил бы ровно столько же, сколько первый.
-    func reportsGridPosition(id: String, date: Date?, in window: MediaScrollWindow) -> some View {
+    /// Отдать наверх дату плитки, если она сейчас в кадре.
+    func reportsVisibleDate(_ date: Date?, in window: MediaScrollWindow) -> some View {
         background {
             GeometryReader { proxy in
-                let frame = proxy.frame(in: .named(MediaScrollWindow.space))
-                let isVisible = window.shows(frame)
+                let isVisible = window.shows(proxy.frame(in: .named(MediaScrollWindow.space)))
 
-                Color.clear
-                    .preference(
-                        key: MediaVisibleDatesKey.self,
-                        value: date.flatMap { isVisible ? MediaDateSpan($0) : nil }
-                    )
-                    .preference(
-                        key: MediaAnchorKey.self,
-                        value: isVisible
-                            ? MediaAnchor(id: id, distance: abs(frame.midY - window.center))
-                            : nil
-                    )
+                Color.clear.preference(
+                    key: MediaVisibleDatesKey.self,
+                    value: date.flatMap { isVisible ? MediaDateSpan($0) : nil }
+                )
             }
         }
     }
@@ -149,14 +111,15 @@ extension View {
         }
     }
 
-    /// Низ окна — высота списка. Модификатор вешается на сам скролл,
-    /// а не на его содержимое: содержимое длиннее экрана.
-    func reportsWindowBottom() -> some View {
+    /// Низ окна — высота списка, ширина окна — его ширина. Модификатор
+    /// вешается на сам скролл, а не на его содержимое: содержимое длиннее
+    /// экрана.
+    func reportsWindowSize() -> some View {
         background {
             GeometryReader { proxy in
                 Color.clear.preference(
                     key: MediaScrollWindowKey.self,
-                    value: MediaScrollWindow(bottom: proxy.size.height)
+                    value: MediaScrollWindow(bottom: proxy.size.height, width: proxy.size.width)
                 )
             }
         }

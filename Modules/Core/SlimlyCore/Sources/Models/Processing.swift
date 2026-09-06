@@ -382,6 +382,19 @@ public struct ProcessingResult: Sendable, Hashable, Identifiable {
         )
     }
 
+    /// Тот же результат под другим именем. Файл переезжает вместе с ним,
+    /// поэтому меняется и адрес: имя видно в шторке шаринга, а туда уходит
+    /// сам файл, а не строчка из списка.
+    public func renamed(to name: String, at url: URL) -> ProcessingResult {
+        ProcessingResult(
+            item: item,
+            outputByteCount: outputByteCount,
+            outputName: name,
+            outputURL: url,
+            destination: destination
+        )
+    }
+
     public var savedByteCount: Int64 { item.byteCount - outputByteCount }
 
     /// Доля, на которую файл похудел: 0.64 — это «−64%».
@@ -481,6 +494,16 @@ public struct ProcessingOutcome: Sendable, Hashable {
 
     /// Ни одного готового файла — итог показываем как неудачу.
     public var isEmpty: Bool { results.isEmpty }
+
+    /// Тот же итог с обновлённым файлом на прежнем месте списка: правка
+    /// одного результата не должна переставлять строки на экране.
+    public func replacing(_ result: ProcessingResult) -> ProcessingOutcome {
+        ProcessingOutcome(
+            request: request,
+            results: results.map { $0.id == result.id ? result : $0 },
+            failures: failures
+        )
+    }
 }
 
 public enum ProcessingEvent: Sendable {

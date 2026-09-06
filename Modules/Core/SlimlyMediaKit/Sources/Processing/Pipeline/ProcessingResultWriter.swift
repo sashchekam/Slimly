@@ -32,11 +32,9 @@ struct ProcessingResultWriter: ProcessingResultWriting {
         do {
             try await body(file)
 
-            let size = (try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-
             return ProcessingResult(
                 item: item,
-                outputByteCount: Int64(size),
+                outputByteCount: file.byteCount,
                 outputName: name,
                 outputURL: file,
                 destination: destination

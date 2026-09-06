@@ -67,11 +67,24 @@ struct CompressionWorker: CompressionPerforming {
                 settings: ImageEncodingSettings(
                     format: format,
                     quality: settings.imageQuality(level),
-                    maxPixelSize: settings.imageMaxPixelSize(level)
+                    maxPixelSize: settings.imageMaxPixelSize(level),
+                    paletteColors: settings.imagePaletteColors(level)
                 )
             )
+            try keepLighter(of: source, at: file)
             progress(1)
         }
+    }
+
+    /// Уже сжатый файл вторым проходом не облегчить: PNG из палитры, JPEG
+    /// с низким качеством и кадр мельче нашего предела выходят из кодировщика
+    /// тяжелее, чем вошли. В этом случае отдаём оригинал: «сжатие», которое
+    /// добавляет вес, пользы не приносит, а испортить кадр успевает.
+    private func keepLighter(of source: URL, at destination: URL) throws {
+        guard destination.byteCount >= source.byteCount else { return }
+
+        try FileManager.default.removeItem(at: destination)
+        try FileManager.default.copyItem(at: source, to: destination)
     }
 
     private func compressVideo(

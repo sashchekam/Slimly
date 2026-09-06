@@ -26,6 +26,7 @@ public struct SlimlyIcon: View {
         case chevronDown
         case arrowRight
         case eye
+        case pencil
         case trash
         case person
         case phone
@@ -256,6 +257,20 @@ private struct IconShape: Shape {
             )
             path.closeSubpath()
             path.addEllipse(in: CGRect(x: 9.4, y: 9.4, width: 5.2, height: 5.2))
+
+        case .pencil:
+            // Карандаш лежит по диагонали, грифелем вниз-влево: так он
+            // читается знаком правки, а не восклицательным знаком.
+            path.polyline([
+                CGPoint(x: 4.9, y: 15.6),
+                CGPoint(x: 16.4, y: 4.1),
+                CGPoint(x: 19.9, y: 7.6),
+                CGPoint(x: 8.4, y: 19.1),
+                CGPoint(x: 3.4, y: 20.6),
+            ])
+            path.closeSubpath()
+            // Поясок обоймы: без него силуэт остаётся просто стрелкой.
+            path.line(from: CGPoint(x: 13.6, y: 6.9), to: CGPoint(x: 17.1, y: 10.4))
 
         case .trash:
             path.line(from: CGPoint(x: 4.6, y: 7.4), to: CGPoint(x: 19.4, y: 7.4))

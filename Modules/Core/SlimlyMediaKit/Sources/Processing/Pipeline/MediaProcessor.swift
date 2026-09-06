@@ -11,6 +11,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
     private let output: any OutputStoring
     private let queue: any ProcessingQueueing
     private let scans: any ScanAssembling
+    private let workFiles: any WorkFileProviding
     private let simulatedFailure: any SimulatedFailureProviding
 
     init(
@@ -25,6 +26,7 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         self.output = output
         self.queue = queue
         self.scans = scans
+        self.workFiles = workFiles
         self.simulatedFailure = simulatedFailure
         workFiles.clear()
     }
@@ -92,6 +94,17 @@ public final class MediaProcessor: MediaProcessingService, @unchecked Sendable {
         }
 
         return stored
+    }
+
+    /// Переименовать готовый файл в рабочей папке.
+    ///
+    /// Только до сохранения: после него файл лежит уже не здесь, и трогать
+    /// его — работа «Файлов» и «Фото», а не наша.
+    public func rename(_ result: ProcessingResult, to name: String) async throws -> ProcessingResult {
+        guard let file = result.outputURL else { throw ProcessingError.outputMissing }
+
+        let moved = try workFiles.rename(file, to: name)
+        return result.renamed(to: name, at: moved)
     }
 
     // MARK: Очередь

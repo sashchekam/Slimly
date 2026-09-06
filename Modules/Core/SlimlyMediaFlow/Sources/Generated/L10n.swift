@@ -42,6 +42,11 @@ enum L10n {
     }
 
     enum Common {
+        /// Cancel
+        static var cancel: String {
+            tr("common.cancel")
+        }
+
         /// Done
         static var done: String {
             tr("common.done")
@@ -67,13 +72,6 @@ enum L10n {
         /// track ≈ %@
         static func trackEstimate(_ p1: String) -> String {
             tr("format.trackEstimate", p1)
-        }
-    }
-
-    enum Grid {
-        /// %lld per row
-        static func density(_ p1: Int) -> String {
-            tr("grid.density", p1)
         }
     }
 
@@ -123,6 +121,11 @@ enum L10n {
         /// The originals are still there
         static var originalsKept: String {
             tr("outcome.originalsKept")
+        }
+
+        /// Rename file %@
+        static func renameFile(_ p1: String) -> String {
+            tr("outcome.renameFile", p1)
         }
 
         /// Share all · %lld
@@ -200,11 +203,6 @@ enum L10n {
         /// No videos found
         static var emptyVideos: String {
             tr("picker.emptyVideos")
-        }
-
-        /// Grid
-        static var grid: String {
-            tr("picker.grid")
         }
 
         /// Only part of the library is open — these are just the files you granted access to.
@@ -338,6 +336,33 @@ enum L10n {
         }
     }
 
+    enum Rename {
+        /// Rename
+        static var apply: String {
+            tr("rename.apply")
+        }
+
+        /// Could not rename
+        static var failed: String {
+            tr("rename.failed")
+        }
+
+        /// File name
+        static var field: String {
+            tr("rename.field")
+        }
+
+        /// The %@ extension stays as it is
+        static func note(_ p1: String) -> String {
+            tr("rename.note", p1)
+        }
+
+        /// New name
+        static var title: String {
+            tr("rename.title")
+        }
+    }
+
     enum Save {
         /// Could not save
         static var failed: String {
@@ -359,6 +384,16 @@ enum L10n {
             tr("save.filesFolder")
         }
 
+        /// Save to gallery
+        static var gallery: String {
+            tr("save.gallery")
+        }
+
+        /// Saved to gallery
+        static var galleryDone: String {
+            tr("save.galleryDone")
+        }
+
         /// For now the files live only inside the app — without saving they will be lost
         static var hint: String {
             tr("save.hint")
@@ -367,16 +402,6 @@ enum L10n {
         /// Not everything was saved
         static var partial: String {
             tr("save.partial")
-        }
-
-        /// Save to Photos
-        static var photos: String {
-            tr("save.photos")
-        }
-
-        /// Saved to Photos
-        static var photosDone: String {
-            tr("save.photosDone")
         }
     }
 

@@ -15,6 +15,11 @@ enum L10n {
             tr("accessibility.back")
         }
 
+        /// Before and after comparison
+        static var compare: String {
+            tr("accessibility.compare")
+        }
+
         /// Compression level
         static var compressionLevel: String {
             tr("accessibility.compressionLevel")

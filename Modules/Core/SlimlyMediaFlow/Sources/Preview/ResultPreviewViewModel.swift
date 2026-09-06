@@ -19,6 +19,10 @@ public final class ResultPreviewViewModel {
 
     public let result: ProcessingResult
     public var side: Side = .after
+    /// Где стоит линия шторки: доля ширины окна слева от неё. Пополам —
+    /// потому что до первого движения ни одной из сторон не отдают
+    /// предпочтения.
+    public var comparePosition: Double = 0.5
 
     /// Кадры держим данными, а не картинками: декодирование — дело View,
     /// а ViewModel не должна зависеть от SwiftUI.
@@ -54,6 +58,20 @@ public final class ResultPreviewViewModel {
     /// Пара «до / после» есть только там, где результат сопоставим
     /// с оригиналом по картинке.
     public var showsSides: Bool { FlowCopy.allowsComparison(kind) }
+
+    /// Сравнение идёт прямо в окне — шторкой, а не подменой кадра.
+    /// Так можно только со снимком: у ролика вместо кадра плеер, и двух
+    /// сразу — с разъезжающимся временем — на экране не бывает.
+    public var comparesInline: Bool { showsSides && item.kind == .photo }
+
+    /// Шторку рисуем, когда приехали оба кадра: до этого делить нечего,
+    /// и в окне стоит обычная заглушка.
+    public var showsComparison: Bool {
+        comparesInline && beforeData != nil && afterData != nil
+    }
+
+    /// Переключатель остаётся там, где обе стороны в одно окно не влезают.
+    public var showsSidePicker: Bool { showsSides && !comparesInline }
 
     /// Оригинал берём из медиатеки, результат — из файла: ассетом он ещё
     /// не стал, а если и стал, найти его по имени было бы гаданием.
@@ -119,7 +137,7 @@ public final class ResultPreviewViewModel {
     /// как придётся, и «+140%» читалось бы как ошибка, а не как факт.
     public var showsDelta: Bool { kind == .compression }
 
-    public var isShowingAfter: Bool { !showsSides || side == .after }
+    public var isShowingAfter: Bool { !showsSidePicker || side == .after }
 
     /// Расширение готового файла: «PDF», «HEIC». Формат обработки в маршрут
     /// не приезжает, а имя файла его уже несёт.
@@ -140,7 +158,7 @@ public final class ResultPreviewViewModel {
     /// Пока кадр не приехал, подписываем, что именно грузится: пустая
     /// штриховка без подписи читалась бы как ошибка.
     public var placeholderLabel: String {
-        guard isShowingAfter else { return L10n.Badge.original }
+        guard isShowingAfter else { return beforePlaceholderLabel }
         return switch kind {
         case .compression: L10n.Badge.compressed
         case .conversion:
@@ -150,14 +168,24 @@ public final class ResultPreviewViewModel {
         }
     }
 
-    public var chipText: String {
-        guard isShowingAfter else {
-            return L10n.Preview.beforeCaption(beforeText)
-        }
-        return kind == .compression
+    /// У шторки подписи стоят по обе стороны от линии, поэтому каждая
+    /// собирается сама по себе, а не выбирается по текущей стороне.
+    public var beforeChipText: String {
+        L10n.Preview.beforeCaption(beforeText)
+    }
+
+    public var afterChipText: String {
+        kind == .compression
             ? L10n.Preview.afterCaption(afterText)
             : "\(outputFormat.lowercased()) · \(afterText)"
     }
+
+    public var chipText: String {
+        isShowingAfter ? afterChipText : beforeChipText
+    }
+
+    /// Левая половина шторки — всегда оригинал.
+    public var beforePlaceholderLabel: String { L10n.Badge.original }
 
     public var note: String {
         guard isShowingAfter else {

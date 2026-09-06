@@ -23,10 +23,14 @@ public struct FormatStepView: View {
                     Text(L10n.Format.title).font(.slimlySectionTitle)
                     formats
 
-                    Text(viewModel.config.note)
+                    Text(viewModel.note)
                         .font(.slimlyCaptionSmall)
                         .foregroundStyle(SlimlyColor.neutral600)
                         .fixedSize(horizontal: false, vertical: true)
+                        // Подпись меняется вместе с выбором, и список под ней
+                        // на каждое нажатие перескакивал бы на новую высоту.
+                        // Такой сдвиг лучше проехать, чем перепрыгнуть.
+                        .animation(.easeOut(duration: 0.18), value: viewModel.note)
 
                     fileList
                 }

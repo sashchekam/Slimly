@@ -58,6 +58,18 @@ public struct OutcomeView: View {
         .slimlyScreen()
         // Возвращаться некуда: позади — экран уже закончившейся обработки.
         .backSwipeDisabled()
+        .alert(Text(L10n.Rename.title), isPresented: $viewModel.isRenaming) {
+            TextField(L10n.Rename.field, text: $viewModel.nameDraft)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            Button(L10n.Rename.apply) { viewModel.applyRename() }
+            Button(L10n.Common.cancel, role: .cancel) { }
+        } message: {
+            if let note = viewModel.renameNote {
+                Text(note)
+            }
+        }
     }
 
     /// Тост живёт над кнопками, а не у нижнего края: общий `slimlyToast`
@@ -174,9 +186,10 @@ public struct OutcomeView: View {
         }
     }
 
-    /// Строка результата — две зоны сразу: тап по содержимому открывает
-    /// просмотр, тап по иконке справа — системную шторку. Поэтому строка
-    /// не обёрнута в одну кнопку: вложенная кнопка в SwiftUI не нажимается.
+    /// Строка результата — три зоны сразу: тап по содержимому открывает
+    /// просмотр, карандаш меняет имя, иконка справа зовёт системную шторку.
+    /// Поэтому строка не обёрнута в одну кнопку: вложенная кнопка в SwiftUI
+    /// не нажимается.
     private func resultRow(_ result: ProcessingResult) -> some View {
         HStack(spacing: 12) {
             // Кнопкой содержимое становится, только если просмотр есть:
@@ -185,7 +198,7 @@ public struct OutcomeView: View {
                 Button {
                     viewModel.openPreview(result)
                 } label: {
-                    label(for: result, showsPreview: true)
+                    label(for: result)
                         // Без своей формы кнопка ловит нажатие только по самим
                         // тексту и картинке — промежутки между ними проваливались
                         // бы мимо, хотя выглядят частью той же строки.
@@ -193,7 +206,11 @@ public struct OutcomeView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                label(for: result, showsPreview: false)
+                label(for: result)
+            }
+
+            if viewModel.canRename {
+                renameButton(result)
             }
 
             if let url = viewModel.shareURL(for: result) {
@@ -214,14 +231,33 @@ public struct OutcomeView: View {
         .slimlyRow()
     }
 
-    private func label(for result: ProcessingResult, showsPreview: Bool) -> some View {
+    /// Имя правят до сохранения — после него кнопка уходит, и её место
+    /// в строке занимает шаринг: менять имя копии, уже разложенной по месту,
+    /// приложение не умеет.
+    private func renameButton(_ result: ProcessingResult) -> some View {
+        Button {
+            viewModel.rename(result)
+        } label: {
+            SlimlyIcon(.pencil, width: 17)
+                .foregroundStyle(SlimlyColor.neutral500)
+                .frame(width: 30, height: 30)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(L10n.Outcome.renameFile(viewModel.name(for: result))))
+        // Иконка тянет вокруг себя область нажатия, а стоять должна там же,
+        // где стояла бы одна: отрицательные отступы возвращают ей шаг строки.
+        .padding(.vertical, -4)
+        .padding(.horizontal, -6)
+    }
+
+    private func label(for result: ProcessingResult) -> some View {
         MediaFileLabel(
             item: result.item,
             name: viewModel.name(for: result),
             detail: viewModel.detail(for: result),
             thumbnail: viewModel.thumbnails,
-            delta: viewModel.delta(for: result),
-            showsPreview: showsPreview
+            delta: viewModel.delta(for: result)
         )
     }
 

@@ -27,6 +27,7 @@
 | `flow_files_picked` | `count`, `input_mb`, `tool` | Файлы выбраны, инструмент пошёл к настройкам. |
 | `flow_originals_deleted` | `count`, `tool` | Оригиналы удалены после сохранения: место освобождено по-настоящему, а не «сжато и оставлено рядом». |
 | `flow_result_previewed` | `tool` | Открыли просмотр готового файла — результату не поверили на слово. |
+| `flow_result_renamed` | `tool` | Готовому файлу поменяли имя. |
 | `flow_result_saved` | `count`, `destination`, `output_mb`, `tool` | Готовые файлы сохранены — ради этого затевался весь флоу. |
 | `flow_run_cancelled` | `percent`, `tool` | С экрана обработки ушли, не дождавшись конца: уход рвёт поток, и готовых файлов после него не остаётся. |
 | `flow_run_finished` | `count`, `duration_ms`, `failed`, `input_mb`, `output_mb`, `tool` | Обработка дошла до конца. |

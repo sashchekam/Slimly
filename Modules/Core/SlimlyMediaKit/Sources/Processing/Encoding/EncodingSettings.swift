@@ -9,6 +9,7 @@ import SlimlyCore
 protocol CompressionSettingsProviding: Sendable {
     func imageQuality(_ level: CompressionLevel) -> Double
     func imageMaxPixelSize(_ level: CompressionLevel) -> Int
+    func imagePaletteColors(_ level: CompressionLevel) -> Int
     func videoShortSide(_ level: CompressionLevel) -> Int
     func videoBitrateFactor(_ level: CompressionLevel) -> Double
 }
@@ -24,6 +25,13 @@ struct EncodingSettings: CompressionSettingsProviding {
     /// именно уменьшение кадра, а не качество, даёт основной выигрыш в весе.
     func imageMaxPixelSize(_ level: CompressionLevel) -> Int {
         Int(interpolate(level.value, from: 4032, to: 1600).rounded())
+    }
+
+    /// Длина палитры PNG. У формата без потерь качество не работает, и вес
+    /// задаёт именно она: 256 цветов плоская графика переживает без единого
+    /// изменения, а 64 заметны только на плавных переходах.
+    func imagePaletteColors(_ level: CompressionLevel) -> Int {
+        Int(interpolate(level.value, from: 256, to: 64).rounded())
     }
 
     /// Короткая сторона видео: до середины шкалы держим 1080p,

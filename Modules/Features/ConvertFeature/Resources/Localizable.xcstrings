@@ -261,6 +261,71 @@
         }
       }
     },
+    "photoFormat.source": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사진"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Фото"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片"
+          }
+        }
+      }
+    },
     "photoFormat.title": {
       "extractionState": "manual",
       "localizations": {
@@ -462,61 +527,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC ergibt eine kleinere Datei, H.264 öffnet sich überall. Das ist Neucodierung, keine umbenannte Endung."
+            "value": "Das ist Neucodierung, keine umbenannte Endung."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC gives a smaller size, H.264 opens everywhere. This is re-encoding, not a renamed extension."
+            "value": "This is re-encoding, not a renamed extension."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC ocupa menos, H.264 se abre en todas partes. Es recodificación, no un cambio de extensión."
+            "value": "Es recodificación, no un cambio de extensión."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC donne un fichier plus petit, H.264 s’ouvre partout. C’est un réencodage, pas un changement d’extension."
+            "value": "C’est un réencodage, pas un changement d’extension."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC pesa meno, H.264 si apre ovunque. È una ricodifica, non un cambio di estensione."
+            "value": "È una ricodifica, non un cambio di estensione."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC はサイズが小さく、H.264 はどこでも開けます。拡張子の変更ではなく再エンコードです。"
+            "value": "拡張子の変更ではなく再エンコードです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC는 용량이 작고 H.264는 어디서나 열립니다. 확장자 변경이 아니라 재인코딩입니다."
+            "value": "확장자 변경이 아니라 재인코딩입니다."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC gera arquivos menores, H.264 abre em qualquer lugar. É recodificação, não troca de extensão."
+            "value": "É recodificação, não troca de extensão."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC даёт меньший вес, H.264 открывается везде. Перекодирование, не смена расширения."
+            "value": "Это перекодирование, а не смена расширения."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "HEVC 体积更小，H.264 处处可开。这是重新编码，而非改扩展名。"
+            "value": "这是重新编码，而非改扩展名。"
           }
         }
       }
@@ -647,6 +712,201 @@
           "stringUnit": {
             "state": "translated",
             "value": "容器和编码"
+          }
+        }
+      }
+    },
+    "videoNote.movHevc": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apples Container: praktisch für iMovie und Final Cut. So leicht wie HEVC in MP4, öffnet sich unter Windows und Android aber schlechter."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple’s container: handy for iMovie and Final Cut. Weighs like HEVC in MP4, but opens worse on Windows and Android."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El contenedor de Apple: cómodo para iMovie y Final Cut. Pesa como HEVC en MP4, pero se abre peor en Windows y Android."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le conteneur d’Apple : pratique pour iMovie et Final Cut. Aussi léger que HEVC en MP4, mais s’ouvre moins bien sous Windows et Android."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il contenitore di Apple: comodo per iMovie e Final Cut. Pesa come HEVC in MP4, ma si apre peggio su Windows e Android."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple のコンテナ。iMovie や Final Cut に便利です。容量は MP4 の HEVC と同じで、Windows や Android では開きにくくなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple의 컨테이너입니다. iMovie와 Final Cut에 편리합니다. 용량은 MP4의 HEVC와 같지만 Windows와 Android에서는 잘 열리지 않습니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O contêiner da Apple: prático para iMovie e Final Cut. Pesa como o HEVC em MP4, mas abre pior no Windows e no Android."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Контейнер Apple: удобен для iMovie и Final Cut. Весит как HEVC в MP4, но на Windows и Android открывается хуже."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 的容器：适合 iMovie 和 Final Cut。体积与 MP4 中的 HEVC 相当，但在 Windows 和 Android 上更难打开。"
+          }
+        }
+      }
+    },
+    "videoNote.mp4H264": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet sich überall: Telefone, Fernseher, Schnittprogramme, alte Player. Bei gleicher Qualität schwerer als HEVC."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens everywhere: phones, TVs, editors, old players. At the same quality it weighs more than HEVC."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se abre en todas partes: teléfonos, televisores, editores y reproductores antiguos. Con la misma calidad pesa más que HEVC."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S’ouvre partout : téléphones, téléviseurs, logiciels de montage, vieux lecteurs. À qualité égale, plus lourd que HEVC."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si apre ovunque: telefoni, TV, editor, vecchi lettori. A parità di qualità pesa più di HEVC."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "どこでも開けます。スマホ、テレビ、編集ソフト、古いプレーヤーまで。同じ画質では HEVC より容量が大きくなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "어디서나 열립니다. 휴대폰, TV, 편집 프로그램, 오래된 플레이어까지. 같은 화질에서는 HEVC보다 용량이 큽니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre em qualquer lugar: celulares, TVs, editores e players antigos. Com a mesma qualidade, pesa mais que o HEVC."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Откроется везде: телефоны, телевизоры, редакторы, старые плееры. При том же качестве весит больше, чем HEVC."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "处处可开：手机、电视、剪辑软件和旧播放器都行。同等画质下比 HEVC 更大。"
+          }
+        }
+      }
+    },
+    "videoNote.mp4Hevc": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dasselbe MP4, bei gleicher Qualität etwa halb so groß. Geräte von vor 2015 spielen es womöglich nicht ab."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same MP4, about half the weight at the same quality. Devices older than 2015 may not play it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El mismo MP4, con la misma calidad pesa la mitad. Los dispositivos anteriores a 2015 quizá no lo reproduzcan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le même MP4, deux fois plus léger à qualité égale. Les appareils antérieurs à 2015 peuvent ne pas le lire."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lo stesso MP4, a parità di qualità pesa la metà. I dispositivi precedenti al 2015 potrebbero non riprodurlo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同じ MP4 で、同じ画質なら容量は約半分。2015 年より前の機器では再生できないことがあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 MP4지만 같은 화질에서 용량은 절반 정도입니다. 2015년 이전 기기에서는 재생되지 않을 수 있습니다."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O mesmo MP4, com metade do tamanho na mesma qualidade. Aparelhos anteriores a 2015 podem não reproduzir."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тот же MP4, но при том же качестве вдвое легче. Устройства старше 2015 года могут его не открыть."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同样是 MP4，同等画质下体积约减半。2015 年前的设备可能打不开。"
           }
         }
       }
