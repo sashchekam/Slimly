@@ -6,6 +6,8 @@ import SwiftUI
 public struct OutcomeView: View {
     @State
     private var viewModel: OutcomeViewModel
+    @Environment(\.openURL)
+    private var openURL
 
     public init(viewModel: OutcomeViewModel) {
         _viewModel = State(wrappedValue: viewModel)
@@ -91,6 +93,12 @@ public struct OutcomeView: View {
                             // пока на её месте всплывает тост: это один жест,
                             // а не два независимых.
                             .transition(.scale(scale: 0.96).combined(with: .opacity))
+                    } else if let url = viewModel.filesAppURL {
+                        // Место сохранения — то же место в раскладке: главным
+                        // действием вместо «сохранить» становится «посмотреть,
+                        // куда сохранилось».
+                        openFilesButton(url)
+                            .transition(.scale(scale: 0.96).combined(with: .opacity))
                     }
 
                     // После сохранения главным действием остаётся выход,
@@ -124,6 +132,24 @@ public struct OutcomeView: View {
         }
         .buttonStyle(.slimlyPrimary)
         .disabled(viewModel.isSaving)
+    }
+
+    /// Сохранить файл мало: папку приложения в «Файлах» ещё нужно найти
+    /// среди прочих, и подпись под списком проговаривает путь, а кнопка его
+    /// проходит. Промах системы не молчит — о нём говорит тост.
+    private func openFilesButton(_ url: URL) -> some View {
+        Button {
+            openURL(url) { opened in
+                viewModel.didOpenFilesApp(opened)
+            }
+        } label: {
+            HStack(spacing: 9) {
+                SlimlyIcon(.folder, width: 17)
+
+                Text(L10n.Save.openFiles)
+            }
+        }
+        .buttonStyle(.slimlyPrimary)
     }
 
     private var saveIcon: SlimlyIcon.Kind {

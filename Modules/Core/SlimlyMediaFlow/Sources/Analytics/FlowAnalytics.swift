@@ -121,6 +121,15 @@ public struct FlowAnalytics: FeatureAnalytics {
         track("result_renamed", ["tool": toolValue])
     }
 
+    /// Из итога ушли в «Файлы» — сохранённый файл ещё нужно найти,
+    /// и подписи под списком для этого не хватило.
+    ///
+    /// Событие живёт рядом с сохранением не случайно: рядом с ним видно,
+    /// какую долю сохранений человек не считает законченным делом.
+    public func didOpenFilesApp() {
+        track("files_app_opened", ["tool": toolValue])
+    }
+
     /// Оригиналы удалены после сохранения: место освобождено по-настоящему,
     /// а не «сжато и оставлено рядом».
     public func didDeleteOriginals(_ count: Int) {

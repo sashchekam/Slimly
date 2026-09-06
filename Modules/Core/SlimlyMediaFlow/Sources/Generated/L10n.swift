@@ -399,6 +399,16 @@ enum L10n {
             tr("save.hint")
         }
 
+        /// Couldn’t open Files
+        static var openFailed: String {
+            tr("save.openFailed")
+        }
+
+        /// Open in Files
+        static var openFiles: String {
+            tr("save.openFiles")
+        }
+
         /// Not everything was saved
         static var partial: String {
             tr("save.partial")

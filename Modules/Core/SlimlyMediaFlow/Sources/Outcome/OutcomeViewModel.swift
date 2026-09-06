@@ -28,6 +28,7 @@ public final class OutcomeViewModel {
 
     private let library: any MediaLibrary
     private let service: any MediaProcessingService
+    private let filesApp: any FilesAppLinking
     private let analytics: FlowAnalytics
     private let router: Router
     /// Просмотр результата — не обязательная часть флоу: маршрут приходит
@@ -42,6 +43,7 @@ public final class OutcomeViewModel {
         outcome: ProcessingOutcome,
         library: any MediaLibrary,
         service: any MediaProcessingService,
+        filesApp: any FilesAppLinking = FilesAppLink(),
         analytics: FlowAnalytics,
         router: Router,
         preview: ((ProcessingResult) -> FlowDestination)? = nil
@@ -49,6 +51,7 @@ public final class OutcomeViewModel {
         self.outcome = outcome
         self.library = library
         self.service = service
+        self.filesApp = filesApp
         self.analytics = analytics
         self.router = router
         self.preview = preview
@@ -313,6 +316,32 @@ public final class OutcomeViewModel {
             guard !Task.isCancelled else { return }
             toast = nil
         }
+    }
+
+    // MARK: «Файлы»
+
+    /// Куда ведёт кнопка «Открыть в Файлах». Есть только после сохранения
+    /// и только у того, что легло в папку приложения: до сохранения
+    /// открывать нечего, а ушедшее в медиатеку «Файлы» не покажут.
+    public var filesAppURL: URL? {
+        guard isSaved, destination == .files, let file = results.first?.outputURL else { return nil }
+
+        return filesApp.url(for: file)
+    }
+
+    /// Система ответила на попытку открыть «Файлы».
+    ///
+    /// Отказ — не ошибка человека, но и не событие: схема у «Файлов»
+    /// недокументированная, и перестань она работать, отчёт показал бы
+    /// всплеск интереса к папке вместо сломанной кнопки. Поэтому наверх
+    /// уходит только удавшийся переход, а немой тап объясняет тост.
+    public func didOpenFilesApp(_ opened: Bool) {
+        guard opened else {
+            say(L10n.Save.openFailed)
+            return
+        }
+
+        analytics.didOpenFilesApp()
     }
 
     // MARK: Удаление оригиналов
