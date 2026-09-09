@@ -11,8 +11,7 @@ import SlimlyNavigation
 public enum CompressFeature {
     @MainActor
     public static func resolver(
-        mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService,
+        services: MediaFlowServices,
         previewRenderer: any MediaPreviewRenderer,
         analytics: any AnalyticsService,
         viewers: MediaViewers
@@ -27,8 +26,9 @@ public enum CompressFeature {
             case .picker:
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
-                        config: pickerConfig,
-                        library: mediaLibrary,
+                        config: pickerConfig(limit: services.limits.compressFiles),
+                        library: services.library,
+                        pro: services.pro,
                         analytics: flow,
                         router: router,
                         // Степень сжатия — шторка поверх выбора: настройка
@@ -51,10 +51,10 @@ public enum CompressFeature {
                 ProcessingView(
                     viewModel: ProcessingViewModel(
                         request: request,
-                        service: processingService,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         outcome: { CompressRoute.outcome($0) }
                     )
                 )
@@ -63,8 +63,8 @@ public enum CompressFeature {
                 OutcomeView(
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
-                        library: mediaLibrary,
-                        service: processingService,
+                        library: services.library,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
                         preview: { .push(CompressRoute.preview($0)) }
@@ -76,7 +76,7 @@ public enum CompressFeature {
                     viewModel: ResultPreviewViewModel(
                         result: result,
                         kind: .compression,
-                        library: mediaLibrary,
+                        library: services.library,
                         previews: previewRenderer,
                         router: router
                     ),
@@ -86,12 +86,12 @@ public enum CompressFeature {
         }
     }
 
-    private static var pickerConfig: MediaPickerConfig {
+    private static func pickerConfig(limit: Int) -> MediaPickerConfig {
         MediaPickerConfig(
             title: L10n.Picker.title,
             hint: L10n.Picker.hint,
             kind: nil,
-            limit: 5,
+            limit: limit,
             noun: .file
         )
     }

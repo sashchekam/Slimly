@@ -21,6 +21,15 @@ public struct ProfileAnalytics: FeatureAnalytics {
         track("statistics_opened", ["source": .text(source.rawValue)])
     }
 
+    /// Нажали на предложение тарифа в плашке профиля.
+    ///
+    /// Второй вход в подписку рядом с тем, что в шаге выбора файлов: там
+    /// в предел упираются, а сюда приходят посмотреть на себя — и спрос
+    /// из этих двух мест означает разное.
+    public func didOpenProOffer() {
+        track("pro_offer_opened")
+    }
+
     /// Сменили срез времени. Умолчание — 90 дней; если его почти всегда
     /// меняют, значит выбрано неверно.
     public func didChangeRange(_ range: StatsRange) {

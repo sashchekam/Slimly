@@ -304,6 +304,28 @@ enum L10n {
         }
     }
 
+    enum Pro {
+        /// Up to %@ at a time — Slimly Pro lifts the limit
+        static func limitFoot(_ p1: String) -> String {
+            tr("pro.limitFoot", p1)
+        }
+
+        /// Up to %@ at a time · Slimly Pro
+        static func limitFootPro(_ p1: String) -> String {
+            tr("pro.limitFootPro", p1)
+        }
+
+        /// PRO · NO LIMIT
+        static var offer: String {
+            tr("pro.offer")
+        }
+
+        /// Slimly Pro is coming soon
+        static var soon: String {
+            tr("pro.soon")
+        }
+    }
+
     enum Progress {
         /// Cancel
         static var cancel: String {

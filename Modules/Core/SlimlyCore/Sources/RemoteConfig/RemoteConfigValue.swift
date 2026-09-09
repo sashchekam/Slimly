@@ -10,6 +10,26 @@ public protocol RemoteConfigValue: Sendable {
     init?(remoteConfigText: String)
 }
 
+/// Значение, которое приезжает не числом и не флагом, а объектом JSON.
+///
+/// Отдельный протокол, а не `where Self: Decodable`, — по той же причине,
+/// что и у `CodableStorageValue`: `Decodable` есть и у примитивов, и выбор
+/// реализации стал бы неочевидным.
+///
+/// Набор связанных значений так и правят — вместе, одним полем в веб-консоли:
+/// у каждого поля своё умолчание в самом типе, поэтому неполный и даже
+/// испорченный объект оставляет остальные значения на месте.
+public protocol JSONRemoteConfigValue: RemoteConfigValue, Decodable { }
+
+public extension JSONRemoteConfigValue {
+    init?(remoteConfigText: String) {
+        guard let data = remoteConfigText.data(using: .utf8),
+              let value = try? JSONDecoder().decode(Self.self, from: data) else { return nil }
+
+        self = value
+    }
+}
+
 extension String: RemoteConfigValue {
     public init?(remoteConfigText: String) {
         self = remoteConfigText

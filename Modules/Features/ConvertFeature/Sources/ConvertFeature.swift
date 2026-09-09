@@ -7,8 +7,7 @@ import SlimlyNavigation
 public enum ConvertFeature {
     @MainActor
     public static func resolver(
-        mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService,
+        services: MediaFlowServices,
         previewRenderer: any MediaPreviewRenderer,
         analytics: any AnalyticsService,
         viewers: MediaViewers
@@ -18,8 +17,9 @@ public enum ConvertFeature {
             case let .picker(kind):
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
-                        config: pickerConfig(kind),
-                        library: mediaLibrary,
+                        config: pickerConfig(kind, limit: limit(kind, services.limits)),
+                        library: services.library,
+                        pro: services.pro,
                         analytics: FlowAnalytics(analytics: analytics, tool: tool(for: kind)),
                         router: router,
                         destination: { .push(ConvertRoute.format(kind: kind, items: $0)) }
@@ -33,7 +33,7 @@ public enum ConvertFeature {
                         config: formatConfig(kind, items: items),
                         items: items,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         preview: { .push(ConvertRoute.sourcePreview($0)) },
                         run: { ConvertRoute.run($0) }
                     )
@@ -43,7 +43,7 @@ public enum ConvertFeature {
                 SourcePreviewView(
                     viewModel: SourcePreviewViewModel(
                         item: item,
-                        library: mediaLibrary,
+                        library: services.library,
                         router: router
                     ),
                     viewer: viewers.file,
@@ -54,10 +54,10 @@ public enum ConvertFeature {
                 ProcessingView(
                     viewModel: ProcessingViewModel(
                         request: request,
-                        service: processingService,
+                        service: services.processing,
                         analytics: FlowAnalytics(analytics: analytics, tool: tool(for: request)),
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         outcome: { ConvertRoute.outcome($0) }
                     )
                 )
@@ -66,8 +66,8 @@ public enum ConvertFeature {
                 OutcomeView(
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
-                        library: mediaLibrary,
-                        service: processingService,
+                        library: services.library,
+                        service: services.processing,
                         analytics: FlowAnalytics(analytics: analytics, tool: tool(for: outcome.request)),
                         router: router,
                         preview: { .push(ConvertRoute.preview($0)) }
@@ -79,7 +79,7 @@ public enum ConvertFeature {
                     viewModel: ResultPreviewViewModel(
                         result: result,
                         kind: .conversion,
-                        library: mediaLibrary,
+                        library: services.library,
                         previews: previewRenderer,
                         router: router
                     ),
@@ -105,14 +105,14 @@ public enum ConvertFeature {
 
     // MARK: Настройки шагов
 
-    private static func pickerConfig(_ kind: ConvertKind) -> MediaPickerConfig {
+    private static func pickerConfig(_ kind: ConvertKind, limit: Int) -> MediaPickerConfig {
         switch kind {
         case .photo:
             MediaPickerConfig(
                 title: L10n.Photo.title,
                 hint: L10n.Photo.hint,
                 kind: .photo,
-                limit: 5,
+                limit: limit,
                 noun: .photo
             )
         case .video:
@@ -120,10 +120,14 @@ public enum ConvertFeature {
                 title: L10n.Video.title,
                 hint: L10n.Video.hint,
                 kind: .video,
-                limit: 3,
+                limit: limit,
                 noun: .video
             )
         }
+    }
+
+    private static func limit(_ kind: ConvertKind, _ limits: MediaFlowLimits) -> Int {
+        kind == .photo ? limits.convertPhotos : limits.convertVideos
     }
 
     private static func formatConfig(_ kind: ConvertKind, items: [MediaItem]) -> FormatStepConfig {

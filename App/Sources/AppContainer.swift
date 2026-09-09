@@ -133,6 +133,24 @@ final class AppContainer {
                 : AnyRoute(OnboardingRoute.tour)
         )
 
+        // Покупок в приложении ещё нет: в релизе подписки не бывает,
+        // а в отладочной сборке её включают крутилкой в меню — иначе
+        // пределы Pro нечем увидеть на настоящих экранах.
+        #if DEBUG
+        let pro: any ProSubscription = StoredProSubscription(storage: storage)
+        #else
+        let pro: any ProSubscription = NoProSubscription()
+        #endif
+
+        // Медиатека, обработчик, конфиг и тариф нужны каждому инструменту
+        // и в одном и том же составе — резолверы получают их одним значением.
+        let flowServices = MediaFlowServices(
+            library: mediaLibrary,
+            processing: processing,
+            remoteConfig: remoteConfig,
+            pro: pro
+        )
+
         // Плеер превью знает медиатеку, из которой пришёл файл: ролик она
         // отдаёт ссылкой, и другого экземпляра для этого заводить незачем.
         let viewers = MediaViewers(
@@ -154,34 +172,31 @@ final class AppContainer {
                 analytics: analytics
             ),
             CompressFeature.resolver(
-                mediaLibrary: mediaLibrary,
-                processingService: processing,
+                services: flowServices,
                 previewRenderer: previewRenderer,
                 analytics: analytics,
                 viewers: viewers
             ),
             ConvertFeature.resolver(
-                mediaLibrary: mediaLibrary,
-                processingService: processing,
+                services: flowServices,
                 previewRenderer: previewRenderer,
                 analytics: analytics,
                 viewers: viewers
             ),
             AudioFeature.resolver(
-                mediaLibrary: mediaLibrary,
-                processingService: processing,
+                services: flowServices,
                 analytics: analytics,
                 viewers: viewers
             ),
             ScanFeature.resolver(
-                mediaLibrary: mediaLibrary,
-                processingService: processing,
+                services: flowServices,
                 analytics: analytics,
                 viewers: viewers
             ),
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
                 processingService: processing,
+                pro: pro,
                 localization: localization,
                 analytics: analytics,
                 debugMenu: Self.debugMenuRoute

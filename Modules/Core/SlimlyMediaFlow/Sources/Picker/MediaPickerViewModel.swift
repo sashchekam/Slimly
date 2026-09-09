@@ -46,6 +46,7 @@ public final class MediaPickerViewModel {
     public private(set) var albumID = MediaAlbum.recentID
     public private(set) var access: MediaAccess = .notDetermined
     public private(set) var isLoading = true
+    public private(set) var toast: String?
     /// Догрузка следующей страницы: сетка уже видна, поэтому индикатор
     /// у неё свой, под последним рядом.
     public private(set) var isLoadingMore = false
@@ -72,19 +73,28 @@ public final class MediaPickerViewModel {
     private var pageTask: Task<Void, Never>?
 
     private let library: any MediaLibrary
+    /// Тариф спрашивают здесь, а не в резолвере: предел уже приехал числом,
+    /// а экрану нужно ещё и то, откуда это число взялось, — про бесплатный
+    /// он говорит иначе, чем про оплаченный.
+    private let pro: any ProSubscription
     private let analytics: FlowAnalytics
     private let router: Router
     private let destination: ([MediaItem]) -> FlowDestination
 
+    @ObservationIgnored
+    private var toastTask: Task<Void, Never>?
+
     public init(
         config: MediaPickerConfig,
         library: any MediaLibrary,
+        pro: any ProSubscription = NoProSubscription(),
         analytics: FlowAnalytics,
         router: Router,
         destination: @escaping ([MediaItem]) -> FlowDestination
     ) {
         self.config = config
         self.library = library
+        self.pro = pro
         self.analytics = analytics
         self.router = router
         self.destination = destination
@@ -259,6 +269,40 @@ public final class MediaPickerViewModel {
 
     public var limitFraction: Double {
         min(Double(selection.count) / Double(config.limit), 1)
+    }
+
+    /// Подпись под сеткой: сколько файлов берём за раз и откуда это число.
+    /// Предел без объяснения читается как поломка приложения, а не как тариф.
+    public var limitFootnote: String {
+        let limit = CountFormatter.string(config.limit, config.noun)
+        return pro.isActive ? L10n.Pro.limitFootPro(limit) : L10n.Pro.limitFoot(limit)
+    }
+
+    // MARK: Тариф
+
+    /// Предложение стоит рядом со счётчиком — там, где предел и виден.
+    /// Подписчику предлагать нечего: у него это число уже своё.
+    public var showsProOffer: Bool { !pro.isActive }
+
+    public var proOfferTitle: String { L10n.Pro.offer }
+
+    /// Покупок в приложении ещё нет, поэтому нажатие ведёт не на пейволл,
+    /// а в тост: пилюля называет, что даёт тариф, а тост — когда его можно
+    /// будет купить. Открывать экран, за которым ничего не продаётся, хуже,
+    /// чем честно сказать «пока нельзя».
+    public func openProOffer() {
+        analytics.didOpenProOffer()
+        say(L10n.Pro.soon)
+    }
+
+    private func say(_ text: String) {
+        toastTask?.cancel()
+        toast = text
+        toastTask = Task {
+            try? await Task.sleep(for: .seconds(2.6))
+            guard !Task.isCancelled else { return }
+            toast = nil
+        }
     }
 
     public var ctaTitle: String {

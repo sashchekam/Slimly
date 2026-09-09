@@ -6,10 +6,15 @@ import SlimlyNavigation
 @MainActor
 @Observable
 public final class ScanIntroViewModel {
+    /// Сколько страниц можно взять из галереи — про это написано в подсказке
+    /// под кнопкой, поэтому число нужно самой шторке, а не только источнику.
+    public let pageLimit: Int
+
     private let analytics: ScanAnalytics
     private let router: Router
 
-    public init(analytics: ScanAnalytics, router: Router) {
+    public init(pageLimit: Int, analytics: ScanAnalytics, router: Router) {
+        self.pageLimit = pageLimit
         self.analytics = analytics
         self.router = router
     }

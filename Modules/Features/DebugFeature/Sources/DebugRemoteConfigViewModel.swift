@@ -1,3 +1,4 @@
+import DebugFeatureInterface
 import Foundation
 import Observation
 import SlimlyCore
@@ -16,15 +17,23 @@ public final class DebugRemoteConfigViewModel {
 
         public var isOverridden: Bool { overrideText != nil }
 
+        /// Действующее значение, разложенное по строкам, — если в нём
+        /// объект. Строка списка показывает его целиком, а не хвостом
+        /// в углу: за коротким `{"scan_pages"…` не видно ничего.
+        public let prettyValue: String?
+
         /// Действующее значение — то, что получит владелец ключа.
         /// Прочерк значит «источник промолчал»: в дело пойдёт умолчание
         /// самого ключа, а его знает только объявивший ключ код.
         public var value: String { overrideText ?? remoteText ?? "—" }
 
+        public var isObject: Bool { prettyValue != nil }
+
         public var source: String {
             switch (isOverridden, remoteText) {
             case (true, .some):
-                L10n.Config.stateOverridden(remoteText ?? "")
+                // Объект в подпись не помещается, да и лежит он строкой ниже.
+                isObject ? L10n.Config.stateOverriddenShort : L10n.Config.stateOverridden(remoteText ?? "")
             case (true, .none):
                 L10n.Config.stateOverriddenOnly
             case (false, .some): L10n.Config.stateRemote
@@ -37,15 +46,9 @@ public final class DebugRemoteConfigViewModel {
     public private(set) var toast: String?
     public private(set) var isRefreshing = false
 
-    /// Имя ключа, который правят прямо сейчас. Ввод идёт в системном алерте:
-    /// поле ввода в приложении больше нигде не нужно, и заводить под него
-    /// свой контрол ради служебного экрана незачем.
-    public private(set) var editedName: String?
-
-    public var draft = ""
-
     private let settings: DebugSettings
     private let remoteConfig: any RemoteConfigService
+    private let json: any JSONTextFormatting
     private let router: Router
 
     @ObservationIgnored
@@ -53,13 +56,23 @@ public final class DebugRemoteConfigViewModel {
 
     /// - Parameter remoteConfig: сам источник, без подмен поверх: экран
     ///   показывает, что реально приехало с сервера, и подмену рядом с ним.
-    public init(
+    public convenience init(
         settings: DebugSettings,
         remoteConfig: any RemoteConfigService,
         router: Router
     ) {
+        self.init(settings: settings, remoteConfig: remoteConfig, json: JSONText(), router: router)
+    }
+
+    init(
+        settings: DebugSettings,
+        remoteConfig: any RemoteConfigService,
+        json: any JSONTextFormatting,
+        router: Router
+    ) {
         self.settings = settings
         self.remoteConfig = remoteConfig
+        self.json = json
         self.router = router
         reload()
     }
@@ -68,50 +81,10 @@ public final class DebugRemoteConfigViewModel {
         !settings.remoteConfigOverrides.isEmpty
     }
 
-    /// Алерт правки. Закрыть его может и система — по нажатию мимо кнопок,
-    /// поэтому закрытие снимает правку, а не только кнопка «Отмена».
-    public var isEditing: Bool {
-        get { editedName != nil }
-        set {
-            guard !newValue else { return }
-            editedName = nil
-        }
-    }
-
-    public var editedTitle: String {
-        editedName ?? ""
-    }
-
-    /// У неподменённого ключа снимать нечего — кнопки в алерте быть не должно.
-    public var canResetEdit: Bool {
-        guard let editedName else { return false }
-
-        return settings.remoteConfigOverrides[editedName] != nil
-    }
-
-    public func edit(_ entry: Entry) {
-        editedName = entry.id
-        draft = entry.overrideText ?? entry.remoteText ?? ""
-    }
-
-    public func applyEdit() {
-        guard let editedName else { return }
-        settings.setRemoteConfigOverride(draft, for: editedName)
-        self.editedName = nil
-        reload()
-        say(
-            settings.remoteConfigOverrides[editedName] == nil
-                ? L10n.Config.overrideCleared
-                : L10n.Config.overrideSet
-        )
-    }
-
-    public func resetEdit() {
-        guard let editedName else { return }
-        settings.setRemoteConfigOverride(nil, for: editedName)
-        self.editedName = nil
-        reload()
-        say(L10n.Config.overrideCleared)
+    /// Правка живёт на своём экране: в конфиге лежат объекты, а их
+    /// не набрать в поле алерта.
+    public func open(_ entry: Entry) {
+        router.push(DebugRoute.remoteConfigValue(name: entry.id))
     }
 
     public func resetAll() {
@@ -138,13 +111,18 @@ public final class DebugRemoteConfigViewModel {
         router.pop()
     }
 
-    private func reload() {
+    /// Список перечитывают и на возврате с экрана значения: подмену там
+    /// ставят и снимают, а строка о ней рассказывает.
+    public func reload() {
         let overrides = settings.remoteConfigOverrides
         entries = Set(remoteConfig.names + overrides.names).sorted().map { name in
-            Entry(
+            let remoteText = remoteConfig.text(for: name)
+
+            return Entry(
                 id: name,
-                remoteText: remoteConfig.text(for: name),
-                overrideText: overrides[name]
+                remoteText: remoteText,
+                overrideText: overrides[name],
+                prettyValue: (overrides[name] ?? remoteText).flatMap { json.pretty($0) }
             )
         }
     }

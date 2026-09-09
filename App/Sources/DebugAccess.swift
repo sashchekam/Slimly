@@ -1,12 +1,10 @@
 #if DEBUG
-import DebugFeature
 import DebugFeatureInterface
 import SlimlyNavigation
 import SwiftUI
 import UIKit
 
-/// Вход в отладочное меню поверх всего приложения: невидимый приёмник тряски
-/// и метка DEBUG, пока включена хоть одна подмена.
+/// Вход в отладочное меню поверх всего приложения: невидимый приёмник тряски.
 ///
 /// Лежит над `RouterHost`, а не в шапке экрана: подмены действуют везде,
 /// и попасть в меню нужно с любого места, включая шаг внутри флоу.
@@ -14,23 +12,13 @@ struct DebugAccessOverlay: View {
     let container: AppContainer
 
     var body: some View {
-        VStack(spacing: 0) {
-            if container.debugSettings.isOverridden {
-                DebugStatusChip { container.openDebugMenu() }
-                    .padding(.top, 7)
+        ShakeReporter { container.openDebugMenu() }
+            .frame(width: 0, height: 0)
+            // Тряска — жест без визуального отклика: пока меню выезжает, удар
+            // подтверждает, что система жест распознала, а не приложение зависло.
+            .sensoryFeedback(trigger: isMenuPresented) { _, isPresented in
+                isPresented ? .impact(weight: .medium) : nil
             }
-
-            Spacer(minLength: 0)
-        }
-        .background(alignment: .top) {
-            ShakeReporter { container.openDebugMenu() }
-                .frame(width: 0, height: 0)
-        }
-        // Тряска — жест без визуального отклика: пока меню выезжает, удар
-        // подтверждает, что система жест распознала, а не приложение зависло.
-        .sensoryFeedback(trigger: isMenuPresented) { _, isPresented in
-            isPresented ? .impact(weight: .medium) : nil
-        }
     }
 
     private var isMenuPresented: Bool {

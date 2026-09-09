@@ -20,6 +20,7 @@ public struct ProfileView: View {
                         .font(.slimlyLargeTitle)
                         .tracking(SlimlyTracking.largeTitle)
 
+                    proCard
                     libraryCard
                     savedCard
                     usageCard
@@ -32,6 +33,19 @@ public struct ProfileView: View {
         .slimlyScreen()
         .slimlyToast(viewModel.toast)
         .task { await viewModel.load() }
+    }
+
+    // MARK: Тариф
+
+    private var proCard: some View {
+        ProCard(
+            isActive: viewModel.isPro,
+            note: viewModel.proNote,
+            status: viewModel.proStatus,
+            pitch: viewModel.proPitch,
+            actionTitle: viewModel.proAction,
+            action: { viewModel.openProOffer() }
+        )
     }
 
     // MARK: В медиатеке

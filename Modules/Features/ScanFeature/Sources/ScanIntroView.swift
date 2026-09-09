@@ -44,7 +44,7 @@ public struct ScanIntroView: View {
                     SourceRow(
                         icon: .gallery,
                         title: L10n.Intro.library,
-                        subtitle: L10n.Intro.libraryHint(ScanFeature.pageLimit),
+                        subtitle: L10n.Intro.libraryHint(viewModel.pageLimit),
                         isAccented: false
                     )
                 }

@@ -11,8 +11,7 @@ import SlimlyNavigation
 public enum AudioFeature {
     @MainActor
     public static func resolver(
-        mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService,
+        services: MediaFlowServices,
         analytics: any AnalyticsService,
         viewers: MediaViewers
     ) -> RouteResolver {
@@ -23,8 +22,9 @@ public enum AudioFeature {
             case .picker:
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
-                        config: pickerConfig,
-                        library: mediaLibrary,
+                        config: pickerConfig(limit: services.limits.audioVideos),
+                        library: services.library,
+                        pro: services.pro,
                         analytics: flow,
                         router: router,
                         destination: { .push(AudioRoute.format(items: $0)) }
@@ -38,7 +38,7 @@ public enum AudioFeature {
                         config: formatConfig,
                         items: items,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         preview: { .push(AudioRoute.sourcePreview($0)) },
                         run: { AudioRoute.run($0) }
                     )
@@ -48,7 +48,7 @@ public enum AudioFeature {
                 SourcePreviewView(
                     viewModel: SourcePreviewViewModel(
                         item: item,
-                        library: mediaLibrary,
+                        library: services.library,
                         router: router
                     ),
                     viewer: viewers.file,
@@ -59,10 +59,10 @@ public enum AudioFeature {
                 ProcessingView(
                     viewModel: ProcessingViewModel(
                         request: request,
-                        service: processingService,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         outcome: { AudioRoute.outcome($0) }
                     )
                 )
@@ -71,8 +71,8 @@ public enum AudioFeature {
                 OutcomeView(
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
-                        library: mediaLibrary,
-                        service: processingService,
+                        library: services.library,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
                         // Дорожку слушают шторкой поверх итога: уходить
@@ -90,12 +90,12 @@ public enum AudioFeature {
         }
     }
 
-    private static var pickerConfig: MediaPickerConfig {
+    private static func pickerConfig(limit: Int) -> MediaPickerConfig {
         MediaPickerConfig(
             title: L10n.Tool.extractAudio,
             hint: L10n.Picker.hint,
             kind: .video,
-            limit: 3,
+            limit: limit,
             noun: .video
         )
     }

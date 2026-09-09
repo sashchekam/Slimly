@@ -129,32 +129,50 @@ public struct SlimlySegmentedControl: View {
 ///
 /// Лимит видно всё время, а не только при попытке его превысить: иначе
 /// пользователь узнаёт о нём в момент отказа, что читается как ошибка.
-public struct SlimlyLimitPill: View {
+public struct SlimlyLimitPill<Trailing: View>: View {
     private let title: String
     private let fraction: Double
     private let isAtLimit: Bool
+    private let trailing: Trailing
 
-    public init(title: String, fraction: Double, isAtLimit: Bool) {
+    /// - Parameter trailing: что стоит за полосой — например, предложение
+    ///   тарифа, который этот предел снимает. Слот пустует, когда предлагать
+    ///   нечего, и пилюля остаётся одним счётчиком.
+    public init(
+        title: String,
+        fraction: Double,
+        isAtLimit: Bool,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
         self.title = title
         self.fraction = fraction
         self.isAtLimit = isAtLimit
+        self.trailing = trailing()
     }
 
     public var body: some View {
         HStack(spacing: 11) {
-            Text(title)
-                .font(.system(size: 12.5, weight: .medium))
-                .foregroundStyle(isAtLimit ? SlimlyColor.accent200 : SlimlyColor.neutral300)
+            // Счётчик и полоса — одно показание, и озвучиваются вместе.
+            // Объединять с ними то, что стоит в слоте, нельзя: кнопку внутри
+            // склеенного элемента VoiceOver уже не нажмёт.
+            HStack(spacing: 11) {
+                Text(title)
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(isAtLimit ? SlimlyColor.accent200 : SlimlyColor.neutral300)
 
-            SlimlyProgressBar(
-                value: fraction,
-                height: 4,
-                fill: isAtLimit ? .solid : .gradient
-            )
-            // Шаг лимита крупный — пятая или третья часть полосы, — поэтому
-            // заполнение догоняет выбор упруго: мгновенный скачок читается
-            // как подмена картинки, а не как реакция на нажатие.
-            .animation(.spring(response: 0.32, dampingFraction: 0.8), value: fraction)
+                SlimlyProgressBar(
+                    value: fraction,
+                    height: 4,
+                    fill: isAtLimit ? .solid : .gradient
+                )
+                // Шаг лимита крупный — пятая или третья часть полосы, — поэтому
+                // заполнение догоняет выбор упруго: мгновенный скачок читается
+                // как подмена картинки, а не как реакция на нажатие.
+                .animation(.spring(response: 0.32, dampingFraction: 0.8), value: fraction)
+            }
+            .accessibilityElement(children: .combine)
+
+            trailing
         }
         .padding(.horizontal, 13)
         .padding(.vertical, 9)
@@ -168,7 +186,12 @@ public struct SlimlyLimitPill: View {
             // цифра «4 из 5» перекрёстно растворялась бы в «5 из 5».
             .animation(.easeOut(duration: 0.2), value: isAtLimit)
         }
-        .accessibilityElement(children: .combine)
+    }
+}
+
+public extension SlimlyLimitPill where Trailing == EmptyView {
+    init(title: String, fraction: Double, isAtLimit: Bool) {
+        self.init(title: title, fraction: fraction, isAtLimit: isAtLimit) { EmptyView() }
     }
 }
 

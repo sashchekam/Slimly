@@ -71,6 +71,7 @@ public struct MediaPickerView: View {
             .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.hasSelection)
         }
         .slimlyScreen()
+        .slimlyToast(viewModel.toast)
         .task { await viewModel.load() }
     }
 
@@ -82,7 +83,11 @@ public struct MediaPickerView: View {
                 title: viewModel.limitTitle,
                 fraction: viewModel.limitFraction,
                 isAtLimit: viewModel.isAtLimit
-            )
+            ) {
+                if viewModel.showsProOffer {
+                    SlimlyProPill(viewModel.proOfferTitle) { viewModel.openProOffer() }
+                }
+            }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
         }
@@ -120,7 +125,18 @@ public struct MediaPickerView: View {
                 limitedAccessHint
             }
             grid
+            limitFootnote
         }
+    }
+
+    /// Подпись под сеткой: предел и тариф, который его задал. Стоит внизу,
+    /// а не в шапке, — счётчик наверху отвечает «сколько уже», и объяснение
+    /// рядом с ним читалось бы как часть показания.
+    private var limitFootnote: some View {
+        Text(viewModel.limitFootnote)
+            .font(.slimlyCaptionSmall)
+            .foregroundStyle(SlimlyColor.neutral600)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     /// Пока медиатека читается, сетки нет — вместо неё держим место высотой

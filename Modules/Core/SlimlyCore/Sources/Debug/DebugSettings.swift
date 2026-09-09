@@ -59,19 +59,30 @@ public final class DebugSettings {
     /// подмену рядом с настоящим значением, и знать, что она вообще есть.
     public private(set) var remoteConfigOverrides: RemoteConfigOverrides
 
+    /// Включена ли подписка. Покупок ещё нет, поэтому тариф переставляют
+    /// руками: пределы у Pro свои, и увидеть их надо на настоящих экранах,
+    /// а не только в объекте конфига.
+    public private(set) var isPro: Bool
+
     private let storage: any KeyValueStorage
 
     public init(storage: any KeyValueStorage = DefaultsStorage()) {
         self.storage = storage
         simulatedFailure = storage.value(for: .simulatedFailure, default: .off)
         remoteConfigOverrides = storage.value(for: .remoteConfigOverrides, default: RemoteConfigOverrides())
+        isPro = storage.value(for: .proSubscription, default: false)
     }
 
     /// Хоть одна подмена включена. Пока это так, поверх экранов горит метка
     /// DEBUG: странное поведение сборки должно объясняться раньше, чем его
     /// пойдут искать в коде.
     public var isOverridden: Bool {
-        simulatedFailure != .off || !remoteConfigOverrides.isEmpty
+        simulatedFailure != .off || !remoteConfigOverrides.isEmpty || isPro
+    }
+
+    public func setPro(_ active: Bool) {
+        isPro = active
+        storage.set(active, for: .proSubscription)
     }
 
     public func setSimulatedFailure(_ failure: SimulatedFailure) {
@@ -95,6 +106,7 @@ public final class DebugSettings {
 
     public func reset() {
         setSimulatedFailure(.off)
+        setPro(false)
         clearRemoteConfigOverrides()
     }
 }

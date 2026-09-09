@@ -9,6 +9,7 @@ public enum ProfileFeature {
     public static func resolver(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        pro: any ProSubscription,
         localization: any LocalizationService,
         analytics: any AnalyticsService,
         debugMenu: (any Route)? = nil
@@ -22,6 +23,7 @@ public enum ProfileFeature {
                     viewModel: ProfileViewModel(
                         mediaLibrary: mediaLibrary,
                         processingService: processingService,
+                        pro: pro,
                         localization: localization,
                         analytics: profileAnalytics,
                         debugMenu: debugMenu,

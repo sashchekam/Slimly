@@ -11,8 +11,7 @@ import SlimlyNavigation
 public enum ScanFeature {
     @MainActor
     public static func resolver(
-        mediaLibrary: any MediaLibrary,
-        processingService: any MediaProcessingService,
+        services: MediaFlowServices,
         analytics: any AnalyticsService,
         viewers: MediaViewers
     ) -> RouteResolver {
@@ -24,9 +23,19 @@ public enum ScanFeature {
         return RouteResolver(for: ScanRoute.self) { route, router in
             switch route {
             case .intro:
-                ScanIntroView(viewModel: ScanIntroViewModel(analytics: scan, router: router))
+                ScanIntroView(
+                    viewModel: ScanIntroViewModel(
+                        pageLimit: services.limits.scanPages,
+                        analytics: scan,
+                        router: router
+                    )
+                )
 
             case .camera:
+                // Предел читается один раз на экран: съёмка и её подсказка
+                // считают одни и те же страницы, и разъехаться этим числам
+                // посреди набора документа нельзя.
+                let pageLimit = services.limits.scanPages
                 ScanCameraView(
                     viewModel: ScanCameraViewModel(
                         camera: DocumentCameraSession(pageLimit: pageLimit),
@@ -39,8 +48,9 @@ public enum ScanFeature {
             case .picker:
                 MediaPickerView(
                     viewModel: MediaPickerViewModel(
-                        config: pickerConfig,
-                        library: mediaLibrary,
+                        config: pickerConfig(limit: services.limits.scanPages),
+                        library: services.library,
+                        pro: services.pro,
                         analytics: flow,
                         router: router,
                         destination: { .push(ScanRoute.pages(items: $0)) }
@@ -53,7 +63,7 @@ public enum ScanFeature {
                     viewModel: ScanPagesViewModel(
                         items: items,
                         detector: boundsDetector,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         analytics: scan,
                         router: router
                     )
@@ -65,7 +75,7 @@ public enum ScanFeature {
                         config: formatConfig(bounds: bounds),
                         items: items,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         preview: { .push(ScanRoute.sourcePreview($0)) },
                         run: { ScanRoute.run($0) }
                     )
@@ -75,7 +85,7 @@ public enum ScanFeature {
                 SourcePreviewView(
                     viewModel: SourcePreviewViewModel(
                         item: item,
-                        library: mediaLibrary,
+                        library: services.library,
                         // Вес страницы не показываем и здесь: в списке
                         // его нет, и в просмотре ему взяться неоткуда.
                         showsSize: false,
@@ -88,10 +98,10 @@ public enum ScanFeature {
                 ProcessingView(
                     viewModel: ProcessingViewModel(
                         request: request,
-                        service: processingService,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
-                        thumbnails: mediaLibrary.thumbnailLoader,
+                        thumbnails: services.library.thumbnailLoader,
                         outcome: { ScanRoute.outcome($0) }
                     )
                 )
@@ -100,8 +110,8 @@ public enum ScanFeature {
                 OutcomeView(
                     viewModel: OutcomeViewModel(
                         outcome: outcome,
-                        library: mediaLibrary,
-                        service: processingService,
+                        library: services.library,
+                        service: services.processing,
                         analytics: flow,
                         router: router,
                         // Документ уходит поверх всего: у системного
@@ -128,18 +138,12 @@ public enum ScanFeature {
     /// не нужен.
     private static let boundsDetector = VisionDocumentBoundsDetector()
 
-    /// Сколько страниц берём за раз — и в галерее, и с камеры.
-    ///
-    /// Предел один на оба источника: это ограничение документа, а не способа
-    /// его набрать, и расходиться этим числам было бы неоткуда объяснить.
-    static let pageLimit = 5
-
-    private static var pickerConfig: MediaPickerConfig {
+    private static func pickerConfig(limit: Int) -> MediaPickerConfig {
         MediaPickerConfig(
             title: L10n.Picker.title,
             hint: L10n.Picker.hint,
             kind: .photo,
-            limit: pageLimit,
+            limit: limit,
             noun: .page,
             // Страницу выбирают по тому, что на ней написано: вес снимка
             // здесь ни на что не влияет и в итог документа не переходит.

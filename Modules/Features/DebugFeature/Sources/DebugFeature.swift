@@ -42,6 +42,15 @@ public enum DebugFeature {
                         router: router
                     )
                 )
+            case let .remoteConfigValue(name):
+                DebugRemoteConfigValueView(
+                    viewModel: DebugRemoteConfigValueViewModel(
+                        name: name,
+                        settings: settings,
+                        remoteConfig: remoteConfig,
+                        router: router
+                    )
+                )
             case .analytics:
                 DebugAnalyticsView(
                     viewModel: DebugAnalyticsViewModel(log: analyticsLog, router: router)

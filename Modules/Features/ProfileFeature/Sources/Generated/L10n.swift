@@ -148,6 +148,38 @@ enum L10n {
         }
     }
 
+    enum Pro {
+        /// No cap on how many files you process at once
+        static var activeNote: String {
+            tr("pro.activeNote")
+        }
+
+        /// Subscription not connected
+        static var inactiveNote: String {
+            tr("pro.inactiveNote")
+        }
+
+        /// Lifts the cap on how many files you process at once — in every tool.
+        static var pitch: String {
+            tr("pro.pitch")
+        }
+
+        /// Slimly Pro is coming soon
+        static var soon: String {
+            tr("pro.soon")
+        }
+
+        /// active
+        static var status: String {
+            tr("pro.status")
+        }
+
+        /// Subscribe
+        static var subscribe: String {
+            tr("pro.subscribe")
+        }
+    }
+
     enum Profile {
         /// All statistics
         static var allStatistics: String {

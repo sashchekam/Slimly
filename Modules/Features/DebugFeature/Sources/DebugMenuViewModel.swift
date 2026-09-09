@@ -13,6 +13,7 @@ public final class DebugMenuViewModel {
         public enum ID: String, Sendable {
             case failure
             case onboarding
+            case subscription
         }
 
         public let id: ID
@@ -81,6 +82,20 @@ public final class DebugMenuViewModel {
         }
     }
 
+    /// Тариф: у крутилки те же чипы, что и у остальных, поэтому подписка
+    /// разложена в пару значений. Имя продукта не переводится — это марка.
+    private enum Tier: String {
+        case free
+        case pro
+
+        var title: String {
+            switch self {
+            case .free: L10n.Knob.tierFree
+            case .pro: "Slimly Pro"
+            }
+        }
+    }
+
     public private(set) var toast: String?
 
     private let settings: DebugSettings
@@ -120,7 +135,7 @@ public final class DebugMenuViewModel {
     }
 
     public var knobs: [Knob] {
-        [failureKnob, onboardingKnob]
+        [failureKnob, subscriptionKnob, onboardingKnob]
     }
 
     public var sections: [Section] {
@@ -179,11 +194,31 @@ public final class DebugMenuViewModel {
         )
     }
 
+    /// Тариф в самой сборке ничего не покупает: он переставляет флаг,
+    /// по которому инструменты берут свой набор пределов.
+    private var subscriptionKnob: Knob {
+        Knob(
+            id: .subscription,
+            title: L10n.Knob.tierTitle,
+            hint: L10n.Knob.tierNote,
+            options: [
+                Option(id: Tier.free.rawValue, title: Tier.free.title, isSelected: !settings.isPro),
+                Option(id: Tier.pro.rawValue, title: Tier.pro.title, isSelected: settings.isPro),
+            ]
+        )
+    }
+
     public func select(_ option: Option, in knob: Knob) {
         switch knob.id {
         case .failure:
             guard let failure = SimulatedFailure(rawValue: option.id) else { return }
             settings.setSimulatedFailure(failure)
+        case .subscription:
+            guard let tier = Tier(rawValue: option.id) else { return }
+            settings.setPro(tier == .pro)
+            // Предел читается на построении экрана: тот, что открыт сейчас,
+            // так и останется со старым числом.
+            say(L10n.Knob.tierSwitched)
         case .onboarding:
             guard let mark = TourMark(rawValue: option.id) else { return }
             isTourSeen = mark == .seen

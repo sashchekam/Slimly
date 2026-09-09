@@ -43,3 +43,61 @@ public struct SlimlyTagBadge: View {
             )
     }
 }
+
+/// Знак тарифа: круг с маркой продукта.
+///
+/// Марка не переводится и набирается тем же разряженным капсом, что и ярлык
+/// сборки: «PRO» здесь — имя тарифа, а не слово в предложении.
+public struct SlimlyProMark: View {
+    private let isActive: Bool
+
+    /// - Parameter isActive: тариф подключён. Тогда у знака появляется заливка:
+    ///   в Nocturne заполненная форма читается как «включено», а пустая
+    ///   рамка — как «место, где могло бы быть».
+    public init(isActive: Bool) {
+        self.isActive = isActive
+    }
+
+    public var body: some View {
+        Text(verbatim: "PRO")
+            .font(.system(size: 10, weight: .medium))
+            .tracking(0.8)
+            .foregroundStyle(isActive ? SlimlyColor.accent100 : SlimlyColor.accent200)
+            .frame(width: 38, height: 38)
+            .background(isActive ? SlimlyColor.accentTint(14) : .clear, in: Circle())
+            .overlay {
+                Circle().strokeBorder(
+                    isActive ? SlimlyColor.accent500 : SlimlyColor.accent600,
+                    lineWidth: 1
+                )
+            }
+    }
+}
+
+/// Нажимаемая пилюля с обещанием тарифа: «PRO · БЕЗ ЛИМИТА».
+///
+/// Стоит там, где предел уже виден, — рядом со счётчиком выбранного. Поэтому
+/// сама себя не объясняет: ей достаточно назвать, чего у тарифа нет.
+public struct SlimlyProPill: View {
+    private let title: String
+    private let action: () -> Void
+
+    public init(_ title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 10, weight: .medium))
+                .tracking(0.8)
+                .foregroundStyle(SlimlyColor.accent200)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .overlay(Capsule().strokeBorder(SlimlyColor.accent600, lineWidth: 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}

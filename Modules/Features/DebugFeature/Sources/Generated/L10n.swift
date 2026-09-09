@@ -131,14 +131,14 @@ enum L10n {
             tr("config.allCleared")
         }
 
-        /// Cancel
-        static var cancel: String {
-            tr("config.cancel")
-        }
-
         /// Clear all overrides
         static var clearAll: String {
             tr("config.clearAll")
+        }
+
+        /// Done
+        static var doneTyping: String {
+            tr("config.doneTyping")
         }
 
         /// The value is overridden only on this device. An empty field clears the override.
@@ -157,6 +157,16 @@ enum L10n {
             tr("config.emptyNote")
         }
 
+        /// Format
+        static var format: String {
+            tr("config.format")
+        }
+
+        /// Not valid JSON: check the braces, commas and quotes.
+        static var invalid: String {
+            tr("config.invalid")
+        }
+
         /// Values from the server and the local overrides on top of them. An override lives only on
         /// this device and survives a restart, while screens read the value when they open.
         static var note: String {
@@ -173,16 +183,6 @@ enum L10n {
             tr("config.override")
         }
 
-        /// Override cleared
-        static var overrideCleared: String {
-            tr("config.overrideCleared")
-        }
-
-        /// Value overridden
-        static var overrideSet: String {
-            tr("config.overrideSet")
-        }
-
         /// Refresh
         static var refresh: String {
             tr("config.refresh")
@@ -191,6 +191,11 @@ enum L10n {
         /// Restore the server value
         static var restore: String {
             tr("config.restore")
+        }
+
+        /// On the server
+        static var serverValue: String {
+            tr("config.serverValue")
         }
 
         /// key default
@@ -206,6 +211,11 @@ enum L10n {
         /// overridden · no value on the server
         static var stateOverriddenOnly: String {
             tr("config.stateOverriddenOnly")
+        }
+
+        /// overridden
+        static var stateOverriddenShort: String {
+            tr("config.stateOverriddenShort")
         }
 
         /// from the server
@@ -249,6 +259,27 @@ enum L10n {
         /// Shown
         static var seen: String {
             tr("knob.seen")
+        }
+
+        /// Free
+        static var tierFree: String {
+            tr("knob.tierFree")
+        }
+
+        /// The tier the tools take their limits from. There are no purchases yet: the flag is set by
+        /// hand.
+        static var tierNote: String {
+            tr("knob.tierNote")
+        }
+
+        /// Tier switched — the next picker takes the new limits
+        static var tierSwitched: String {
+            tr("knob.tierSwitched")
+        }
+
+        /// Subscription
+        static var tierTitle: String {
+            tr("knob.tierTitle")
         }
 
         /// The tour will show on the next launch
@@ -297,11 +328,6 @@ enum L10n {
         /// App Store.
         static var note: String {
             tr("menu.note")
-        }
-
-        /// Open the debug menu
-        static var open: String {
-            tr("menu.open")
         }
 
         /// sections

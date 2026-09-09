@@ -50,6 +50,9 @@ public final class ProfileViewModel {
 
     private let mediaLibrary: any MediaLibrary
     private let processingService: any MediaProcessingService
+    /// Тариф спрашивают на каждой перерисовке, а не запоминают при загрузке:
+    /// подписку могут оформить, пока экран открыт.
+    private let pro: any ProSubscription
     private let localization: any LocalizationService
     private let analytics: ProfileAnalytics
     private let environment: AppEnvironment
@@ -66,6 +69,7 @@ public final class ProfileViewModel {
     public init(
         mediaLibrary: any MediaLibrary,
         processingService: any MediaProcessingService,
+        pro: any ProSubscription = NoProSubscription(),
         localization: any LocalizationService,
         analytics: ProfileAnalytics,
         environment: AppEnvironment = .current,
@@ -74,6 +78,7 @@ public final class ProfileViewModel {
     ) {
         self.mediaLibrary = mediaLibrary
         self.processingService = processingService
+        self.pro = pro
         self.localization = localization
         self.analytics = analytics
         self.environment = environment
@@ -92,6 +97,28 @@ public final class ProfileViewModel {
         self.snapshot = await snapshot
         self.stats = await stats
         usageDigest = await history.digest(for: Self.usageRange)
+    }
+
+    // MARK: Тариф
+
+    public var isPro: Bool { pro.isActive }
+
+    /// Подписи под маркой у состояний разные по смыслу: подключённая
+    /// подписка говорит, что она даёт, а её отсутствие — что её нет.
+    public var proNote: String {
+        isPro ? L10n.Pro.activeNote : L10n.Pro.inactiveNote
+    }
+
+    public var proStatus: String { L10n.Pro.status }
+    public var proPitch: String { L10n.Pro.pitch }
+    public var proAction: String { L10n.Pro.subscribe }
+
+    /// Покупок в приложении ещё нет, и пейволла за кнопкой тоже: она честно
+    /// говорит, что тариф пока не купить. Экран, за которым ничего
+    /// не продаётся, обманул бы сильнее, чем эта строка.
+    public func openProOffer() {
+        analytics.didOpenProOffer()
+        say(L10n.Pro.soon)
     }
 
     // MARK: Медиатека
