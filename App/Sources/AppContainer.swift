@@ -133,14 +133,7 @@ final class AppContainer {
                 : AnyRoute(OnboardingRoute.tour)
         )
 
-        // Покупок в приложении ещё нет: в релизе подписки не бывает,
-        // а в отладочной сборке её включают крутилкой в меню — иначе
-        // пределы Pro нечем увидеть на настоящих экранах.
-        #if DEBUG
-        let pro: any ProSubscription = StoredProSubscription(storage: storage)
-        #else
-        let pro: any ProSubscription = NoProSubscription()
-        #endif
+        let pro = Self.subscription(storage: storage)
 
         // Медиатека, обработчик, конфиг и тариф нужны каждому инструменту
         // и в одном и том же составе — резолверы получают их одним значением.
@@ -148,7 +141,11 @@ final class AppContainer {
             library: mediaLibrary,
             processing: processing,
             remoteConfig: remoteConfig,
-            pro: pro
+            pro: pro,
+            // Хранилище то же, что у остальных отметок: счётчик сохранений
+            // общий на все инструменты, и заводить под него второе место
+            // на диске незачем.
+            review: StoredReviewPrompt(storage: storage)
         )
 
         // Плеер превью знает медиатеку, из которой пришёл файл: ролик она
@@ -240,6 +237,17 @@ final class AppContainer {
             guard item.kind == .video || item.isLivePhoto else { return nil }
             return AnyView(MediaItemPlayer(item: item, library: library))
         }
+    }
+
+    /// Тариф пользователя. Покупок в приложении ещё нет: в релизе подписки
+    /// не бывает, а в отладочной сборке её включают крутилкой в меню — иначе
+    /// пределы Pro нечем увидеть на настоящих экранах.
+    private static func subscription(storage: any KeyValueStorage) -> any ProSubscription {
+        #if DEBUG
+        StoredProSubscription(storage: storage)
+        #else
+        NoProSubscription()
+        #endif
     }
 
     /// Куда ведёт пятое нажатие на строку версии. В релизе — никуда.

@@ -68,6 +68,7 @@ public enum ConvertFeature {
                         outcome: outcome,
                         library: services.library,
                         service: services.processing,
+                        review: services.review,
                         analytics: FlowAnalytics(analytics: analytics, tool: tool(for: outcome.request)),
                         router: router,
                         preview: { .push(ConvertRoute.preview($0)) }

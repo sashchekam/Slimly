@@ -112,6 +112,7 @@ public enum ScanFeature {
                         outcome: outcome,
                         library: services.library,
                         service: services.processing,
+                        review: services.review,
                         analytics: flow,
                         router: router,
                         // Документ уходит поверх всего: у системного

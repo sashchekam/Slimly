@@ -31,6 +31,7 @@
 | `flow_result_previewed` | `tool` | Открыли просмотр готового файла — результату не поверили на слово. |
 | `flow_result_renamed` | `tool` | Готовому файлу поменяли имя. |
 | `flow_result_saved` | `count`, `destination`, `output_mb`, `tool` | Готовые файлы сохранены — ради этого затевался весь флоу. |
+| `flow_review_requested` | `tool` | Показали системное окно оценки. |
 | `flow_run_cancelled` | `percent`, `tool` | С экрана обработки ушли, не дождавшись конца: уход рвёт поток, и готовых файлов после него не остаётся. |
 | `flow_run_finished` | `count`, `duration_ms`, `failed`, `input_mb`, `output_mb`, `tool` | Обработка дошла до конца. |
 | `flow_run_started` | `count`, `format`, `input_mb`, `tool` | Обработка началась — настройки приняты, дальше работает устройство. |

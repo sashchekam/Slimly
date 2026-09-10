@@ -25,6 +25,21 @@ enum L10n {
             tr("action.copyDiagnosticsHint")
         }
 
+        /// Copy Documents path
+        static var copyDocuments: String {
+            tr("action.copyDocuments")
+        }
+
+        /// Documents path copied to the clipboard
+        static var copyDocumentsDone: String {
+            tr("action.copyDocumentsDone")
+        }
+
+        /// app sandbox folder
+        static var copyDocumentsHint: String {
+            tr("action.copyDocumentsHint")
+        }
+
         /// Turn off all overrides
         static var resetKnobs: String {
             tr("action.resetKnobs")

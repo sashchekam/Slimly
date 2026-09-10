@@ -139,6 +139,14 @@ public struct FlowAnalytics: FeatureAnalytics {
         track("files_app_opened", ["tool": toolValue])
     }
 
+    /// Показали системное окно оценки. Система не говорит ни что показала
+    /// его, ни что ответил человек, — поэтому событие считает попытки:
+    /// по ним видно, что момент выбран, а рост оценок в отчёте App Store
+    /// сходится с сохранениями, а не с запусками.
+    public func didAskForReview() {
+        track("review_requested", ["tool": toolValue])
+    }
+
     /// Оригиналы удалены после сохранения: место освобождено по-настоящему,
     /// а не «сжато и оставлено рядом».
     public func didDeleteOriginals(_ count: Int) {

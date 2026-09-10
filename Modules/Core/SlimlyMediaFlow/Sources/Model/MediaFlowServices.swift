@@ -15,16 +15,23 @@ public struct MediaFlowServices {
     /// инструмент об этом не знает — он спрашивает `limits`.
     public let pro: any ProSubscription
 
+    /// Правило, по которому просят оценку. Момент у всех инструментов один
+    /// и тот же — удачное сохранение, — а счётчик показов общий: три сжатия
+    /// и три скана для человека одинаково значат, что приложение прижилось.
+    public let review: any ReviewPrompting
+
     public init(
         library: any MediaLibrary,
         processing: any MediaProcessingService,
         remoteConfig: any RemoteConfigService,
-        pro: any ProSubscription = NoProSubscription()
+        pro: any ProSubscription = NoProSubscription(),
+        review: any ReviewPrompting = NoReviewPrompt()
     ) {
         self.library = library
         self.processing = processing
         self.remoteConfig = remoteConfig
         self.pro = pro
+        self.review = review
     }
 
     /// Пределы того тарифа, который сейчас у пользователя: умолчания тарифа,

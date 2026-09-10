@@ -18,6 +18,10 @@ public final class OutcomeViewModel {
     /// Подтверждение сохранения. Живёт пару секунд: где искать файлы,
     /// написано и в подписи под списком — тост только отмечает момент.
     public private(set) var toast: String?
+    /// Пора просить оценку: система показывает своё окно, а экран лишь
+    /// говорит, что момент настал. Флаг гаснет сразу после показа —
+    /// второй раз за экран просить нечего.
+    public private(set) var isAskingReview = false
     /// Файл, которому прямо сейчас меняют имя. Ввод идёт в системном алерте:
     /// заводить своё поле ради одной правки на экране незачем.
     public private(set) var renamedID: String?
@@ -29,6 +33,7 @@ public final class OutcomeViewModel {
     private let library: any MediaLibrary
     private let service: any MediaProcessingService
     private let filesApp: any FilesAppLinking
+    private let review: any ReviewPrompting
     private let analytics: FlowAnalytics
     private let router: Router
     /// Просмотр результата — не обязательная часть флоу: маршрут приходит
@@ -39,11 +44,15 @@ public final class OutcomeViewModel {
     @ObservationIgnored
     private var toastTask: Task<Void, Never>?
 
+    @ObservationIgnored
+    private var reviewTask: Task<Void, Never>?
+
     public init(
         outcome: ProcessingOutcome,
         library: any MediaLibrary,
         service: any MediaProcessingService,
         filesApp: any FilesAppLinking = FilesAppLink(),
+        review: any ReviewPrompting = NoReviewPrompt(),
         analytics: FlowAnalytics,
         router: Router,
         preview: ((ProcessingResult) -> FlowDestination)? = nil
@@ -52,6 +61,7 @@ public final class OutcomeViewModel {
         self.library = library
         self.service = service
         self.filesApp = filesApp
+        self.review = review
         self.analytics = analytics
         self.router = router
         self.preview = preview
@@ -290,10 +300,16 @@ public final class OutcomeViewModel {
             analytics.didSaveResults(stored)
 
             let lost = requested - stored.results.count
-            if lost > 0 {
+            guard lost == 0 else {
                 analytics.didFailSaving(lost)
+                say(L10n.Save.partial)
+                return
             }
-            say(lost > 0 ? L10n.Save.partial : savedTitle)
+
+            say(savedTitle)
+            // Оценку просим только после сохранения целиком: после потери
+            // части файлов вопрос «нравится ли приложение» звучит издёвкой.
+            askForReview()
         }
     }
 
@@ -304,6 +320,32 @@ public final class OutcomeViewModel {
         case .photoLibrary: L10n.Save.galleryDone
         case .files: L10n.Save.filesDone
         }
+    }
+
+    // MARK: Оценка
+
+    /// Просьба оценить приходит после сохранения, а не вместо него: окно
+    /// системы накрывает экран, и появиться оно должно тогда, когда тост
+    /// уже подтвердил то, ради чего человек сюда шёл. Отсюда пауза —
+    /// и её отмена на выходе: спрашивать про сохранение с главного экрана,
+    /// куда человек уже ушёл, поздно.
+    private func askForReview() {
+        guard review.shouldAskAfterSave() else { return }
+
+        reviewTask = Task {
+            try? await Task.sleep(for: .seconds(1.4))
+            guard !Task.isCancelled else { return }
+
+            isAskingReview = true
+        }
+    }
+
+    /// Окно оценки показано. Считает показ экран, а не система: ответа
+    /// она не сообщает, и другого места отметить попытку нет.
+    public func didAskReview() {
+        isAskingReview = false
+        review.didAsk()
+        analytics.didAskForReview()
     }
 
     /// Тост уходит сам: следующий показ отменяет прошлый отсчёт, иначе
@@ -361,6 +403,7 @@ public final class OutcomeViewModel {
     // MARK: Действия
 
     public func finish() {
+        reviewTask?.cancel()
         router.popToRoot()
     }
 
@@ -383,6 +426,7 @@ public final class OutcomeViewModel {
             do {
                 try await library.deleteOriginals(results.map(\.item))
                 isDeleting = false
+                reviewTask?.cancel()
                 analytics.didDeleteOriginals(results.count)
                 router.popToRoot()
             } catch {

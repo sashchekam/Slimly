@@ -73,6 +73,7 @@ public enum AudioFeature {
                         outcome: outcome,
                         library: services.library,
                         service: services.processing,
+                        review: services.review,
                         analytics: flow,
                         router: router,
                         // Дорожку слушают шторкой поверх итога: уходить

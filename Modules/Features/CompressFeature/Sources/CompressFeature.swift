@@ -65,6 +65,7 @@ public enum CompressFeature {
                         outcome: outcome,
                         library: services.library,
                         service: services.processing,
+                        review: services.review,
                         analytics: flow,
                         router: router,
                         preview: { .push(CompressRoute.preview($0)) }

@@ -1,5 +1,6 @@
 import SlimlyCore
 import SlimlyDesignSystem
+import StoreKit
 import SwiftUI
 
 /// Итог обработки: что получилось, из чего, и что с этим делать дальше.
@@ -8,6 +9,10 @@ public struct OutcomeView: View {
     private var viewModel: OutcomeViewModel
     @Environment(\.openURL)
     private var openURL
+    /// Окно оценки рисует система, и позвать её умеет только окружение:
+    /// экран получает от модели момент, а не готовое окно.
+    @Environment(\.requestReview)
+    private var requestReview
 
     public init(viewModel: OutcomeViewModel) {
         _viewModel = State(wrappedValue: viewModel)
@@ -71,6 +76,14 @@ public struct OutcomeView: View {
             if let note = viewModel.renameNote {
                 Text(note)
             }
+        }
+        // Просьба оценить приходит после удачного сохранения — единственного
+        // момента во флоу, когда человек уже получил то, за чем пришёл.
+        .onChange(of: viewModel.isAskingReview) { _, isAsking in
+            guard isAsking else { return }
+
+            requestReview()
+            viewModel.didAskReview()
         }
     }
 

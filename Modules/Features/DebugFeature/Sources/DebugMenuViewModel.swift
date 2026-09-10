@@ -46,6 +46,7 @@ public final class DebugMenuViewModel {
     /// Разовое действие: сработало — и всё, состояния у него нет.
     public enum Action: String, CaseIterable, Identifiable, Sendable {
         case copyDiagnostics
+        case copyDocuments
         case resetStats
         case resetKnobs
 
@@ -54,6 +55,7 @@ public final class DebugMenuViewModel {
         public var title: String {
             switch self {
             case .copyDiagnostics: L10n.Action.copyDiagnostics
+            case .copyDocuments: L10n.Action.copyDocuments
             case .resetStats: L10n.Action.resetStats
             case .resetKnobs: L10n.Action.resetKnobs
             }
@@ -62,6 +64,7 @@ public final class DebugMenuViewModel {
         public var value: String {
             switch self {
             case .copyDiagnostics: L10n.Action.copyDiagnosticsHint
+            case .copyDocuments: L10n.Action.copyDocumentsHint
             case .resetStats: L10n.Action.resetStatsHint
             case .resetKnobs: L10n.Action.resetKnobsHint
             }
@@ -244,6 +247,11 @@ public final class DebugMenuViewModel {
             // Буфер обмена SwiftUI не отдаёт — за ним приходится идти в UIKit.
             UIPasteboard.general.string = environment.summary
             say(L10n.Action.copyDiagnosticsDone)
+        case .copyDocuments:
+            // Путь нужен, чтобы открыть песочницу в Finder: `path()` отдаёт его
+            // без схемы `file://`, которую пришлось бы вычищать руками.
+            UIPasteboard.general.string = URL.documentsDirectory.path()
+            say(L10n.Action.copyDocumentsDone)
         case .resetStats:
             Task {
                 await statsStore.reset()
