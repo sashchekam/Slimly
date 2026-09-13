@@ -71,7 +71,6 @@ public struct MediaPickerView: View {
             .animation(.spring(response: 0.34, dampingFraction: 0.86), value: viewModel.hasSelection)
         }
         .slimlyScreen()
-        .slimlyToast(viewModel.toast)
         .task { await viewModel.load() }
     }
 

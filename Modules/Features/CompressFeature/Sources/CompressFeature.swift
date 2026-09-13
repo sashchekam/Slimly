@@ -29,6 +29,7 @@ public enum CompressFeature {
                         config: pickerConfig(limit: services.limits.compressFiles),
                         library: services.library,
                         pro: services.pro,
+                        paywall: services.paywall,
                         analytics: flow,
                         router: router,
                         // Степень сжатия — шторка поверх выбора: настройка

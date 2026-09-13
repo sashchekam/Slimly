@@ -17,6 +17,7 @@ public enum Module: CaseIterable {
     case mediaFlow
     case shortcuts
     case firebase
+    case purchases
     // Features
     case homeInterface
     case home
@@ -34,6 +35,8 @@ public enum Module: CaseIterable {
     case debug
     case onboardingInterface
     case onboarding
+    case paywallInterface
+    case paywall
 
     public enum Kind {
         case core
@@ -44,12 +47,12 @@ public enum Module: CaseIterable {
     public var kind: Kind {
         switch self {
         case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts,
-             .firebase: .core
+             .firebase, .purchases: .core
         case .homeInterface, .compressInterface, .convertInterface,
              .audioInterface, .scanInterface, .profileInterface,
-             .debugInterface, .onboardingInterface: .featureInterface
+             .debugInterface, .onboardingInterface, .paywallInterface: .featureInterface
         case .home, .compress, .convert, .audio, .scan, .profile, .debug,
-             .onboarding: .feature
+             .onboarding, .paywall: .feature
         }
     }
 
@@ -62,6 +65,7 @@ public enum Module: CaseIterable {
         case .mediaFlow: "SlimlyMediaFlow"
         case .shortcuts: "SlimlyShortcuts"
         case .firebase: "SlimlyFirebase"
+        case .purchases: "SlimlyPurchases"
         case .homeInterface: "HomeFeatureInterface"
         case .home: "HomeFeature"
         case .compressInterface: "CompressFeatureInterface"
@@ -78,6 +82,8 @@ public enum Module: CaseIterable {
         case .debug: "DebugFeature"
         case .onboardingInterface: "OnboardingFeatureInterface"
         case .onboarding: "OnboardingFeature"
+        case .paywallInterface: "PaywallFeatureInterface"
+        case .paywall: "PaywallFeature"
         }
     }
 
@@ -85,7 +91,7 @@ public enum Module: CaseIterable {
     public var path: String {
         switch self {
         case .core, .designSystem, .navigation, .mediaKit, .mediaFlow, .shortcuts,
-             .firebase:
+             .firebase, .purchases:
             "Modules/Core/\(name)"
         case .homeInterface, .home:
             "Modules/Features/HomeFeature"
@@ -103,6 +109,8 @@ public enum Module: CaseIterable {
             "Modules/Features/DebugFeature"
         case .onboardingInterface, .onboarding:
             "Modules/Features/OnboardingFeature"
+        case .paywallInterface, .paywall:
+            "Modules/Features/PaywallFeature"
         }
     }
 
@@ -147,6 +155,10 @@ public enum Module: CaseIterable {
         // отдаёт только протоколы аналитики и конфига из core, поэтому
         // ни одна фича с SDK не связывается.
         case .firebase: [.core]
+        // Единственный модуль, который знает про RevenueCat: наружу он отдаёт
+        // покупки и тариф протоколами из core, поэтому ни пейволл, ни шаг
+        // выбора файлов с магазином не связываются.
+        case .purchases: [.core]
         case .homeInterface: [.navigation]
         case .home: [.core, .designSystem, .navigation, .homeInterface]
         // Маршруты инструментов несут модели медиатеки и задание
@@ -169,6 +181,10 @@ public enum Module: CaseIterable {
         // Маршрут главного экрана тур получает значением от App, поэтому
         // интерфейсов чужих фич ему не нужно.
         case .onboarding: [.core, .designSystem, .navigation, .onboardingInterface]
+        // Ключ удалённого конфига объявлен рядом с маршрутом: и то и другое —
+        // публичный договор пейволла, а читает его App.
+        case .paywallInterface: [.core, .navigation]
+        case .paywall: [.core, .designSystem, .navigation, .paywallInterface]
         }
     }
 
@@ -180,6 +196,7 @@ public enum Module: CaseIterable {
     public var externalDependencies: [String] {
         switch self {
         case .firebase: ["FirebaseAnalytics", "FirebaseRemoteConfig"]
+        case .purchases: ["RevenueCat"]
         default: []
         }
     }

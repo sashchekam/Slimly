@@ -25,6 +25,7 @@ public enum AudioFeature {
                         config: pickerConfig(limit: services.limits.audioVideos),
                         library: services.library,
                         pro: services.pro,
+                        paywall: services.paywall,
                         analytics: flow,
                         router: router,
                         destination: { .push(AudioRoute.format(items: $0)) }

@@ -43,6 +43,8 @@ Modules/Core/SlimlyMediaFlow       — общие шаги флоу обрабо
                                      формат, обработка, итог
 Modules/Core/SlimlyFirebase        — единственный модуль, знающий про Firebase
                                      SDK: аналитика и удалённый конфиг
+Modules/Core/SlimlyPurchases       — единственный модуль, знающий про RevenueCat:
+                                     витрина тарифов и покупка
 Modules/Features/<Name>Feature/
   Interface/                       — только enum Route, без UI
   Sources/                         — View, ViewModel, <Name>Feature.resolver(...)
@@ -54,6 +56,10 @@ Tuist/ProjectDescriptionHelpers/   — реестр модулей и прави
 Реализации сервисов живут в `SlimlyMediaKit` и `SlimlyFirebase`, а протоколы —
 в `SlimlyCore`: фича видит только протокол, поэтому не тянет за собой
 ни PhotoKit, ни Firebase.
+
+Пейволл — своя фича (`PaywallFeature`): её маршрут приходит значением
+и в профиль, и в шаг выбора файлов, и в конец тура, поэтому про неё
+не знает ни один из них.
 
 Главный экран (`HomeFeature`) — хаб инструментов, а каждый инструмент —
 свой модуль: `CompressFeature`, `ConvertFeature`, `AudioFeature`, `ScanFeature`.
@@ -117,6 +123,34 @@ public extension RemoteConfigKey where Value == Bool {
 `GoogleService-Info.plist` в репозитории нет — положи его в `App/Resources/`
 (он подхватится глобом) и выполни `tuist generate`. Без файла приложение
 работает как обычно: события уходят в `NoAnalytics`, конфиг отдаёт умолчания.
+
+## Покупки
+
+Протоколы `PurchaseService` и `ProSubscription` живут в `SlimlyCore`,
+реализация на RevenueCat — в `SlimlyPurchases`. Про SDK знает только этот
+модуль: наружу он отдаёт `PurchasesServices` с магазином за протоколом
+и тарифом, за которым наблюдают экраны.
+
+Тариф — один экземпляр на приложение (`StoredProSubscription`): его меняет
+ответ магазина, тумблер отладочного меню ставит туда же, а пределы
+инструментов и плашка профиля читают его же.
+
+Ключа в репозитории нет — положи `RevenueCat-Info.plist` в `App/Resources/`
+и выполни `tuist generate`:
+
+```xml
+<key>API_KEY</key>
+<string>appl_…</string>
+```
+
+Право в кабинете RevenueCat зовётся `pro`, тарифы берутся из текущего
+offering — экраны спрашивают «есть ли Pro», а не «какой продукт куплен».
+Без файла отладочная сборка показывает витрину-образец с придуманными ценами
+(`SamplePurchases`), а релизная — пустой магазин: сборка без ключей работает,
+просто без подписки.
+
+Пейволл открывается ссылкой `slimly://paywall` — так его проверяют, не проходя
+весь путь до него. Показ после тура выключается ключом `paywall_after_tour`.
 
 ## Локализация
 

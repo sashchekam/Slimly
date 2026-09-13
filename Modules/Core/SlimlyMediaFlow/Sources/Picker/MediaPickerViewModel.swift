@@ -46,7 +46,6 @@ public final class MediaPickerViewModel {
     public private(set) var albumID = MediaAlbum.recentID
     public private(set) var access: MediaAccess = .notDetermined
     public private(set) var isLoading = true
-    public private(set) var toast: String?
     /// Догрузка следующей страницы: сетка уже видна, поэтому индикатор
     /// у неё свой, под последним рядом.
     public private(set) var isLoadingMore = false
@@ -77,17 +76,18 @@ public final class MediaPickerViewModel {
     /// а экрану нужно ещё и то, откуда это число взялось, — про бесплатный
     /// он говорит иначе, чем про оплаченный.
     private let pro: any ProSubscription
+    /// Куда ведёт предложение тарифа. `nil` — вести некуда, и предложения
+    /// на экране нет: пилюля, которая ничего не открывает, обещает зря.
+    private let paywall: (any Route)?
     private let analytics: FlowAnalytics
     private let router: Router
     private let destination: ([MediaItem]) -> FlowDestination
-
-    @ObservationIgnored
-    private var toastTask: Task<Void, Never>?
 
     public init(
         config: MediaPickerConfig,
         library: any MediaLibrary,
         pro: any ProSubscription = NoProSubscription(),
+        paywall: (any Route)? = nil,
         analytics: FlowAnalytics,
         router: Router,
         destination: @escaping ([MediaItem]) -> FlowDestination
@@ -95,6 +95,7 @@ public final class MediaPickerViewModel {
         self.config = config
         self.library = library
         self.pro = pro
+        self.paywall = paywall
         self.analytics = analytics
         self.router = router
         self.destination = destination
@@ -282,27 +283,18 @@ public final class MediaPickerViewModel {
 
     /// Предложение стоит рядом со счётчиком — там, где предел и виден.
     /// Подписчику предлагать нечего: у него это число уже своё.
-    public var showsProOffer: Bool { !pro.isActive }
+    public var showsProOffer: Bool { !pro.isActive && paywall != nil }
 
     public var proOfferTitle: String { L10n.Pro.offer }
 
-    /// Покупок в приложении ещё нет, поэтому нажатие ведёт не на пейволл,
-    /// а в тост: пилюля называет, что даёт тариф, а тост — когда его можно
-    /// будет купить. Открывать экран, за которым ничего не продаётся, хуже,
-    /// чем честно сказать «пока нельзя».
+    /// Пейволл приезжает поверх всего, а не шторкой над сеткой: разговор
+    /// про деньги прерывает выбор файлов, и вернуться после него надо
+    /// на тот же экран с той же выборкой.
     public func openProOffer() {
-        analytics.didOpenProOffer()
-        say(L10n.Pro.soon)
-    }
+        guard let paywall else { return }
 
-    private func say(_ text: String) {
-        toastTask?.cancel()
-        toast = text
-        toastTask = Task {
-            try? await Task.sleep(for: .seconds(2.6))
-            guard !Task.isCancelled else { return }
-            toast = nil
-        }
+        analytics.didOpenProOffer()
+        router.cover(paywall)
     }
 
     public var ctaTitle: String {

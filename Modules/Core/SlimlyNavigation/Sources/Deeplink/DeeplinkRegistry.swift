@@ -5,23 +5,27 @@ import SlimlyCore
 ///
 /// Обычная запись — литерал массива, поэтому таблица ссылок читается как
 /// список маршрутов. Модалка нужна там, где экран и с хаба открывается
-/// шторкой: ссылка не должна показывать его иначе, чем кнопка.
+/// модалкой: ссылка не должна показывать его иначе, чем кнопка, — поэтому
+/// слотов два, шторка и экран поверх всего.
 public struct DeeplinkDestination: Sendable, ExpressibleByArrayLiteral {
     /// Первый маршрут становится корнем слоя, остальные ложатся в стек.
     public let routes: [any Route]
     /// Что показать шторкой поверх стека.
     public let sheet: (any Route)?
+    /// Что показать поверх всего экрана.
+    public let cover: (any Route)?
 
-    public init(routes: [any Route], sheet: (any Route)? = nil) {
+    public init(routes: [any Route], sheet: (any Route)? = nil, cover: (any Route)? = nil) {
         self.routes = routes
         self.sheet = sheet
+        self.cover = cover
     }
 
     public init(arrayLiteral elements: any Route...) {
         self.init(routes: elements)
     }
 
-    public var isEmpty: Bool { routes.isEmpty && sheet == nil }
+    public var isEmpty: Bool { routes.isEmpty && sheet == nil && cover == nil }
 }
 
 /// Превращает разобранный диплинк в состояние навигации.
@@ -52,6 +56,9 @@ public extension Router {
         replace(with: destination.routes)
         if let sheet = destination.sheet {
             present(sheet)
+        }
+        if let cover = destination.cover {
+            self.cover(cover)
         }
     }
 }

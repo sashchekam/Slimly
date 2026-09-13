@@ -51,6 +51,7 @@ public enum ScanFeature {
                         config: pickerConfig(limit: services.limits.scanPages),
                         library: services.library,
                         pro: services.pro,
+                        paywall: services.paywall,
                         analytics: flow,
                         router: router,
                         destination: { .push(ScanRoute.pages(items: $0)) }

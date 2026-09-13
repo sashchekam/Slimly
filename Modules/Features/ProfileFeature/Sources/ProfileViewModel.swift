@@ -56,6 +56,9 @@ public final class ProfileViewModel {
     private let localization: any LocalizationService
     private let analytics: ProfileAnalytics
     private let environment: AppEnvironment
+    /// Куда ведёт кнопка в плашке тарифа. `nil` — вести некуда, и кнопка
+    /// ничего не обещает.
+    private let paywall: (any Route)?
     /// Маршрут отладочного меню. В релизной сборке его нет — и строка версии
     /// остаётся обычным показанием, а не спрятанной дверью.
     private let debugMenu: (any Route)?
@@ -73,6 +76,7 @@ public final class ProfileViewModel {
         localization: any LocalizationService,
         analytics: ProfileAnalytics,
         environment: AppEnvironment = .current,
+        paywall: (any Route)? = nil,
         debugMenu: (any Route)? = nil,
         router: Router
     ) {
@@ -82,6 +86,7 @@ public final class ProfileViewModel {
         self.localization = localization
         self.analytics = analytics
         self.environment = environment
+        self.paywall = paywall
         self.debugMenu = debugMenu
         self.router = router
     }
@@ -113,12 +118,14 @@ public final class ProfileViewModel {
     public var proPitch: String { L10n.Pro.pitch }
     public var proAction: String { L10n.Pro.subscribe }
 
-    /// Покупок в приложении ещё нет, и пейволла за кнопкой тоже: она честно
-    /// говорит, что тариф пока не купить. Экран, за которым ничего
-    /// не продаётся, обманул бы сильнее, чем эта строка.
+    /// Пейволл поднимается поверх всего, а не пушится в стек профиля:
+    /// закончиться разговор про деньги должен возвратом ровно сюда,
+    /// а не новым экраном в истории.
     public func openProOffer() {
+        guard let paywall else { return }
+
         analytics.didOpenProOffer()
-        say(L10n.Pro.soon)
+        router.cover(paywall)
     }
 
     // MARK: Медиатека

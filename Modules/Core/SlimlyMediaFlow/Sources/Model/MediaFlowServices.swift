@@ -1,4 +1,5 @@
 import SlimlyCore
+import SlimlyNavigation
 
 /// Сервисы, из которых собирается любой инструмент.
 ///
@@ -20,18 +21,26 @@ public struct MediaFlowServices {
     /// и три скана для человека одинаково значат, что приложение прижилось.
     public let review: any ReviewPrompting
 
+    /// Куда ведёт предложение тарифа в шаге выбора файлов. Приходит готовым
+    /// маршрутом, а не типом: пейволл — это фича, а модуль общих шагов
+    /// про фичи ничего не знает. `nil` — предложение не показываем.
+    public let paywall: (any Route)?
+
+    @MainActor
     public init(
         library: any MediaLibrary,
         processing: any MediaProcessingService,
         remoteConfig: any RemoteConfigService,
         pro: any ProSubscription = NoProSubscription(),
-        review: any ReviewPrompting = NoReviewPrompt()
+        review: any ReviewPrompting = NoReviewPrompt(),
+        paywall: (any Route)? = nil
     ) {
         self.library = library
         self.processing = processing
         self.remoteConfig = remoteConfig
         self.pro = pro
         self.review = review
+        self.paywall = paywall
     }
 
     /// Пределы того тарифа, который сейчас у пользователя: умолчания тарифа,
@@ -40,7 +49,7 @@ public struct MediaFlowServices {
     /// Читают их на построении экрана, а не при сборке резолвера: и свежий
     /// конфиг приезжает уже после старта, и подписку могут оформить, пока
     /// приложение открыто.
-    public var limits: MediaFlowLimits {
+    @MainActor public var limits: MediaFlowLimits {
         guard pro.isActive else {
             return MediaFlowLimits().applying(remoteConfig.value(for: .mediaLimits))
         }

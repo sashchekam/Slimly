@@ -51,6 +51,19 @@
 | `onboarding_finished` | `page`, `skipped` | Тур закончен. |
 | `onboarding_page_opened` | `page` | Открыта следующая страница тура. |
 
+## paywall · `Modules/Features/PaywallFeature/Sources/PaywallAnalytics.swift`
+
+| Событие | Параметры | Что значит |
+| --- | --- | --- |
+| `paywall_closed` | `source` | Ушли с пейволла, ничего не купив. |
+| `paywall_opened` | `offers`, `source` | Экран открыт. |
+| `paywall_plan_picked` | `plan` | Выбрали другой тариф. |
+| `paywall_purchase_cancelled` | `plan` | Системное окно оплаты закрыли, не заплатив. |
+| `paywall_purchase_failed` | `plan` | Покупка сорвалась отказом магазина. |
+| `paywall_purchase_finished` | `plan`, `source`, `trial` | Покупка прошла. |
+| `paywall_purchase_started` | `plan`, `trial` | Нажали кнопку покупки — дальше говорит система. |
+| `paywall_restored` | `restored` | Нажали «восстановить». |
+
 ## profile · `Modules/Features/ProfileFeature/Sources/ProfileAnalytics.swift`
 
 | Событие | Параметры | Что значит |

@@ -14,6 +14,10 @@ public final class OnboardingViewModel {
     /// Куда уходит тур на последнем шаге. Приходит готовым маршрутом:
     /// какая фича стоит за главным экраном, туру знать незачем.
     private let home: any Route
+    /// Пейволл после тура. Замыканием, а не значением: показывать его или
+    /// нет, решает удалённый конфиг, а свежие значения приезжают уже после
+    /// старта — на момент сборки резолвера ответа ещё нет.
+    private let paywall: () -> (any Route)?
     private let analytics: OnboardingAnalytics
     private let router: Router
 
@@ -21,12 +25,14 @@ public final class OnboardingViewModel {
         pages: [OnboardingPage] = OnboardingPage.tour,
         state: any OnboardingState,
         home: any Route,
+        paywall: @escaping () -> (any Route)? = { nil },
         analytics: OnboardingAnalytics,
         router: Router
     ) {
         self.pages = pages
         self.state = state
         self.home = home
+        self.paywall = paywall
         self.analytics = analytics
         self.router = router
     }
@@ -67,5 +73,19 @@ public final class OnboardingViewModel {
         analytics.didFinish(page: pageIndex, skipped: skipped)
         state.markTourSeen()
         router.restart(with: home)
+        showPaywall()
+    }
+
+    /// Пейволл ждёт конца смены корня: главный экран приезжает с переходом,
+    /// и модалка, выехавшая поверх ещё едущего экрана, читается как сбой.
+    /// Пропуск тура тоже ведёт сюда — отказ смотреть картинки не означает
+    /// отказ от тарифа.
+    private func showPaywall() {
+        guard let paywall = paywall() else { return }
+
+        Task {
+            try? await Task.sleep(for: .seconds(0.55))
+            router.topmost.cover(paywall)
+        }
     }
 }

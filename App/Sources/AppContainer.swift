@@ -12,6 +12,8 @@ import HomeFeatureInterface
 import Observation
 import OnboardingFeature
 import OnboardingFeatureInterface
+import PaywallFeature
+import PaywallFeatureInterface
 import ProfileFeature
 import ProfileFeatureInterface
 import ScanFeature
@@ -21,6 +23,7 @@ import SlimlyFirebase
 import SlimlyMediaFlow
 import SlimlyMediaKit
 import SlimlyNavigation
+import SlimlyPurchases
 import SwiftUI
 
 /// Единственное место, которое знает про все фичи сразу: здесь живут сервисы,
@@ -91,7 +94,10 @@ final class AppContainer {
         // Хранилище одно на меню и на конфиг: подмены значений пишет меню,
         // а читает их конфиг сам, без посредника между ними.
         let storage = DefaultsStorage()
-        debugSettings = DebugSettings(storage: storage)
+        // Магазин собирается здесь же: тариф ему нужен тот самый, который
+        // читают экраны, — иначе покупка меняла бы не тот экземпляр.
+        let purchases = PurchasesServices(storage: storage)
+        debugSettings = DebugSettings(storage: storage, pro: purchases.pro)
         localization = StoredLocalization(storage: storage)
         self.mediaLibrary = mediaLibrary
         self.processingService = processing
@@ -111,12 +117,15 @@ final class AppContainer {
         #endif
         // Подмены отладочного меню ложатся поверх источника и действуют
         // на всё приложение: проверять флаг имеет смысл на настоящих экранах,
-        // а не только на том, где его подменили.
+        // а не только на том, где его подменили. Конфиг держится локальной
+        // переменной по той же причине, что и журнал: до конца инициализации
+        // своё же свойство читать нельзя, а он нужен ещё и замыканию пейволла.
         #if DEBUG
-        remoteConfig = OverridingRemoteConfig(base: firebase.remoteConfig, storage: storage)
+        let config: any RemoteConfigService = OverridingRemoteConfig(base: firebase.remoteConfig, storage: storage)
         #else
-        remoteConfig = firebase.remoteConfig
+        let config: any RemoteConfigService = firebase.remoteConfig
         #endif
+        remoteConfig = config
         appAnalytics = AppAnalytics(analytics: analytics)
 
         // Свежие значения нужны первому же экрану, но ждать их старт не
@@ -133,32 +142,25 @@ final class AppContainer {
                 : AnyRoute(OnboardingRoute.tour)
         )
 
-        let pro = Self.subscription(storage: storage)
-
-        // Медиатека, обработчик, конфиг и тариф нужны каждому инструменту
-        // и в одном и том же составе — резолверы получают их одним значением.
-        let flowServices = MediaFlowServices(
+        let flowServices = Self.flowServices(
             library: mediaLibrary,
             processing: processing,
-            remoteConfig: remoteConfig,
-            pro: pro,
-            // Хранилище то же, что у остальных отметок: счётчик сохранений
-            // общий на все инструменты, и заводить под него второе место
-            // на диске незачем.
-            review: StoredReviewPrompt(storage: storage)
+            remoteConfig: config,
+            pro: purchases.pro,
+            storage: storage
         )
-
-        // Плеер превью знает медиатеку, из которой пришёл файл: ролик она
-        // отдаёт ссылкой, и другого экземпляра для этого заводить незачем.
-        let viewers = MediaViewers(
-            file: Self.fileViewer,
-            player: Self.mediaPlayer(library: mediaLibrary)
-        )
+        let viewers = Self.viewers(library: mediaLibrary)
 
         var resolvers: [RouteResolver] = [
             OnboardingFeature.resolver(
                 state: onboardingState,
                 home: HomeRoute.home,
+                // Замыканием, а не значением: ключ конфига спрашивают в конце
+                // тура, а не при сборке резолвера, — к тому моменту ответ
+                // сервера уже приехал.
+                paywall: {
+                    config.value(for: .paywallAfterTour) ? PaywallRoute.paywall(.onboarding) : nil
+                },
                 analytics: analytics
             ),
             HomeFeature.resolver(
@@ -168,37 +170,28 @@ final class AppContainer {
                 profile: ProfileRoute.profile,
                 analytics: analytics
             ),
-            CompressFeature.resolver(
-                services: flowServices,
-                previewRenderer: previewRenderer,
-                analytics: analytics,
-                viewers: viewers
-            ),
-            ConvertFeature.resolver(
-                services: flowServices,
-                previewRenderer: previewRenderer,
-                analytics: analytics,
-                viewers: viewers
-            ),
-            AudioFeature.resolver(
-                services: flowServices,
-                analytics: analytics,
-                viewers: viewers
-            ),
-            ScanFeature.resolver(
-                services: flowServices,
-                analytics: analytics,
-                viewers: viewers
-            ),
             ProfileFeature.resolver(
                 mediaLibrary: mediaLibrary,
                 processingService: processing,
-                pro: pro,
+                pro: purchases.pro,
                 localization: localization,
                 analytics: analytics,
+                paywall: PaywallRoute.paywall(.profile),
                 debugMenu: Self.debugMenuRoute
             ),
+            PaywallFeature.resolver(
+                purchases: purchases.purchases,
+                pro: purchases.pro,
+                analytics: analytics
+            ),
         ]
+
+        resolvers += Self.toolResolvers(
+            services: flowServices,
+            previewRenderer: previewRenderer,
+            analytics: analytics,
+            viewers: viewers
+        )
 
         // В релизной сборке резолвера нет: маршрут остаётся значением,
         // которому не соответствует ни один экран, и меню недостижимо.
@@ -216,6 +209,63 @@ final class AppContainer {
 
         registry = RouteRegistry(resolvers)
         deeplinks = DeeplinkRegistry(DeeplinkMap.mappers)
+    }
+
+    /// Инструменты обработки файлов. Собраны отдельно от остальных экранов,
+    /// потому что состав у них общий: шаги одни и те же, различаются конфиг
+    /// и то, что есть только у инструмента.
+    @MainActor
+    private static func toolResolvers(
+        services: MediaFlowServices,
+        previewRenderer: any MediaPreviewRenderer,
+        analytics: any AnalyticsService,
+        viewers: MediaViewers
+    ) -> [RouteResolver] {
+        [
+            CompressFeature.resolver(
+                services: services,
+                previewRenderer: previewRenderer,
+                analytics: analytics,
+                viewers: viewers
+            ),
+            ConvertFeature.resolver(
+                services: services,
+                previewRenderer: previewRenderer,
+                analytics: analytics,
+                viewers: viewers
+            ),
+            AudioFeature.resolver(services: services, analytics: analytics, viewers: viewers),
+            ScanFeature.resolver(services: services, analytics: analytics, viewers: viewers),
+        ]
+    }
+
+    /// Медиатека, обработчик, конфиг и тариф нужны каждому инструменту
+    /// и в одном и том же составе — резолверы получают их одним значением.
+    private static func flowServices(
+        library: any MediaLibrary,
+        processing: any MediaProcessingService,
+        remoteConfig: any RemoteConfigService,
+        pro: any ProSubscription,
+        storage: any KeyValueStorage
+    ) -> MediaFlowServices {
+        MediaFlowServices(
+            library: library,
+            processing: processing,
+            remoteConfig: remoteConfig,
+            pro: pro,
+            // Хранилище то же, что у остальных отметок: счётчик сохранений
+            // общий на все инструменты, и заводить под него второе место
+            // на диске незачем.
+            review: StoredReviewPrompt(storage: storage),
+            paywall: PaywallRoute.paywall(.picker)
+        )
+    }
+
+    /// Чем открывают готовое и что оживляет превью при выборе. Плеер знает
+    /// медиатеку, из которой пришёл файл: ролик она отдаёт ссылкой,
+    /// и другого экземпляра для этого заводить незачем.
+    private static func viewers(library: any MediaLibrary) -> MediaViewers {
+        MediaViewers(file: fileViewer, player: mediaPlayer(library: library))
     }
 
     /// Чем показать готовый файл на экране просмотра. Собирается здесь,
@@ -237,17 +287,6 @@ final class AppContainer {
             guard item.kind == .video || item.isLivePhoto else { return nil }
             return AnyView(MediaItemPlayer(item: item, library: library))
         }
-    }
-
-    /// Тариф пользователя. Покупок в приложении ещё нет: в релизе подписки
-    /// не бывает, а в отладочной сборке её включают крутилкой в меню — иначе
-    /// пределы Pro нечем увидеть на настоящих экранах.
-    private static func subscription(storage: any KeyValueStorage) -> any ProSubscription {
-        #if DEBUG
-        StoredProSubscription(storage: storage)
-        #else
-        NoProSubscription()
-        #endif
     }
 
     /// Куда ведёт пятое нажатие на строку версии. В релизе — никуда.

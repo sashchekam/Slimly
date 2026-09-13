@@ -59,18 +59,20 @@ public final class DebugSettings {
     /// подмену рядом с настоящим значением, и знать, что она вообще есть.
     public private(set) var remoteConfigOverrides: RemoteConfigOverrides
 
-    /// Включена ли подписка. Покупок ещё нет, поэтому тариф переставляют
-    /// руками: пределы у Pro свои, и увидеть их надо на настоящих экранах,
-    /// а не только в объекте конфига.
-    public private(set) var isPro: Bool
+    /// Включена ли подписка. Тумблер ставит тот же тариф, что и покупка:
+    /// пределы у Pro свои, и увидеть их надо на настоящих экранах, а не
+    /// только в объекте конфига. Держать своё поле рядом нельзя — источник
+    /// тарифа один на всё приложение, и меню читает его же.
+    public var isPro: Bool { pro.isActive }
 
     private let storage: any KeyValueStorage
+    private let pro: StoredProSubscription
 
-    public init(storage: any KeyValueStorage = DefaultsStorage()) {
+    public init(storage: any KeyValueStorage = DefaultsStorage(), pro: StoredProSubscription) {
         self.storage = storage
+        self.pro = pro
         simulatedFailure = storage.value(for: .simulatedFailure, default: .off)
         remoteConfigOverrides = storage.value(for: .remoteConfigOverrides, default: RemoteConfigOverrides())
-        isPro = storage.value(for: .proSubscription, default: false)
     }
 
     /// Хоть одна подмена включена. Пока это так, поверх экранов горит метка
@@ -81,8 +83,7 @@ public final class DebugSettings {
     }
 
     public func setPro(_ active: Bool) {
-        isPro = active
-        storage.set(active, for: .proSubscription)
+        pro.update(isActive: active)
     }
 
     public func setSimulatedFailure(_ failure: SimulatedFailure) {

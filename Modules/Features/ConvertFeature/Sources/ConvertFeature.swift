@@ -20,6 +20,7 @@ public enum ConvertFeature {
                         config: pickerConfig(kind, limit: limit(kind, services.limits)),
                         library: services.library,
                         pro: services.pro,
+                        paywall: services.paywall,
                         analytics: FlowAnalytics(analytics: analytics, tool: tool(for: kind)),
                         router: router,
                         destination: { .push(ConvertRoute.format(kind: kind, items: $0)) }

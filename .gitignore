@@ -9,3 +9,6 @@ Derived/
 
 # Резолвленные SPM-зависимости: восстанавливаются `tuist install`.
 Tuist/.build/
+
+# Ключ магазина: он публичный, но привязан к нашему кабинету RevenueCat.
+App/Resources/RevenueCat-Info.plist

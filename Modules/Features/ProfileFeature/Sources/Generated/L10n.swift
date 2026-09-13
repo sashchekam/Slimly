@@ -164,11 +164,6 @@ enum L10n {
             tr("pro.pitch")
         }
 
-        /// Slimly Pro is coming soon
-        static var soon: String {
-            tr("pro.soon")
-        }
-
         /// active
         static var status: String {
             tr("pro.status")

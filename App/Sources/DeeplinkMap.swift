@@ -5,6 +5,7 @@ import DebugFeatureInterface
 import Foundation
 import HomeFeatureInterface
 import OnboardingFeatureInterface
+import PaywallFeatureInterface
 import ProfileFeatureInterface
 import ScanFeatureInterface
 import SlimlyCore
@@ -25,6 +26,7 @@ enum DeeplinkMap {
             audio,
             scan,
             profile,
+            paywall,
         ]
         #if DEBUG
         mappers.append(debug)
@@ -85,6 +87,14 @@ enum DeeplinkMap {
         case ["stats"]: return [HomeRoute.home, ProfileRoute.profile, ProfileRoute.statistics]
         default: return nil
         }
+    }
+
+    /// `slimly://paywall` — предложение тарифа поверх хаба, ровно так же,
+    /// как оно открывается из профиля. Ссылка нужна прежде всего затем,
+    /// чтобы проверять покупку, не проходя весь путь до неё заново.
+    private static let paywall: DeeplinkRegistry.Mapper = { deeplink in
+        guard deeplink.host == "paywall", deeplink.pathComponents.isEmpty else { return nil }
+        return DeeplinkDestination(routes: [HomeRoute.home], cover: PaywallRoute.paywall(.deeplink))
     }
 
     #if DEBUG

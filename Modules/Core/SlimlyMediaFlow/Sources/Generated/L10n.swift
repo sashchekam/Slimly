@@ -319,11 +319,6 @@ enum L10n {
         static var offer: String {
             tr("pro.offer")
         }
-
-        /// Slimly Pro is coming soon
-        static var soon: String {
-            tr("pro.soon")
-        }
     }
 
     enum Progress {
